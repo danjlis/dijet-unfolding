@@ -75,7 +75,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
   Double_t JER_sys = rb.get_jer_sys();
   std::cout << "JES = " << JES_sys << std::endl;
   std::cout << "JER = " << JER_sys << std::endl;
-  float width = 0.08 + JER_sys;
+  float width = 0.10 + JER_sys;
   fgaus->SetParameters(1, 0, width);
 
   if (JER_sys != 0)

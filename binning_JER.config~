@@ -3,7 +3,6 @@ minimum: 5.5
 alpha: 1.25992
 fixed: 14
 bbins: 7
-minentries: 5
 
 truth_leading_goal: 13.99
 truth_subleading_goal: 0
@@ -31,5 +30,5 @@ pt2_3: 30
 low_trigger: 16
 first_xj: 0.3
 
-JER: 0.05
+JER: 0.0
 JES: 0.0
