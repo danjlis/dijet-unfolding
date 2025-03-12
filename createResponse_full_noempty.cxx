@@ -11,7 +11,7 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int createResponse_full_noempty(const std::string configfile = "binning.config", const int niterations = 20)
+int createResponse_full_noempty(const std::string configfile = "binning.config", const int niterations = 10)
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
@@ -75,7 +75,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
   Double_t JER_sys = rb.get_jer_sys();
   std::cout << "JES = " << JES_sys << std::endl;
   std::cout << "JER = " << JER_sys << std::endl;
-  float width = 0.10 + JER_sys;
+  float width = 0.1 + JER_sys;
   fgaus->SetParameters(1, 0, width);
 
   if (JER_sys != 0)
@@ -112,6 +112,9 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 			   0.263404, 
 			   2.91882};
 
+  Int_t prior_sys = rb.get_prior_sys();
+
+  
   // Vertex Reweight
   Int_t vtx_sys = rb.get_vtx_sys();
   TFile *fvtx = new TFile("vertex_reweight.root","r");
@@ -191,6 +194,32 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 
   TH2D *h_flat_response_pt1pt2 = new TH2D("h_flat_response_pt1pt2",";p_{T,1, reco} + p_{T,2, reco};p_{T,1, truth} + p_{T,2, truth}", nbins*nbins, 0, nbins*nbins, nbins*nbins, 0, nbins*nbins);
 
+  // For the prior sensitivity
+  TH1D *h_flatreweight_pt1pt2 = new TH1D("h_unfold_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+
+  if (prior_sys)
+    {
+      std::cout << "doing prior" << std::endl;
+      TFile *fun = new TFile("unfolded_hists.root", "r");
+      TH1D *h_unfold_flat = (TH1D*) fun->Get("h_flat_unfold_pt1pt2_5");
+      TFile *ftr = new TFile("response_matrix.root", "r");
+      std::cout << "doing prior" << std::endl;
+      TH1D *h_truth_flat = (TH1D*) ftr->Get("h_truth_flat_pt1pt2");
+
+      h_unfold_flat->Scale(1./h_unfold_flat->Integral());
+      h_truth_flat->Scale(1./h_truth_flat->Integral());
+      for (int ibin = 0; ibin < nbins*nbins; ibin++)
+	{
+	  float v = h_unfold_flat->GetBinContent(ibin+1);
+	  float b = h_truth_flat->GetBinContent(ibin+1);
+
+	  std::cout << v/b << std::endl;
+	  if (b == 0)
+	    h_flatreweight_pt1pt2->SetBinContent(ibin+1, 1);
+	  else
+	    h_flatreweight_pt1pt2->SetBinContent(ibin+1, v/b);
+	}
+    }
   int nbin_response = nbins*nbins;
   
   RooUnfoldResponse rooResponse(nbin_response, 0, nbin_response);
@@ -209,19 +238,18 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 	    {
 	      event_scale *= njet_scale[(inrecojets > 9 ? 0 : inrecojets)];
 	    }
-	  if (vtx_sys)
+
+	  // Vertex Rewieghting
+	  for (int ib = 0; ib < vertex_scales.size(); ib++)
 	    {
-	      
-	      for (int ib = 0; ib < vertex_scales.size(); ib++)
+	      if (mbd_vertex[isample] < vertex_scales.at(ib).first)
 		{
-		  if (mbd_vertex[isample] < vertex_scales.at(ib).first)
-		    {
-		      event_scale *= vertex_scales.at(ib).second;
-		      if (i < 100) std:cout << "found z = " << vertex_scales.at(ib).first << " " <<vertex_scales.at(ib).second<<std::endl;
-		      break;
-		    }
+		  event_scale *= vertex_scales.at(ib).second;
+		  //if (i < 100) std:cout << "found z = " << vertex_scales.at(ib).first << " " <<vertex_scales.at(ib).second<<std::endl;
+		  break;
 		}
 	    }
+
 	  h_truth_lead_sample[isample]->Fill(pt1_truth[isample], event_scale);
 
 	  if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
@@ -259,6 +287,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 
 	  double smear1 = fgaus->GetRandom();
 	  double smear2 = fgaus->GetRandom();
+
 	  if (JES_sys != 0)
 	    {
 	      es1 = es1 + (JES_sys + smear1)*e1;
@@ -269,6 +298,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 	      es1 = es1 + smear1*e1;
 	      es2 = es2 + smear2*e2; 	  
 	    }
+	  
 	  float maxi = std::max(es1, es2);
 	  float mini = std::min(es1, es2);
 	  if (e1 > truth_leading_cut) h_truth_lead->Fill(e1, event_scale);
@@ -303,6 +333,13 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 	  bool reco_good = (maxi >= reco_leading_cut && mini >= reco_subleading_cut && dphi_reco[isample] > dphicut);
 
 	  if (!truth_good && !reco_good) continue;
+
+
+	  if (prior_sys)
+	    {
+	      int recorrectbin = pt1_truth_bin*nbins + pt2_truth_bin;
+	      event_scale *= h_flatreweight_pt1pt2->GetBinContent(recorrectbin);
+	    }
 	  //RooUnfoldResponse rooResponse_histo(*h_flat_reco_to_response_pt1pt2, *h_flat_truth_to_response, *flat_response_pt1pt2);
 	  if (truth_good && !reco_good)
 	    {
@@ -415,480 +452,534 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
     }
 
 
-  int nbinsx = h_flat_response_pt1pt2->GetXaxis()->GetNbins();
-  int nbinsy = h_flat_response_pt1pt2->GetYaxis()->GetNbins();
+  int number_of_mins = 1;
+  if (minentries == 0) number_of_mins = 20;
+  for (int imin = minentries; imin < minentries + number_of_mins; imin++)       
+    {
+      std::cout << "Minimum Entries == " << imin << std::endl;
+      int nbinsx = h_flat_response_pt1pt2->GetXaxis()->GetNbins();
+      int nbinsy = h_flat_response_pt1pt2->GetYaxis()->GetNbins();
 
-  TH1D *h_flat_truth_mapping = (TH1D*) h_flat_truth_pt1pt2->Clone();
-  TH1D *h_flat_reco_mapping = (TH1D*) h_flat_reco_pt1pt2->Clone();
-
-  h_flat_truth_mapping->SetName("h_flat_truth_mapping");
-  h_flat_reco_mapping->SetName("h_flat_reco_mapping");
-  h_flat_reco_mapping->Reset();
-  h_flat_truth_mapping->Reset();
+      TH1D *h_flat_truth_mapping = (TH1D*) h_flat_truth_pt1pt2->Clone();
+      TH1D *h_flat_reco_mapping = (TH1D*) h_flat_reco_pt1pt2->Clone();
+      if (minentries)
+	{
+	  h_flat_truth_mapping->SetName("h_flat_truth_mapping");
+	  h_flat_reco_mapping->SetName("h_flat_reco_mapping");
+	}
+      else
+	{
+	  h_flat_truth_mapping->SetName(Form("h_flat_truth_mapping_min%d", imin));
+	  h_flat_reco_mapping->SetName(Form("h_flat_reco_mapping_min%d", imin));
+	}
+      h_flat_reco_mapping->Reset();
+      h_flat_truth_mapping->Reset();
   
-  int nempty_reco = 0;
-  std::vector<int> binnumbers_reco{};
-  int nempty_truth = 0;
-  std::vector<int> binnumbers_truth{};
-  int nrecobins = 0;
-  int ntruthbins = 0;
-  for (int ib = 0; ib < nbins*nbins; ib++)
-    {
-      if (h_count_flat_reco_pt1pt2->GetBinContent(ib+1) < minentries)
+      int nempty_reco = 0;
+      std::vector<int> binnumbers_reco{};
+      int nempty_truth = 0;
+      std::vector<int> binnumbers_truth{};
+      int nrecobins = 0;
+      int ntruthbins = 0;
+      for (int ib = 0; ib < nbins*nbins; ib++)
 	{
-	  nempty_reco++;
-	  binnumbers_reco.push_back(0);
-	  h_flat_reco_mapping->SetBinContent(ib+1, 0);
-	}
-      else
-	{
-	  nrecobins++;
-	  binnumbers_reco.push_back(nrecobins);
-	  h_flat_reco_mapping->SetBinContent(ib+1, nrecobins);
-	}
-      if (h_count_flat_truth_pt1pt2->GetBinContent(ib+1) < minentries)
-	{
-	  nempty_truth++;
-	  binnumbers_truth.push_back(0);
-	  h_flat_truth_mapping->SetBinContent(ib+1, 0);
-	}
-      else
-	{
-	  ntruthbins++;
-	  binnumbers_truth.push_back(ntruthbins);
-	  h_flat_truth_mapping->SetBinContent(ib+1, ntruthbins);
-	}
-    }
-  TH1D *h_flat_truth_skim = new TH1D("h_flat_truth_skim","", ntruthbins, 0, ntruthbins);
-  TH1D *h_flat_reco_skim = new TH1D("h_flat_reco_skim","", nrecobins, 0, nrecobins);
-  TH2D *h_flat_response_skim = new TH2D("h_flat_response_skim","", nrecobins, 0, nrecobins, ntruthbins, 0, ntruthbins);
-
-  for (int ib = 0; ib < nbins*nbins; ib++)
-    {
-      int bintruth = binnumbers_truth.at(ib);      
-      int binreco = binnumbers_reco.at(ib);
-      if (binreco)
-	{
-	  h_flat_reco_skim->SetBinContent(binreco, h_flat_reco_pt1pt2->GetBinContent(ib+1));
-	  h_flat_reco_skim->SetBinError(binreco, h_flat_reco_pt1pt2->GetBinError(ib+1));
-	}
-      if (bintruth)
-	{
-	 
-	  h_flat_truth_skim->SetBinContent(bintruth, h_flat_truth_pt1pt2->GetBinContent(ib+1));
-	  h_flat_truth_skim->SetBinError(bintruth, h_flat_truth_pt1pt2->GetBinError(ib+1));
-
-	  for (int ibr = 0; ibr < nbins*nbins; ibr++)
+	  if (h_count_flat_reco_pt1pt2->GetBinContent(ib+1) < imin)
 	    {
-	      int binreco2 = binnumbers_reco.at(ibr);
-	      if (binreco2)
+	      nempty_reco++;
+	      binnumbers_reco.push_back(0);
+	      h_flat_reco_mapping->SetBinContent(ib+1, 0);
+	    }
+	  else
+	    {
+	      nrecobins++;
+	      binnumbers_reco.push_back(nrecobins);
+	      h_flat_reco_mapping->SetBinContent(ib+1, nrecobins);
+	    }
+	  if (h_count_flat_truth_pt1pt2->GetBinContent(ib+1) < imin)
+	    {
+	      nempty_truth++;
+	      binnumbers_truth.push_back(0);
+	      h_flat_truth_mapping->SetBinContent(ib+1, 0);
+	    }
+	  else
+	    {
+	      ntruthbins++;
+	      binnumbers_truth.push_back(ntruthbins);
+	      h_flat_truth_mapping->SetBinContent(ib+1, ntruthbins);
+	    }
+	}
+      TH1D *h_flat_truth_skim = new TH1D(Form("h_flat_truth_skim_min%d", imin),"", ntruthbins, 0, ntruthbins);
+      TH1D *h_flat_reco_skim = new TH1D(Form("h_flat_reco_skim_min%d", imin),"", nrecobins, 0, nrecobins);
+      TH2D *h_flat_response_skim = new TH2D(Form("h_flat_response_skim_min%d", imin),"", nrecobins, 0, nrecobins, ntruthbins, 0, ntruthbins);
+      if (minentries)
+	{
+	  h_flat_reco_skim->SetName("h_flat_reco_skim");
+	  h_flat_response_skim->SetName("h_flat_response_skim");
+	  h_flat_truth_skim->SetName("h_flat_truth_skim");
+	}
+      for (int ib = 0; ib < nbins*nbins; ib++)
+	{
+	  int bintruth = binnumbers_truth.at(ib);      
+	  int binreco = binnumbers_reco.at(ib);
+	  if (binreco)
+	    {
+	      h_flat_reco_skim->SetBinContent(binreco, h_flat_reco_pt1pt2->GetBinContent(ib+1));
+	      h_flat_reco_skim->SetBinError(binreco, h_flat_reco_pt1pt2->GetBinError(ib+1));
+	    }
+	  if (bintruth)
+	    {
+	 
+	      h_flat_truth_skim->SetBinContent(bintruth, h_flat_truth_pt1pt2->GetBinContent(ib+1));
+	      h_flat_truth_skim->SetBinError(bintruth, h_flat_truth_pt1pt2->GetBinError(ib+1));
+
+	      for (int ibr = 0; ibr < nbins*nbins; ibr++)
 		{
-		  int rbin = h_flat_response_skim->GetBin(binreco2, bintruth);
-		  int tbin = h_flat_response_pt1pt2->GetBin(ibr+1, ib+1);
-		  h_flat_response_skim->SetBinContent(rbin, h_flat_response_pt1pt2->GetBinContent(tbin));
-		  h_flat_response_skim->SetBinError(rbin, h_flat_response_pt1pt2->GetBinError(tbin));
+		  int binreco2 = binnumbers_reco.at(ibr);
+		  if (binreco2)
+		    {
+		      int rbin = h_flat_response_skim->GetBin(binreco2, bintruth);
+		      int tbin = h_flat_response_pt1pt2->GetBin(ibr+1, ib+1);
+		      h_flat_response_skim->SetBinContent(rbin, h_flat_response_pt1pt2->GetBinContent(tbin));
+		      h_flat_response_skim->SetBinError(rbin, h_flat_response_pt1pt2->GetBinError(tbin));
+		    }
 		}
 	    }
 	}
-    }
 
-  std::cout <<" Nbins skim reco = "<<h_flat_reco_skim->GetNbinsX()<<std::endl;
-  std::cout <<" Nbins skim reco = "<<h_flat_truth_skim->GetNbinsX()<<std::endl;
-  std::cout <<" Nbins skim reco = "<<h_flat_response_skim->GetXaxis()->GetNbins()<<"  --  " << h_flat_response_skim->GetYaxis()->GetNbins()<<std::endl; 
-  RooUnfoldResponse rooResponsehist(h_flat_reco_skim, h_flat_truth_skim, h_flat_response_skim);
-  rooResponsehist.SetName("response_noempty");
-  h_flat_reco_pt1pt2->Scale(.5);
-  h_flat_truth_pt1pt2->Scale(.5);
-
-  h_flat_reco_skim->Scale(.5);
-  TH1D* h_flat_unfold_skim[niterations];
-  TH1D* h_flat_unfold_pt1pt2[niterations];
-  int niter = 3;
-
-  for (int iter = 0; iter < niterations; iter++ )
-    {
-      
-      RooUnfoldBayes   unfold (&rooResponsehist, h_flat_reco_skim, iter + 1);    // OR
-
-      h_flat_unfold_skim[iter] = (TH1D*) unfold.Hunfold();
-      std::cout <<" Nbins skim reco = "<<h_flat_unfold_skim[iter]->GetNbinsX()<<std::endl;
-      h_flat_unfold_pt1pt2[iter] = (TH1D*) h_flat_truth_pt1pt2->Clone();
-      h_flat_unfold_pt1pt2[iter]->Reset();
-      h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_pt1pt2_%d",iter));
-      for (int ib = 0; ib < nbins*nbins; ib++)
+      std::cout <<" Nbins skim reco = "<<h_flat_reco_skim->GetNbinsX()<<std::endl;
+      std::cout <<" Nbins skim reco = "<<h_flat_truth_skim->GetNbinsX()<<std::endl;
+      std::cout <<" Nbins skim reco = "<<h_flat_response_skim->GetXaxis()->GetNbins()<<"  --  " << h_flat_response_skim->GetYaxis()->GetNbins()<<std::endl; 
+      RooUnfoldResponse rooResponsehist(h_flat_reco_skim, h_flat_truth_skim, h_flat_response_skim);
+      if (minentries)
 	{
-	  int bin = binnumbers_truth.at(ib);
-	  if (bin)
-	    {
-	      h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(bin));
-	      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin));
-	    }
+	  rooResponsehist.SetName("response_noempty");
 	}
-    }
+      else
+	{
+	  rooResponsehist.SetName(Form("response_noempty_min%d", imin));
+	}
+
+      if (minentries)
+	{
+	  h_flat_reco_skim->Scale(.5);
+	  TH1D* h_flat_unfold_skim[niterations];
+	  TH1D* h_flat_unfold_pt1pt2[niterations];
+	  int niter = 3;
+
+	  for (int iter = 0; iter < niterations; iter++ )
+	    {
+      
+	      RooUnfoldBayes   unfold (&rooResponsehist, h_flat_reco_skim, iter + 1);    // OR
+
+	      h_flat_unfold_skim[iter] = (TH1D*) unfold.Hunfold();
+	      std::cout <<" Nbins skim reco = "<<h_flat_unfold_skim[iter]->GetNbinsX()<<std::endl;
+	      h_flat_unfold_pt1pt2[iter] = (TH1D*) h_flat_truth_pt1pt2->Clone();
+	      h_flat_unfold_pt1pt2[iter]->Reset();
+	      h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_pt1pt2_%d",iter));
+	      for (int ib = 0; ib < nbins*nbins; ib++)
+		{
+		  int bin = binnumbers_truth.at(ib);
+		  if (bin)
+		    {
+		      h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(bin));
+		      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin));
+		    }
+		}
+	    }
+
+	  h_flat_reco_pt1pt2->Scale(.5);
+	  h_flat_truth_pt1pt2->Scale(.5);
 
 
-  TCanvas *c = new TCanvas("c","c", 500, 500);
 
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      dlutility::SetLineAtt(h_flat_unfold_pt1pt2[iter], kBlack, 1, 1);
-      dlutility::SetMarkerAtt(h_flat_unfold_pt1pt2[iter], kBlack, 1, 8);
-    }
+	  TCanvas *c = new TCanvas("c","c", 500, 500);
+
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      dlutility::SetLineAtt(h_flat_unfold_pt1pt2[iter], kBlack, 1, 1);
+	      dlutility::SetMarkerAtt(h_flat_unfold_pt1pt2[iter], kBlack, 1, 8);
+	    }
   
-  dlutility::SetLineAtt(h_flat_truth_pt1pt2, kRed, 2, 1);
-  dlutility::SetLineAtt(h_flat_reco_pt1pt2, kBlue, 2, 1);
+	  dlutility::SetLineAtt(h_flat_truth_pt1pt2, kRed, 2, 1);
+	  dlutility::SetLineAtt(h_flat_reco_pt1pt2, kBlue, 2, 1);
 
-  h_flat_truth_pt1pt2->Draw("hist");
-  h_flat_reco_pt1pt2->Draw("hist same");
-  h_flat_unfold_pt1pt2[niter]->Draw("same p");
+	  h_flat_truth_pt1pt2->Draw("hist");
+	  h_flat_reco_pt1pt2->Draw("hist same");
+	  h_flat_unfold_pt1pt2[niter]->Draw("same p");
 
-  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_unfold[niterations];
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
-      h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
-    }
-  TH1D *h_xj_reco = new TH1D("h_xj_reco", ";x_{J};", nbins, ixj_bins);
-  TH1D *h_xj_truth = new TH1D("h_xj_truth", ";x_{J};",nbins, ixj_bins);
-  TH1D *h_xj_unfold[niterations];
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      h_xj_unfold[iter] = new TH1D(Form("h_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
-    }
+	  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+	  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+	  TH2D *h_pt1pt2_unfold[niterations];
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+	      h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
+	    }
+	  TH1D *h_xj_reco = new TH1D("h_xj_reco", ";x_{J};", nbins, ixj_bins);
+	  TH1D *h_xj_truth = new TH1D("h_xj_truth", ";x_{J};",nbins, ixj_bins);
+	  TH1D *h_xj_unfold[niterations];
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      h_xj_unfold[iter] = new TH1D(Form("h_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+	    }
 
-  h_pt1pt2_reco->SetTitle(";Reco p_{T, 1} [GeV]; Reco p_{T, 2} [GeV]; Counts * lumi scale ");
-  h_pt1pt2_truth->SetTitle(";Truth p_{T, 1} [GeV]; Truth p_{T, 2} [GeV]; Counts * lumi scale ");
-  h_pt1pt2_unfold[niter]->SetTitle(";Unfold p_{T, 1} [GeV]; Unfold p_{T, 2} [GeV]; Counts * lumi scale ");
+	  h_pt1pt2_reco->SetTitle(";Reco p_{T, 1} [GeV]; Reco p_{T, 2} [GeV]; Counts * lumi scale ");
+	  h_pt1pt2_truth->SetTitle(";Truth p_{T, 1} [GeV]; Truth p_{T, 2} [GeV]; Counts * lumi scale ");
+	  h_pt1pt2_unfold[niter]->SetTitle(";Unfold p_{T, 1} [GeV]; Unfold p_{T, 2} [GeV]; Counts * lumi scale ");
 
-  histo_opps::make_sym_pt1pt2(h_flat_truth_pt1pt2, h_pt1pt2_truth, nbins);
-  histo_opps::make_sym_pt1pt2(h_flat_reco_pt1pt2, h_pt1pt2_reco, nbins);
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins);
-    }
+	  histo_opps::make_sym_pt1pt2(h_flat_truth_pt1pt2, h_pt1pt2_truth, nbins);
+	  histo_opps::make_sym_pt1pt2(h_flat_reco_pt1pt2, h_pt1pt2_reco, nbins);
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins);
+	    }
 
-  TCanvas *cpt1pt2 = new TCanvas("cpt1pt2","cpt1pt2", 800, 300);
-  cpt1pt2->Divide(3, 1);
-  cpt1pt2->cd(1);
-  gPad->SetLogz();
-  gPad->SetRightMargin(0.2);
-  h_pt1pt2_reco->Draw("colz");
-  dlutility::DrawSPHENIXpp(0.22, 0.85);
+	  TCanvas *cpt1pt2 = new TCanvas("cpt1pt2","cpt1pt2", 800, 300);
+	  cpt1pt2->Divide(3, 1);
+	  cpt1pt2->cd(1);
+	  gPad->SetLogz();
+	  gPad->SetRightMargin(0.2);
+	  h_pt1pt2_reco->Draw("colz");
+	  dlutility::DrawSPHENIXpp(0.22, 0.85);
   
-  cpt1pt2->cd(2);
-  gPad->SetRightMargin(0.2);
-  gPad->SetLogz();
-  h_pt1pt2_truth->Draw("colz");
-  cpt1pt2->cd(3);
-  gPad->SetRightMargin(0.2);
-  gPad->SetLogz();
-  h_pt1pt2_unfold[niter]->Draw("colz");
+	  cpt1pt2->cd(2);
+	  gPad->SetRightMargin(0.2);
+	  gPad->SetLogz();
+	  h_pt1pt2_truth->Draw("colz");
+	  cpt1pt2->cd(3);
+	  gPad->SetRightMargin(0.2);
+	  gPad->SetLogz();
+	  h_pt1pt2_unfold[niter]->Draw("colz");
 
 
-  cpt1pt2->Print("pt1pt2.pdf");
+	  cpt1pt2->Print("pt1pt2.pdf");
 
-  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
-  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
-    }
+	  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	    }
   
-  TCanvas *cxj = new TCanvas("cxj","cxj", 500, 700);
-  dlutility::ratioPanelCanvas(cxj);
-  cxj->cd(1);
-  dlutility::SetLineAtt(h_xj_unfold[niter], kBlack, 1, 1);
-  dlutility::SetMarkerAtt(h_xj_unfold[niter], kBlack, 1, 8);
+	  TCanvas *cxj = new TCanvas("cxj","cxj", 500, 700);
+	  dlutility::ratioPanelCanvas(cxj);
+	  cxj->cd(1);
+	  dlutility::SetLineAtt(h_xj_unfold[niter], kBlack, 1, 1);
+	  dlutility::SetMarkerAtt(h_xj_unfold[niter], kBlack, 1, 8);
 
-  dlutility::SetLineAtt(h_truth_xj, kRed, 2, 1);
-  dlutility::SetMarkerAtt(h_truth_xj, kRed, 2, 24);
+	  dlutility::SetLineAtt(h_truth_xj, kRed, 2, 1);
+	  dlutility::SetMarkerAtt(h_truth_xj, kRed, 2, 24);
 
-  dlutility::SetLineAtt(h_linear_truth_xj, kRed, 2, 1);
-  dlutility::SetMarkerAtt(h_linear_truth_xj, kRed, 2, 25);
+	  dlutility::SetLineAtt(h_linear_truth_xj, kRed, 2, 1);
+	  dlutility::SetMarkerAtt(h_linear_truth_xj, kRed, 2, 25);
 
-  dlutility::SetLineAtt(h_reco_xj, kBlue, 2, 1);
-  dlutility::SetMarkerAtt(h_reco_xj, kBlue, 2, 24);
+	  dlutility::SetLineAtt(h_reco_xj, kBlue, 2, 1);
+	  dlutility::SetMarkerAtt(h_reco_xj, kBlue, 2, 24);
 
-  dlutility::SetLineAtt(h_linear_reco_xj, kBlue, 2, 1);
-  dlutility::SetMarkerAtt(h_linear_reco_xj, kBlue, 2, 25);
+	  dlutility::SetLineAtt(h_linear_reco_xj, kBlue, 2, 1);
+	  dlutility::SetMarkerAtt(h_linear_reco_xj, kBlue, 2, 25);
 
   
-  dlutility::SetLineAtt(h_xj_truth, kRed, 2, 1);
-  dlutility::SetMarkerAtt(h_xj_truth, kRed, 1, 8);
+	  dlutility::SetLineAtt(h_xj_truth, kRed, 2, 1);
+	  dlutility::SetMarkerAtt(h_xj_truth, kRed, 1, 8);
 
-  dlutility::SetLineAtt(h_xj_reco, kBlue, 2, 1);
-  dlutility::SetMarkerAtt(h_xj_reco, kBlue, 1, 8);
+	  dlutility::SetLineAtt(h_xj_reco, kBlue, 2, 1);
+	  dlutility::SetMarkerAtt(h_xj_reco, kBlue, 1, 8);
   
-  histo_opps::normalize_histo(h_xj_truth, nbins);
-  histo_opps::normalize_histo(h_xj_reco, nbins);
-  histo_opps::normalize_histo(h_truth_xj, nbins);
-  histo_opps::normalize_histo(h_reco_xj, nbins);
-  h_linear_truth_xj->Scale(1./h_linear_truth_xj->Integral(), "width");
-  h_linear_reco_xj->Scale(1./h_linear_reco_xj->Integral(), "width");
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      histo_opps::normalize_histo(h_xj_unfold[iter], nbins);
-    }
+	  histo_opps::normalize_histo(h_xj_truth, nbins);
+	  histo_opps::normalize_histo(h_xj_reco, nbins);
+	  histo_opps::normalize_histo(h_truth_xj, nbins);
+	  histo_opps::normalize_histo(h_reco_xj, nbins);
+	  h_linear_truth_xj->Scale(1./h_linear_truth_xj->Integral(), "width");
+	  h_linear_reco_xj->Scale(1./h_linear_reco_xj->Integral(), "width");
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      histo_opps::normalize_histo(h_xj_unfold[iter], nbins);
+	    }
 
-  dlutility::SetFont(h_xj_unfold[niter], 42, 0.04);
-  h_xj_truth->SetTitle(";x_{J};#frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");
-  h_xj_truth->SetMaximum(5);
-  h_xj_truth->Draw("p");
-  h_xj_unfold[niter]->Draw("same p");
-  h_xj_reco->Draw("hist same");
-  h_xj_truth->Draw("same hist");
-  h_xj_reco->Draw("p same");
-  h_xj_unfold[niter]->Draw("same hist");
-  h_xj_unfold[niter]->Draw("same p");
-  dlutility::DrawSPHENIXpp(0.22, 0.84);
-  dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
-  dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
-  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
-  TLegend *leg = new TLegend(0.22, 0.3, 0.4, 0.55);
-  leg->SetLineWidth(0);
-  leg->AddEntry(h_xj_reco, "Pythia Reco");
-  leg->AddEntry(h_xj_truth, "Pythia8 Truth");
-  leg->AddEntry(h_xj_unfold[niter], "Unfolded");
-  leg->Draw("same");
-  dlutility::drawText(Form("Niter = %d", niter + 1), 0.22, 0.25);
+	  dlutility::SetFont(h_xj_unfold[niter], 42, 0.04);
+	  h_xj_truth->SetTitle(";x_{J};#frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");
+	  h_xj_truth->SetMaximum(5);
+	  h_xj_truth->Draw("p");
+	  h_xj_unfold[niter]->Draw("same p");
+	  h_xj_reco->Draw("hist same");
+	  h_xj_truth->Draw("same hist");
+	  h_xj_reco->Draw("p same");
+	  h_xj_unfold[niter]->Draw("same hist");
+	  h_xj_unfold[niter]->Draw("same p");
+	  dlutility::DrawSPHENIXpp(0.22, 0.84);
+	  dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
+	  dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
+	  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
+	  TLegend *leg = new TLegend(0.22, 0.3, 0.4, 0.55);
+	  leg->SetLineWidth(0);
+	  leg->AddEntry(h_xj_reco, "Pythia Reco");
+	  leg->AddEntry(h_xj_truth, "Pythia8 Truth");
+	  leg->AddEntry(h_xj_unfold[niter], "Unfolded");
+	  leg->Draw("same");
+	  dlutility::drawText(Form("Niter = %d", niter + 1), 0.22, 0.25);
     
-  cxj->cd(2);
+	  cxj->cd(2);
 
-  TH1D *h_reco_compare = (TH1D*) h_xj_unfold[niter]->Clone();
-  h_reco_compare->Divide(h_xj_truth);
-  h_reco_compare->SetTitle(";x_{J}; Unfold / Truth");
-  dlutility::SetFont(h_reco_compare, 42, 0.06);
-  dlutility::SetLineAtt(h_reco_compare, kBlack, 1,1);
-  dlutility::SetMarkerAtt(h_reco_compare, kBlack, 1,8);
+	  TH1D *h_reco_compare = (TH1D*) h_xj_unfold[niter]->Clone();
+	  h_reco_compare->Divide(h_xj_truth);
+	  h_reco_compare->SetTitle(";x_{J}; Unfold / Truth");
+	  dlutility::SetFont(h_reco_compare, 42, 0.06);
+	  dlutility::SetLineAtt(h_reco_compare, kBlack, 1,1);
+	  dlutility::SetMarkerAtt(h_reco_compare, kBlack, 1,8);
 
  
-  h_reco_compare->Draw("p");
-  TLine *line = new TLine(0.1, 1, 1, 1);
-  line->SetLineStyle(4);
-  line->SetLineColor(kRed + 3);
-  line->SetLineWidth(2);
-  line->Draw("same");
+	  h_reco_compare->Draw("p");
+	  TLine *line = new TLine(0.1, 1, 1, 1);
+	  line->SetLineStyle(4);
+	  line->SetLineColor(kRed + 3);
+	  line->SetLineWidth(2);
+	  line->Draw("same");
 
-  TCanvas *c_iter = new TCanvas("c_iter", "c_iter");
-  TH1D *h_closure[niterations];
+	  TCanvas *c_iter = new TCanvas("c_iter", "c_iter");
+	  TH1D *h_closure[niterations];
 
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      h_closure[iter] = (TH1D*) h_xj_unfold[iter]->Clone();
-      h_closure[iter]->SetName(Form("h_closure_%d", iter));
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      h_closure[iter] = (TH1D*) h_xj_unfold[iter]->Clone();
+	      h_closure[iter]->SetName(Form("h_closure_%d", iter));
 		
-      h_closure[iter]->Divide(h_xj_truth);
-      h_closure[iter]->SetTitle(";x_{J}; Unfold / Truth");
-      dlutility::SetFont(h_closure[iter], 42, 0.06);
-    }
-  int colors[5] = {kBlue, kBlue - 7, kBlue - 9, kYellow - 7, kYellow +1}; 
+	      h_closure[iter]->Divide(h_xj_truth);
+	      h_closure[iter]->SetTitle(";x_{J}; Unfold / Truth");
+	      dlutility::SetFont(h_closure[iter], 42, 0.06);
+	    }
+	  int colors[5] = {kBlue, kBlue - 7, kBlue - 9, kYellow - 7, kYellow +1}; 
 
-  for (int iter = 0; iter < 5; iter++)
-    {
-      dlutility::SetLineAtt(h_closure[1 + 2*iter], colors[iter], 1,1);
-      dlutility::SetMarkerAtt(h_closure[1 + 2*iter], colors[iter], 1,8);
-    }
-  h_closure[1]->Draw("p");
-  h_closure[3]->Draw("p same");
-  h_closure[5]->Draw("p same");
-  h_closure[7]->Draw("p same");
-  h_closure[9]->Draw("p same");
-  TLine *line2 = new TLine(0.1, 1, 1, 1);
-  line2->SetLineStyle(4);
-  line2->SetLineColor(kRed + 3);
-  line2->SetLineWidth(2);
-  line2->Draw("same");
+	  for (int iter = 0; iter < 5; iter++)
+	    {
+	      dlutility::SetLineAtt(h_closure[1 + 2*iter], colors[iter], 1,1);
+	      dlutility::SetMarkerAtt(h_closure[1 + 2*iter], colors[iter], 1,8);
+	    }
+	  h_closure[1]->Draw("p");
+	  h_closure[3]->Draw("p same");
+	  h_closure[5]->Draw("p same");
+	  h_closure[7]->Draw("p same");
+	  h_closure[9]->Draw("p same");
+	  TLine *line2 = new TLine(0.1, 1, 1, 1);
+	  line2->SetLineStyle(4);
+	  line2->SetLineColor(kRed + 3);
+	  line2->SetLineWidth(2);
+	  line2->Draw("same");
 
 
-  TCanvas *cjet = new TCanvas("cjet","cjet", 700, 500);
-  dlutility::createCutCanvas(cjet);
-  cjet->cd(1);
-  gPad->SetLogy();
+	  TCanvas *cjet = new TCanvas("cjet","cjet", 700, 500);
+	  dlutility::createCutCanvas(cjet);
+	  cjet->cd(1);
+	  gPad->SetLogy();
 
-  dlutility::SetLineAtt(h_truth_lead, kRed, 1, 1);
-  dlutility::SetMarkerAtt(h_truth_lead, kRed, 1, 24);
+	  dlutility::SetLineAtt(h_truth_lead, kRed, 1, 1);
+	  dlutility::SetMarkerAtt(h_truth_lead, kRed, 1, 24);
 
-  dlutility::SetLineAtt(h_truth_sublead, kBlue, 1, 1);
-  dlutility::SetMarkerAtt(h_truth_sublead, kBlue, 1, 24);
+	  dlutility::SetLineAtt(h_truth_sublead, kBlue, 1, 1);
+	  dlutility::SetMarkerAtt(h_truth_sublead, kBlue, 1, 24);
 
-  dlutility::SetLineAtt(h_reco_lead, kRed, 1, 1);
-  dlutility::SetMarkerAtt(h_reco_lead, kRed, 1, 20);
+	  dlutility::SetLineAtt(h_reco_lead, kRed, 1, 1);
+	  dlutility::SetMarkerAtt(h_reco_lead, kRed, 1, 20);
 
-  dlutility::SetLineAtt(h_reco_sublead, kBlue, 1, 1);
-  dlutility::SetMarkerAtt(h_reco_sublead, kBlue, 1, 20);
+	  dlutility::SetLineAtt(h_reco_sublead, kBlue, 1, 1);
+	  dlutility::SetMarkerAtt(h_reco_sublead, kBlue, 1, 20);
 
-  h_truth_lead->SetTitle(";Jet p_{T} [GeV];counts * lumiscale");
+	  h_truth_lead->SetTitle(";Jet p_{T} [GeV];counts * lumiscale");
     
-  h_truth_lead->Draw();
-  h_truth_sublead->Draw("same");
-  h_reco_lead->Draw("same");
-  h_reco_sublead->Draw("same");
-  cjet->cd(2);
-  dlutility::DrawSPHENIXppsize(0.1, 0.84, 0.1);
-  dlutility::drawText("anti-k_{T} R = 0.4", 0.1, 0.74, 0, kBlack, 0.1);
-  dlutility::drawText("All Dijet Pairs", 0.1, 0.69, 0, kBlack, 0.1);
-  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.1, 0.64, 0, kBlack, 0.1);
+	  h_truth_lead->Draw();
+	  h_truth_sublead->Draw("same");
+	  h_reco_lead->Draw("same");
+	  h_reco_sublead->Draw("same");
+	  cjet->cd(2);
+	  dlutility::DrawSPHENIXppsize(0.1, 0.84, 0.1);
+	  dlutility::drawText("anti-k_{T} R = 0.4", 0.1, 0.74, 0, kBlack, 0.1);
+	  dlutility::drawText("All Dijet Pairs", 0.1, 0.69, 0, kBlack, 0.1);
+	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.1, 0.64, 0, kBlack, 0.1);
 
-  TLegend *leg33 = new TLegend(0.01, 0.13, 0.7, 0.62);
-  leg33->SetLineWidth(0);
-  leg33->AddEntry(h_reco_lead, "Leading Reco");
-  leg33->AddEntry(h_reco_sublead, "Subleading Reco");
-  leg33->AddEntry(h_truth_lead, "Leading Truth");
-  leg33->AddEntry(h_truth_sublead, "Subleading Truth");
-  leg33->SetTextSize(0.1);
-  leg33->Draw("same");
+	  TLegend *leg33 = new TLegend(0.01, 0.13, 0.7, 0.62);
+	  leg33->SetLineWidth(0);
+	  leg33->AddEntry(h_reco_lead, "Leading Reco");
+	  leg33->AddEntry(h_reco_sublead, "Subleading Reco");
+	  leg33->AddEntry(h_truth_lead, "Leading Truth");
+	  leg33->AddEntry(h_truth_sublead, "Subleading Truth");
+	  leg33->SetTextSize(0.1);
+	  leg33->Draw("same");
 
-  TCanvas *cjetdiv = new TCanvas("cjetdiv","cjetdiv", 700, 500);
-  dlutility::createCutCanvas(cjetdiv);
-  cjetdiv->cd(1);
-  gPad->SetLogy();
+	  TCanvas *cjetdiv = new TCanvas("cjetdiv","cjetdiv", 700, 500);
+	  dlutility::createCutCanvas(cjetdiv);
+	  cjetdiv->cd(1);
+	  gPad->SetLogy();
 
-  dlutility::SetLineAtt(h_truth_lead, kBlack, 1, 1);
-  dlutility::SetMarkerAtt(h_truth_lead, kBlack, 0.8, 24);
+	  dlutility::SetLineAtt(h_truth_lead, kBlack, 1, 1);
+	  dlutility::SetMarkerAtt(h_truth_lead, kBlack, 0.8, 24);
 
-  dlutility::SetLineAtt(h_truth_lead_sample[0], kRed, 1, 1);
-  dlutility::SetMarkerAtt(h_truth_lead_sample[0], kRed, 1, 20);
-  dlutility::SetLineAtt(h_truth_lead_sample[1], kGreen, 1, 1);
-  dlutility::SetMarkerAtt(h_truth_lead_sample[1], kGreen, 1, 20);
-  dlutility::SetLineAtt(h_truth_lead_sample[2], kBlue, 1, 1);
-  dlutility::SetMarkerAtt(h_truth_lead_sample[2], kBlue, 1, 20);
+	  dlutility::SetLineAtt(h_truth_lead_sample[0], kRed, 1, 1);
+	  dlutility::SetMarkerAtt(h_truth_lead_sample[0], kRed, 1, 20);
+	  dlutility::SetLineAtt(h_truth_lead_sample[1], kGreen, 1, 1);
+	  dlutility::SetMarkerAtt(h_truth_lead_sample[1], kGreen, 1, 20);
+	  dlutility::SetLineAtt(h_truth_lead_sample[2], kBlue, 1, 1);
+	  dlutility::SetMarkerAtt(h_truth_lead_sample[2], kBlue, 1, 20);
 
-  h_truth_lead->SetTitle(";Leading Jet p_{T} [GeV];counts * lumiscale");
-  h_truth_lead->SetMinimum(1);
-  h_truth_lead->Draw("p");
-  h_truth_lead_sample[0]->Draw("same p");
-  h_truth_lead_sample[1]->Draw("same p");
-  h_truth_lead_sample[2]->Draw("same p");
-  h_truth_lead->Draw(" same p");
+	  h_truth_lead->SetTitle(";Leading Jet p_{T} [GeV];counts * lumiscale");
+	  h_truth_lead->SetMinimum(1);
+	  h_truth_lead->Draw("p");
+	  h_truth_lead_sample[0]->Draw("same p");
+	  h_truth_lead_sample[1]->Draw("same p");
+	  h_truth_lead_sample[2]->Draw("same p");
+	  h_truth_lead->Draw(" same p");
 
 
-  TLine  *line1 = new TLine(14, 1, 14, h_truth_lead->GetBinContent(15));
-  dlutility::SetLineAtt(line1, kRed, 1.5, 1);
-  line1->Draw("same");
-  TLine  *lin2 = new TLine(20, 1, 20, h_truth_lead->GetBinContent(21));
-  dlutility::SetLineAtt(lin2, kGreen, 1.5, 1);
-  lin2->Draw("same");
-  TLine  *lin3 = new TLine(30, 1, 30, h_truth_lead->GetBinContent(31));
-  dlutility::SetLineAtt(lin3, kBlue, 1.5, 1);
-  lin3->Draw("same");
-  cjetdiv->cd(2);
+	  TLine  *line1 = new TLine(14, 1, 14, h_truth_lead->GetBinContent(15));
+	  dlutility::SetLineAtt(line1, kRed, 1.5, 1);
+	  line1->Draw("same");
+	  TLine  *lin2 = new TLine(20, 1, 20, h_truth_lead->GetBinContent(21));
+	  dlutility::SetLineAtt(lin2, kGreen, 1.5, 1);
+	  lin2->Draw("same");
+	  TLine  *lin3 = new TLine(30, 1, 30, h_truth_lead->GetBinContent(31));
+	  dlutility::SetLineAtt(lin3, kBlue, 1.5, 1);
+	  lin3->Draw("same");
+	  cjetdiv->cd(2);
 
-  dlutility::DrawSPHENIXppsize(0.05, 0.84, 0.08, 1, 0, 1, "Pythia8");
-  dlutility::drawText("anti-k_{T} R = 0.4", 0.05, 0.74, 0, kBlack, 0.08);
-  dlutility::drawText("All Dijet Pairs", 0.05, 0.69, 0, kBlack, 0.08);
-  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.05, 0.64, 0, kBlack, 0.08);
+	  dlutility::DrawSPHENIXppsize(0.05, 0.84, 0.08, 1, 0, 1, "Pythia8");
+	  dlutility::drawText("anti-k_{T} R = 0.4", 0.05, 0.74, 0, kBlack, 0.08);
+	  dlutility::drawText("All Dijet Pairs", 0.05, 0.69, 0, kBlack, 0.08);
+	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.05, 0.64, 0, kBlack, 0.08);
 
-  TLegend *leg3 = new TLegend(0.01, 0.13, 0.7, 0.62);
-  leg3->SetLineWidth(0);
-  leg3->AddEntry(h_truth_lead, "Combined Sample");
-  leg3->AddEntry(h_truth_lead_sample[0], "10 GeV Sample");
-  leg3->AddEntry(h_truth_lead_sample[1], "20 GeV Sample");
-  leg3->AddEntry(h_truth_lead_sample[2], "30 GeV Sample");
-  leg3->SetTextSize(0.08);
-  leg3->Draw("same");
+	  TLegend *leg3 = new TLegend(0.01, 0.13, 0.7, 0.62);
+	  leg3->SetLineWidth(0);
+	  leg3->AddEntry(h_truth_lead, "Combined Sample");
+	  leg3->AddEntry(h_truth_lead_sample[0], "10 GeV Sample");
+	  leg3->AddEntry(h_truth_lead_sample[1], "20 GeV Sample");
+	  leg3->AddEntry(h_truth_lead_sample[2], "30 GeV Sample");
+	  leg3->SetTextSize(0.08);
+	  leg3->Draw("same");
 
-  cjetdiv->Print("combined_sample.pdf");
+	  cjetdiv->Print("combined_sample.pdf");
 
-  TCanvas *cmjet = new TCanvas("cmjet","cmjet", 700, 500);
-  dlutility::createCutCanvas(cmjet);
-  cmjet->cd(1);
-  gPad->SetLogy();
+	  TCanvas *cmjet = new TCanvas("cmjet","cmjet", 700, 500);
+	  dlutility::createCutCanvas(cmjet);
+	  cmjet->cd(1);
+	  gPad->SetLogy();
 
-  dlutility::SetLineAtt(h_match_truth_lead, kRed, 1, 1);
-  dlutility::SetMarkerAtt(h_match_truth_lead, kRed, 1, 24);
+	  dlutility::SetLineAtt(h_match_truth_lead, kRed, 1, 1);
+	  dlutility::SetMarkerAtt(h_match_truth_lead, kRed, 1, 24);
 
-  dlutility::SetLineAtt(h_match_truth_sublead, kBlue, 1, 1);
-  dlutility::SetMarkerAtt(h_match_truth_sublead, kBlue, 1, 24);
+	  dlutility::SetLineAtt(h_match_truth_sublead, kBlue, 1, 1);
+	  dlutility::SetMarkerAtt(h_match_truth_sublead, kBlue, 1, 24);
 
-  dlutility::SetLineAtt(h_match_reco_lead, kRed, 1, 1);
-  dlutility::SetMarkerAtt(h_match_reco_lead, kRed, 1, 20);
+	  dlutility::SetLineAtt(h_match_reco_lead, kRed, 1, 1);
+	  dlutility::SetMarkerAtt(h_match_reco_lead, kRed, 1, 20);
 
-  dlutility::SetLineAtt(h_match_reco_sublead, kBlue, 1, 1);
-  dlutility::SetMarkerAtt(h_match_reco_sublead, kBlue, 1, 20);
+	  dlutility::SetLineAtt(h_match_reco_sublead, kBlue, 1, 1);
+	  dlutility::SetMarkerAtt(h_match_reco_sublead, kBlue, 1, 20);
 
-  h_match_reco_lead->SetTitle(";Jet p_{T} [GeV];counts * lumiscale");
+	  h_match_reco_lead->SetTitle(";Jet p_{T} [GeV];counts * lumiscale");
     
-  h_match_reco_lead->Draw();
-  h_match_truth_sublead->Draw("same");
-  h_match_truth_lead->Draw("same");
-  h_match_reco_sublead->Draw("same");
-  cmjet->cd(2);
-  dlutility::DrawSPHENIXppsize(0.1, 0.84, 0.1);
-  dlutility::drawText("anti-k_{T} R = 0.4", 0.1, 0.74, 0, kBlack, 0.1);
-  dlutility::drawText("Matched Dijet Pairs", 0.1, 0.69, 0, kBlack, 0.1);
-  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.1, 0.64, 0, kBlack, 0.1);
-  TLegend *lef3 = new TLegend(0.01, 0.13, 0.7, 0.62);
-  lef3->SetLineWidth(0);
-  lef3->AddEntry(h_match_reco_lead, "Leading Reco");
-  lef3->AddEntry(h_match_reco_sublead, "Subleading Reco");
-  lef3->AddEntry(h_match_truth_lead, "Leading Truth");
-  lef3->AddEntry(h_match_truth_sublead, "Subleading Truth");
-  lef3->SetTextSize(0.1);
-  lef3->Draw("same");
+	  h_match_reco_lead->Draw();
+	  h_match_truth_sublead->Draw("same");
+	  h_match_truth_lead->Draw("same");
+	  h_match_reco_sublead->Draw("same");
+	  cmjet->cd(2);
+	  dlutility::DrawSPHENIXppsize(0.1, 0.84, 0.1);
+	  dlutility::drawText("anti-k_{T} R = 0.4", 0.1, 0.74, 0, kBlack, 0.1);
+	  dlutility::drawText("Matched Dijet Pairs", 0.1, 0.69, 0, kBlack, 0.1);
+	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.1, 0.64, 0, kBlack, 0.1);
+	  TLegend *lef3 = new TLegend(0.01, 0.13, 0.7, 0.62);
+	  lef3->SetLineWidth(0);
+	  lef3->AddEntry(h_match_reco_lead, "Leading Reco");
+	  lef3->AddEntry(h_match_reco_sublead, "Subleading Reco");
+	  lef3->AddEntry(h_match_truth_lead, "Leading Truth");
+	  lef3->AddEntry(h_match_truth_sublead, "Subleading Truth");
+	  lef3->SetTextSize(0.1);
+	  lef3->Draw("same");
 
 
-  TCanvas *cresponse = new TCanvas("fd","fd", 500, 500);
-  h_flat_response_pt1pt2->Draw("colz");
-  TCanvas *cresponseskim = new TCanvas("fds","fds", 500, 500);
-  cresponseskim->SetLogz();
-  h_flat_response_skim->Draw("colz");
-  dlutility::DrawSPHENIXppsize(0.1, 0.84, 0.1);
+	  TCanvas *cresponse = new TCanvas("fd","fd", 500, 500);
+	  h_flat_response_pt1pt2->Draw("colz");
+	  TCanvas *cresponseskim = new TCanvas("fds","fds", 500, 500);
+	  cresponseskim->SetLogz();
+	  h_flat_response_skim->Draw("colz");
+	  dlutility::DrawSPHENIXppsize(0.1, 0.84, 0.1);
 
 
-  TString responsepath = "response_matrix.root";
-  if (JES_sys > 0)
-    {
-      responsepath = "response_matrix_posJES.root";
-    }
-  else if (JES_sys < 0)
-    {
-      responsepath = "response_matrix_negJES.root";
-    }
-  else if (JER_sys > 0)
-    {
-      responsepath = "response_matrix_posJER.root";
-    }
-  else if (JER_sys < 0)
-    {
-      responsepath = "response_matrix_negJER.root";
-    }
-  else if (njet_sys > 0)
-    {
-      responsepath = "response_matrix_NJET.root";
-    }
-  else if (vtx_sys > 0)
-    {
-      responsepath = "response_matrix_VTX.root";
-    }
+	  TString responsepath = "response_matrix.root";
+	  if (JES_sys > 0)
+	    {
+	      responsepath = "response_matrix_posJES.root";
+	    }
+	  else if (JES_sys < 0)
+	    {
+	      responsepath = "response_matrix_negJES.root";
+	    }
+	  else if (JER_sys > 0)
+	    {
+	      responsepath = "response_matrix_posJER.root";
+	    }
+	  else if (JER_sys < 0)
+	    {
+	      responsepath = "response_matrix_negJER.root";
+	    }
+	  else if (njet_sys > 0)
+	    {
+	      responsepath = "response_matrix_NJET.root";
+	    }
+	  else if (prior_sys > 0)
+	    {
+	      responsepath = "response_matrix_PRIOR.root";
+	    }
+	  TFile *fr = new TFile(responsepath.Data(),"recreate");
+	  rooResponsehist.Write();
+	  h_flat_reco_pt1pt2->Write();
+	  h_flat_truth_pt1pt2->Write();
+	  h_flat_response_pt1pt2->Write();
+	  h_flat_truth_mapping->Write();
+	  h_flat_reco_mapping->Write();
+	  h_flat_truth_skim->Write();
+	  h_flat_reco_skim->Write();
+	  h_flat_response_skim->Write();
+	  h_mbd_vertex->Write();
   
-  TFile *fr = new TFile(responsepath.Data(),"recreate");
-  rooResponsehist.Write();
+	  // Full closure drawing
+	  h_xj_truth->Write();
+	  for (int iter = 0 ; iter < niterations; iter++)
+	    {
+	      h_xj_unfold[iter]->Write();
+	    }
+	  h_xj_reco->Write();
+	      
+	  fr->Close();
 
-  h_flat_reco_pt1pt2->Write();
-  h_flat_truth_pt1pt2->Write();
-  h_flat_response_pt1pt2->Write();
-  h_flat_truth_mapping->Write();
-  h_flat_reco_mapping->Write();
-  h_flat_truth_skim->Write();
-  h_flat_reco_skim->Write();
-  h_flat_response_skim->Write();
-  h_mbd_vertex->Write();
-  
-  // Full closure drawing
-  h_xj_truth->Write();
-  for (int iter =0 ; iter < niterations; iter++)
-    {
-      h_xj_unfold[iter]->Write();
+	}
+      else
+	{
+	  TString responsepath = "response_matrix_min_" + std::to_string(imin) + ".root";
+
+	  TFile *fr = new TFile(responsepath.Data(),"recreate");
+	  rooResponsehist.Write();
+	  
+	  TH1D *h1 = (TH1D*)h_flat_reco_pt1pt2->Clone();
+	  TH1D *h2 = (TH1D*)h_flat_truth_pt1pt2->Clone();
+	  TH2D *h3 = (TH2D*)h_flat_response_pt1pt2->Clone();
+	  TH1D *h4 = (TH1D*)h_flat_truth_mapping->Clone();
+	  TH1D *h5 = (TH1D*)h_flat_reco_mapping->Clone();
+	  TH1D *h6 = (TH1D*)h_flat_truth_skim->Clone();
+	  TH1D *h7 = (TH1D*)h_flat_reco_skim->Clone();
+	  TH2D *h8 = (TH2D*)h_flat_response_skim->Clone();
+	  h1->Write();
+	  h2->Write();
+	  h3->Write();
+	  h4->Write();
+	  h5->Write();
+	  h6->Write();
+	  h7->Write();
+	  h8->Write();
+			  	  
+	  fr->Close();
+	}
+      std::cout << "Reco empty: " << nempty_reco << std::endl;
+      std::cout << "Truth empty: " << nempty_truth << std::endl;
     }
-  h_xj_reco->Write();
-
-  fr->Close();
-
-  std::cout << "Reco empty: " << nempty_reco << std::endl;
-  std::cout << "Truth empty: " << nempty_truth << std::endl;
   return 0;
 }
 

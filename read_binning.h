@@ -19,6 +19,7 @@ public:
   Double_t get_fixed(){ return penv->GetValue("fixed", 1.0); }
 
   Int_t get_njet_sys(){ return penv->GetValue("NJET", 0); }
+  Int_t get_prior_sys(){ return penv->GetValue("PRIOR", 0); }
   Int_t get_vtx_sys(){ return penv->GetValue("VTX", 0); }
   Double_t get_jes_sys(){ return penv->GetValue("JES", 0.0); }
   Double_t get_jer_sys(){ return penv->GetValue("JER", 0.0); }

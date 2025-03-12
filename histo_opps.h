@@ -34,6 +34,8 @@ namespace histo_opps
 	h1->SetBinError(i+1, new_error);
       }
   }
+
+
   void finalize_xj(TH1D *h1, TH1D *h2, const int nbins, float first_xj)
   {
     for (int i = 0; i < nbins; i++)

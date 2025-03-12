@@ -21,6 +21,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   float pt1_reco;
   float pt2_reco;
   float dphi_reco;
+  float nrecojets;
   float trigger;
   TFile *fin = new TFile(data_file.c_str(), "r");
   TNtuple *tn  = (TNtuple*) fin->Get("tn_dijet");;
@@ -31,6 +32,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   tn->SetBranchAddress("pt1_reco", &pt1_reco);
   tn->SetBranchAddress("pt2_reco", &pt2_reco);
   tn->SetBranchAddress("dphi_reco", &dphi_reco);
+  tn->SetBranchAddress("nrecojets", &nrecojets);
   tn->SetBranchAddress("trigger", &trigger);
   tn->SetBranchAddress("mbd_vertex", &mbd_vertex);
 
@@ -43,23 +45,23 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   const int nbins = read_nbins;
 
   Int_t njet_sys = rb.get_njet_sys();
+  Int_t prior_sys = rb.get_prior_sys();
   Double_t JES_sys = rb.get_jes_sys();
-  Int_t vtx_sys = rb.get_vtx_sys();
   Double_t JER_sys = rb.get_jer_sys();
   std::cout << "JES = " << JES_sys << std::endl;
   std::cout << "JER = " << JER_sys << std::endl;
-  std::cout << "VTX = " << vtx_sys << std::endl;
+
   if (JER_sys != 0)
     {
       std::cout << "Calculating JER extra = " << JER_sys  << std::endl;
     }
-  if (vtx_sys > 0)
-    {
-      std::cout << "Calculating VTX rewight " << std::endl;
-    }
   if (JES_sys != 0)
     {
       std::cout << "Calculating JES extra = " << JES_sys  << std::endl;
+    }
+  if (prior_sys != 0)
+    {
+      std::cout << "Calculating prior extra = " << prior_sys  << std::endl;
     }
 
   
@@ -132,12 +134,12 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
     {
       responsepath = "response_matrix_NJET.root";
     }
-
-    else if (vtx_sys > 0)
+  else if (prior_sys > 0)
     {
-      responsepath = "response_matrix_VTX.root";
+      responsepath = "response_matrix_PRIOR.root";
     }
 
+  
   TFile *fresponse = new TFile(responsepath.Data(),"r");
   
   RooUnfoldResponse *rooResponse = (RooUnfoldResponse*) fresponse->Get("response_noempty");
@@ -204,6 +206,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
 	{
 	  continue;
 	}
+      if (nrecojets > 9) continue;
       float pt1_reco_bin = nbins;
       float pt2_reco_bin = nbins;
 
@@ -505,9 +508,9 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
       unfoldpath = "unfolded_hists_NJET.root";
     }
 
-    else if (vtx_sys > 0)
+  else if (prior_sys > 0)
     {
-      unfoldpath = "unfolded_hists_VTX.root";
+      unfoldpath = "unfolded_hists_PRIOR.root";
     }
 
   TFile *fout = new TFile(unfoldpath.Data(),"recreate");

@@ -106,6 +106,18 @@ int createResponse_half_noempty(const std::string configfile = "binning.config",
 			   0.486207, 
 			   0.263404, 
 			   2.91882};
+
+  TFile *fvtx = new TFile("vertex_reweight.root","r");
+  TH1D *h_mbd_reweight = (TH1D*) fvtx->Get("h_mbd_reweight");
+
+  std::vector<std::pair<float, float>> vertex_scales;
+
+  for (int ib = 0; ib < h_mbd_reweight->GetNbinsX(); ib++)
+    {
+      vertex_scales.push_back(std::make_pair(h_mbd_reweight->GetBinLowEdge(ib+1) + h_mbd_reweight->GetBinWidth(ib+1), h_mbd_reweight->GetBinContent(ib+1)));
+    }
+
+
   float truth_leading_cut = rb.get_truth_leading_cut();
   float truth_subleading_cut = rb.get_truth_subleading_cut();
 
@@ -190,6 +202,17 @@ int createResponse_half_noempty(const std::string configfile = "binning.config",
 		{
 		  event_scale *= njet_scale[(inrecojets > 9 ? 0 : inrecojets)];
 		}
+	      // Vertex Rewieghting
+	      for (int ib = 0; ib < vertex_scales.size(); ib++)
+		{
+		  if (mbd_vertex[isample] < vertex_scales.at(ib).first)
+		    {
+		      event_scale *= vertex_scales.at(ib).second;
+		      if (i < 100) std:cout << "found z = " << vertex_scales.at(ib).first << " " <<vertex_scales.at(ib).second<<std::endl;
+		      break;
+		    }
+		}
+
 	      h_truth_lead_sample[isample]->Fill(pt1_truth[isample], event_scale);
 	      if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
 	      float max_truth = 0;
