@@ -73,7 +73,7 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
   tnd->SetBranchAddress("dphi_reco", &dphi_data);
 
 
-  const int nbinsdphi  = 32;
+  const int nbinsdphi  = 16;
   float min_dphi = 3*TMath::Pi()/4.;
   float max_dphi = TMath::Pi();
   float stepdphi = (max_dphi - min_dphi)/(float)nbinsdphi;
@@ -145,15 +145,58 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
   TProfile *h_sim_match_ddphi = new TProfile("h_sim_match_ddphi", ";<p_{T}> [GeV]; d#Delta#phi", 25, 10, 60, "s");
   TProfile2D *h2_sim_match_ddphi = new TProfile2D("h2_sim_match_ddphi", ";p_{T1} [GeV] ;p_{T2} [GeV]; d#Delta#phi", 4, 20, 60, 10, 10, 60, "s");
 
-  TH3D *h_truth_pt1pt2dphi = new TH3D("h_truth_pt1pt2",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_truth_pt1pt2dphi = new TH3D("h_truth_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   TH3D *h_reco_pt1pt2dphi = new TH3D("h_reco_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
 
-  TH3D *h_truth_match_pt1pt2dphi = new TH3D("h_truth_match_pt1pt2",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_truth_match_pt1pt2dphi = new TH3D("h_truth_match_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   TH3D *h_reco_match_pt1pt2dphi = new TH3D("h_reco_match_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   TH3D *h_reco_match_pt1pt2dphitruth = new TH3D("h_reco_match_pt1pt2dphitruth",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
 
   TH3D *h_data_pt1pt2dphi = new TH3D("h_data_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   // Data
+
+  TH1D *h_data_dphi_counts = new TH1D("h_data_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
+  TH1D *h_truth_dphi_counts = new TH1D("h_truth_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
+  TH1D *h_reco_dphi_counts = new TH1D("h_reco_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
+
+  TH1D *h_truth_match_dphi_counts = new TH1D("h_truth_match_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
+  TH1D *h_reco_match_dphi_counts = new TH1D("h_reco_match_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
+
+  TProfile *h_sim_match_ddphi_counts = new TProfile("h_sim_match_ddphi_counts", ";<p_{T}> [GeV]; d#Delta#phi", 25, 10, 60, "s");
+  TProfile2D *h2_sim_match_ddphi_counts = new TProfile2D("h2_sim_match_ddphi_counts", ";p_{T1} [GeV] ;p_{T2} [GeV]; d#Delta#phi", 4, 20, 60, 10, 10, 60, "s");
+
+  TH3D *h_truth_pt1pt2dphi_counts = new TH3D("h_truth_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_pt1pt2dphi_counts = new TH3D("h_reco_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+
+  TH3D *h_truth_match_pt1pt2dphi_counts = new TH3D("h_truth_match_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_match_pt1pt2dphi_counts = new TH3D("h_reco_match_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_match_pt1pt2dphi_countstruth = new TH3D("h_reco_match_pt1pt2dphi_countstruth",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+
+  TH3D *h_data_pt1pt2dphi_counts = new TH3D("h_data_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  // Data
+
+  TH1D *h_correlated_counts_leading_reco[3];
+  TH1D *h_correlated_counts_subleading_reco[3];
+  TH1D *h_all_counts_leading_reco[3];
+  TH1D *h_all_counts_subleading_reco[3];
+
+    TH1D *h_correlated_counts_leading_truth[3];
+  TH1D *h_correlated_counts_subleading_truth[3];
+  TH1D *h_all_counts_leading_truth[3];
+  TH1D *h_all_counts_subleading_truth[3];
+
+  for (int i = 0; i < 3; i++)
+    {
+      h_correlated_counts_leading_reco[i] = new TH1D(Form("h_correlated_counts_leading_reco_%d", i), ";;", nbinsdphi, idphi_bins);
+      h_correlated_counts_subleading_reco[i] = new TH1D(Form("h_correlated_counts_subleading_reco_%d", i), ";;", nbinsdphi, idphi_bins);
+      h_all_counts_leading_reco[i] = new TH1D(Form("h_all_counts_leading_reco_%d", i), ";;", nbinsdphi, idphi_bins);
+      h_all_counts_subleading_reco[i] = new TH1D(Form("h_all_counts_subleading_reco_%d", i), ";;", nbinsdphi, idphi_bins);
+      h_correlated_counts_leading_truth[i] = new TH1D(Form("h_correlated_counts_leading_truth_%d", i), ";;", nbinsdphi, idphi_bins);
+      h_correlated_counts_subleading_truth[i] = new TH1D(Form("h_correlated_counts_subleading_truth_%d", i), ";;", nbinsdphi, idphi_bins);
+      h_all_counts_leading_truth[i] = new TH1D(Form("h_all_counts_leading_truth_%d", i), ";;", nbinsdphi, idphi_bins);
+      h_all_counts_subleading_truth[i] = new TH1D(Form("h_all_counts_subleading_truth_%d", i), ";;", nbinsdphi, idphi_bins);
+
+    }
   int entriesd = tnd->GetEntries();
 
   TF1 *fJES = new TF1("fJES", "pol4", 0, 100);
@@ -308,9 +351,15 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
 		}
 	    }
 	  
-	  bool truth_good = (e1 >= truth_leading_cut && e2 >= truth_subleading_cut && dphi_truth[isample] > dphicuttruth);
-	  bool reco_good = (maxi >= measure_leading_cut && mini >= measure_subleading_cut && dphi_reco[isample] > dphicut);
-
+	  bool truth_good = (e1 >= truth_leading_cut && e2 >= truth_subleading_cut && fabs(dphi_truth[isample]) > dphicuttruth);
+	  bool reco_good = (maxi >= measure_leading_cut && mini >= measure_subleading_cut && fabs(dphi_reco[isample]) > dphicut);
+	  if (match[isample])
+	    {
+	      float ddphi = dphi_truth[isample] - dphi_reco[isample];
+	      if (ddphi > TMath::Pi()) ddphi -= 2*TMath::Pi();
+	      if (ddphi < -1*TMath::Pi()) ddphi += 2*TMath::Pi();
+	      h_sim_match_ddphi->Fill((max_truth +  min_truth)/2., ddphi, event_scale);
+	    }
 	  if (truth_good)
 	    {
 	      h_truth_dphi->Fill(dphi_truth[isample], event_scale);
@@ -333,8 +382,68 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
 	      h_reco_dphi->Fill(dphi_reco[isample], event_scale);
 	      h_truth_match_dphi->Fill(dphi_truth[isample], event_scale);
 	      h_reco_match_dphi->Fill(dphi_reco[isample], event_scale);
-	      
-	      h_sim_match_ddphi->Fill((max_truth +  min_truth)/2., dphi_truth[isample] - dphi_reco[isample], event_scale);
+
+	      h_truth_match_dphi_counts->Fill(dphi_truth[isample]);
+	      h_reco_match_dphi_counts->Fill(dphi_reco[isample]);
+	      h_truth_match_pt1pt2dphi_counts->Fill(max_truth, min_truth, dphi_truth[isample]);
+	      h_reco_match_pt1pt2dphi_counts->Fill(maxi, mini, dphi_reco[isample]);
+	      h_reco_match_pt1pt2dphi_countstruth->Fill(maxi, mini, dphi_truth[isample]);
+	      h_truth_dphi_counts->Fill(dphi_truth[isample]);
+	      h_reco_dphi_counts->Fill(dphi_reco[isample]);
+	      h_truth_match_dphi_counts->Fill(dphi_truth[isample]);
+	      h_reco_match_dphi_counts->Fill(dphi_reco[isample]);
+
+	      bool same_dphi = false;
+	      for (int ip = 0; ip < nbinsdphi; ip++)
+		{
+		  
+		  if (dphi_truth[isample] >= idphi_bins[ip] && dphi_truth[isample] < idphi_bins[ip+1] && dphi_reco[isample] >= idphi_bins[ip] && dphi_reco[isample] < idphi_bins[ip+1])
+		    {
+		      same_dphi = true;
+		      break;
+		    }
+		}
+
+	      for (int ilead = 0; ilead < 3; ilead++)
+		{
+		  int same_leading = 0;
+		  if (!(max_truth < ipt_bins[binranges[ilead]] || max_truth >= ipt_bins[binranges[ilead+1]]))
+		    {
+		      same_leading++;
+		      h_all_counts_leading_truth[ilead]->Fill(dphi_truth[isample]);
+		    }
+		  if (!(maxi < ipt_bins[binranges[ilead]] || maxi >= ipt_bins[binranges[ilead+1]]))
+		    {
+		      same_leading++;
+		      h_all_counts_leading_reco[ilead]->Fill(dphi_reco[isample]);
+		    }
+		  if (same_dphi && same_leading == 2)
+		    {
+		      h_correlated_counts_leading_reco[ilead]->Fill(dphi_reco[isample]);
+		      h_correlated_counts_leading_truth[ilead]->Fill(dphi_truth[isample]);
+		    }
+
+		    for (int isub = 0; isub < 3; isub++)
+		    {
+		      int same_subleading = 0;
+		      if (!(min_truth < ipt_bins[binrangesmin[isub]] || min_truth >= ipt_bins[binrangesmin[isub+1]]))
+			{
+			  same_subleading++;
+			  h_all_counts_subleading_truth[isub]->Fill(dphi_truth[isample]);
+			}
+		      if (!(mini < ipt_bins[binrangesmin[isub]] || mini >= ipt_bins[binrangesmin[isub+1]]))
+			{
+			  same_subleading++;
+			  h_all_counts_subleading_reco[isub]->Fill(dphi_reco[isample]);
+			}
+		      if (same_dphi && same_subleading == 2)
+			{
+			  h_correlated_counts_subleading_reco[isub]->Fill(dphi_reco[isample]);
+			  h_correlated_counts_subleading_truth[isub]->Fill(dphi_truth[isample]);
+			}
+		    }
+		}
+	      //h_sim_match_ddphi->Fill((max_truth +  min_truth)/2., dphi_truth[isample] - dphi_reco[isample], event_scale);
 	      h2_sim_match_ddphi->Fill(max_truth,  min_truth, dphi_truth[isample] - dphi_reco[isample], event_scale);
 	    }
 	}
@@ -375,6 +484,33 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
   h_reco_match_dphi->Write();
   h_truth_match_dphi->Write();
 
+  h_sim_match_ddphi_counts->Write();
+  h2_sim_match_ddphi_counts->Write();
+  h_data_pt1pt2dphi_counts->Write();
+  h_reco_match_pt1pt2dphi_counts->Write();
+  h_reco_match_pt1pt2dphi_countstruth->Write();
+  h_truth_match_pt1pt2dphi_counts->Write();
+
+  h_reco_pt1pt2dphi_counts->Write();
+  h_truth_pt1pt2dphi_counts->Write();
+  h_reco_dphi_counts->Write();
+  h_truth_dphi_counts->Write();
+
+  h_reco_match_dphi_counts->Write();
+  h_truth_match_dphi_counts->Write();
+
+    for (int i = 0; i < 3; i++) {
+      h_correlated_counts_leading_reco[i]->Write();
+      h_correlated_counts_subleading_reco[i]->Write();
+      h_correlated_counts_leading_truth[i]->Write();
+      h_correlated_counts_subleading_truth[i]->Write();
+
+      h_all_counts_leading_reco[i]->Write();
+      h_all_counts_subleading_reco[i]->Write();
+      h_all_counts_leading_truth[i]->Write();
+      h_all_counts_subleading_truth[i]->Write();
+
+    }
   std::cout << h_reco_dphi->GetMean() <<std::endl;  
   fout->Close();
 }

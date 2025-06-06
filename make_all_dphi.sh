@@ -1,0 +1,5 @@
+root -l -b -q "makeRawDeltaPhi.C(\"binning.config\")"
+root -l -b -q "makeRawDeltaPhi.C(\"binning_negJER.config\")"
+root -l -b -q "makeRawDeltaPhi.C(\"binning_posJER.config\")"
+root -l -b -q "makeRawDeltaPhi.C(\"binning_negJES.config\")"
+root -l -b -q "makeRawDeltaPhi.C(\"binning_posJES.config\")"

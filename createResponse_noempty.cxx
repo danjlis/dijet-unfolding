@@ -12,7 +12,7 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int createResponse_full_noempty(const std::string configfile = "binning.config", const int niterations = 10, const int cone_size = 4)
+int createResponse_noempty(const std::string configfile = "binning.config", const int full_or_half = 0, const int niterations = 10, const int cone_size = 4)
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
@@ -111,17 +111,18 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 
   Int_t njet_sys = rb.get_njet_sys();
   std::cout << "NJET scaling : " << njet_sys << std::endl;
-  double njet_scale[10] = {0, 
-			   0, 
-			   1.22359, 
-			   0.838055, 
-			   0.669555, 
-			   0.513105, 
-			   0.398124, 
-			   0.486207, 
-			   0.263404, 
-			   2.91882};
+  std::vector<double> njet_scale;
+  if (njet_sys)
+    {
 
+      TFile *fnjet = new TFile(Form("vertex/vertex_reweight_r%02d.root", cone_size),"r");
+      TH1D *h_njet_reweight = (TH1D*) fnjet->Get("h_mbd_reweight");
+      for (int ib = 0; ib < h_njet_reweight->GetNbinsX(); ib++)
+	{
+	  njet_scale.push_back(h_njet_reweight->GetBinContent(ib+1));
+	}
+    }
+  
   Int_t prior_sys = rb.get_prior_sys();
   int prior_iteration = 0;
   
@@ -131,7 +132,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
   std::vector<std::pair<float, float>> vertex_scales;
 
   Int_t vtx_sys = rb.get_vtx_sys();
-  if (primer != 1)
+  if (primer != 1 && !full_or_half)
     {
 
       TFile *fvtx = new TFile(Form("vertex/vertex_reweight_r%02d.root", cone_size),"r");
@@ -188,7 +189,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
   TH1D *h_match_truth_sublead = new TH1D("h_match_truth_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
   TH1D *h_match_reco_lead = new TH1D("h_match_reco_lead", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
   TH1D *h_match_reco_sublead = new TH1D("h_match_reco_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
-
+  TH1D *h_njets = new TH1D("h_njets", ";n_{jet}; counts", 51, -0.5, 50.5);
   TH1D *h_mbd_vertex = new TH1D("h_mbd_vertex", ";z_{vtx}; counts", 120, -60, 60);
   // pure fills
   TH1D *h_truth_xj = new TH1D("h_truth_xj",";A_{J};1/N", nbins, ixj_bins);
@@ -243,9 +244,12 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
   for (int isample = 0; isample < 3; isample++)
     {
       std::cout << "Sample " << isample << std::endl;
-      int entries1 = tn[isample]->GetEntries()/2;
+      int entries0 = 0;
+      int entries1 = tn[isample]->GetEntries()/2;    
       int entries2 = tn[isample]->GetEntries();
-      for (int i = 0; i < entries2; i++)
+      if (full_or_half == 1) entries2 = entries1;
+
+      for (int i = entries0; i < entries2; i++)
 	{
 	  tn[isample]->GetEntry(i);
 	  int inrecojets = nrecojets[isample];
@@ -256,7 +260,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 	    }
 
 	  // Vertex Rewieghting
-	  if (primer != 1)
+	  if (primer != 1 && !full_or_half)
 	    {
 	      for (int ib = 0; ib < vertex_scales.size(); ib++)
 		{
@@ -301,7 +305,6 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 	  h_truth_lead_sample[isample]->Fill(e1, event_scale);
 
 	  if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
-
 
 
 	  double smear1 = fgaus->GetRandom();
@@ -432,6 +435,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 		  h_linear_reco_xj->Fill(mini/maxi, event_scale);
 		}
 	      h_mbd_vertex->Fill(mbd_vertex[isample], event_scale);
+	      h_njets->Fill(nrecojets[isample], event_scale);
 	      h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
 	      h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
 	      h_flat_truth_to_response_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
@@ -953,7 +957,10 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 	    {
 	      responsepath = "response_matrices/response_matrix_r0" + std::to_string(cone_size) + "_PRIMER" + std::to_string(primer);;
 	    }
-
+	  if (full_or_half)
+	    {
+	      responsepath = "response_matrices/response_matrix_r0" + std::to_string(cone_size) + "_HALF";
+	    }
 	  responsepath += ".root";
 	  TFile *fr = new TFile(responsepath.Data(),"recreate");
 	  rooResponsehist.Write();
@@ -966,11 +973,13 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
 	  h_flat_reco_skim->Write();
 	  h_flat_response_skim->Write();
 	  h_mbd_vertex->Write();
+	  h_njets->Write();
   
 	  // Full closure drawing
 	  h_xj_truth->Write();
 	  for (int iter = 0 ; iter < niterations; iter++)
 	    {
+	      h_flat_unfold_pt1pt2[iter]->Write();
 	      h_xj_unfold[iter]->Write();
 	    }
 	  h_xj_reco->Write();

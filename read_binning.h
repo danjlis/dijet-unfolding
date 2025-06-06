@@ -17,7 +17,7 @@ public:
   Int_t get_measure_bins(){ return penv->GetValue("measure_bins", 1); }
   Double_t get_minimum(){ return penv->GetValue("minimum", 1.0); }
   Double_t get_fixed(){ return penv->GetValue("fixed", 1.0); }
-
+  Int_t get_primer(){ return penv->GetValue("primer", 0); }
   Int_t get_njet_sys(){ return penv->GetValue("NJET", 0); }
   Int_t get_prior_sys(){ return penv->GetValue("PRIOR", 0); }
   Int_t get_vtx_sys(){ return penv->GetValue("VTX", 0); }

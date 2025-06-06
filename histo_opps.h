@@ -17,12 +17,16 @@
 namespace histo_opps
 {
 
-  void get_xj_systematics(TH1D *h1, TH1D *hs, const int nbins)
+  TGraphAsymmErrors *get_xj_systematics(TH1D *h1, TH1D *hsn,TH1D *hsp, const int nbins)
   {
+    TGraphAsymmErrors *gg = new TGraphAsymmErrors();
     for (int i = 0; i < nbins; i++)
       {
-	h1->SetBinError(i+1, hs->GetBinContent(i+1)*h1->GetBinContent(i+1));
+	gg->Set(i+1);
+	gg->SetPoint(i, h1->GetBinCenter(i+1), h1->GetBinContent(i+1));
+	gg->SetPointError(i, h1->GetBinWidth(i+1)/2., h1->GetBinWidth(i+1)/2.,hsn->GetBinContent(i+1)*h1->GetBinContent(i+1),hsp->GetBinContent(i+1)*h1->GetBinContent(i+1));
       }
+    return gg;
   }
   void set_xj_errors(TH1D *h1, TProfile *hp, const int nbins)
   {

@@ -11,11 +11,12 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int unfoldData_noempty(const std::string configfile = "binning.config", const int niterations = 20)
+int unfoldData_noempty(const std::string configfile = "binning.config", const int niterations = 20, const int cone_size = 4)
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-  std::string data_file = "TNTUPLE_DIJET_v6_2_ana462_2024p010_v001_gl10-00047289-00048291.root";//TNTUPLE_DIJET_v6_1_ana462_2024p010_v001_gl10-00047352-00047733.root";//TNTUPLE_DIJET_v4_2_ana450_2024p009_gl10-00047352-00047733.root";
+  std::string data_file = "../tntuples/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_4_ana462_2024p010_v001_gl10-all.root";
+  //std::string data_file = "../tntuples/TNTUPLE_DIJET_v6_2_ana462_2024p010_v001_gl10-00047289-00048291.root";//TNTUPLE_DIJET_v6_1_ana462_2024p010_v001_gl10-00047352-00047733.root";//TNTUPLE_DIJET_v4_2_ana450_2024p009_gl10-00047352-00047733.root";
 
   float mbd_vertex;
   float pt1_reco;
@@ -32,13 +33,14 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   tn->SetBranchAddress("pt1_reco", &pt1_reco);
   tn->SetBranchAddress("pt2_reco", &pt2_reco);
   tn->SetBranchAddress("dphi_reco", &dphi_reco);
-  tn->SetBranchAddress("nrecojets", &nrecojets);
+  tn->SetBranchAddress("njets", &nrecojets);
   tn->SetBranchAddress("trigger", &trigger);
   tn->SetBranchAddress("mbd_vertex", &mbd_vertex);
 
   read_binning rb(configfile.c_str());
 
   Int_t read_nbins = rb.get_nbins();
+  Int_t primer = rb.get_primer();
 
   Double_t dphicut = rb.get_dphicut();
 
@@ -113,31 +115,36 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
-  TString responsepath = "response_matrix.root";
+  TString responsepath = "response_matrices/response_matrix_r0" + std::to_string(cone_size);
   if (JES_sys > 0)
     {
-      responsepath = "response_matrix_posJES.root";
+      responsepath += "_posJES";
     }
   else if (JES_sys < 0)
     {
-      responsepath = "response_matrix_negJES.root";
+      responsepath += "_negJES";
     }
   else if (JER_sys > 0)
     {
-      responsepath = "response_matrix_posJER.root";
+      responsepath += "_posJER";
     }
   else if (JER_sys < 0)
     {
-      responsepath = "response_matrix_negJER.root";
+      responsepath += "_negJER";
     }
   else if (njet_sys > 0)
     {
-      responsepath = "response_matrix_NJET.root";
+      responsepath += "_NJET";
     }
-  else if (prior_sys > 0)
+  else if (prior_sys)
     {
-      responsepath = "response_matrix_PRIOR.root";
+      responsepath += "_PRIOR";
     }
+  if (primer)
+    {
+      responsepath = "response_matrices/response_matrix_r0" + std::to_string(cone_size) + "_PRIMER" + std::to_string(primer);
+    }
+  responsepath += ".root";
 
   
   TFile *fresponse = new TFile(responsepath.Data(),"r");
@@ -186,6 +193,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
     }
 
   TH1D *h_mbd_vertex = new TH1D("h_mbd_vertex", ";z_{vtx}; counts", 120, -60, 60);
+  TH1D *h_njets = new TH1D("h_njets", ";N_{Jet}; counts", 51, -0.5, 50.5);
   TH1D *h_reco_xj = new TH1D("h_reco_xj",";A_{J};1/N", nbins, ixj_bins);
 
   TH2D *h_pt1pt2 = new TH2D("h_pt1pt2",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins);
@@ -237,6 +245,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
       h_flat_data_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin);
       h_reco_xj->Fill(mini/maxi);
       h_mbd_vertex->Fill(mbd_vertex);
+      h_njets->Fill(nrecojets);
     }
 
   h_flat_data_pt1pt2->Scale(.5);
@@ -323,7 +332,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   h_pt1pt2_unfold[niter]->Draw("colz");
 
 
-  cpt1pt2->Print("pt1pt2_data.pdf");
+  cpt1pt2->Print(Form("pt1pt2_r%02d.pdf", cone_size));
 
   histo_opps::project_xj(h_pt1pt2_data, h_xj_data, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
   histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
@@ -483,42 +492,49 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   line3->SetLineColor(kRed + 3);
   line3->SetLineWidth(2);
   line3->Draw("same");
-  cproj->Print("proj_compar.pdf");
+  cproj->Print(Form("proj_compar_r%02d.pdf", cone_size));
   
-  TString unfoldpath = "unfolded_hists.root";
+  TString unfoldpath = "unfolded_hists/unfolded_hists_r0" + std::to_string(cone_size);
   if (JES_sys > 0)
     {
-      unfoldpath = "unfolded_hists_posJES.root";
+      unfoldpath += "_posJES";
     }
   if (JES_sys < 0)
     {
-      unfoldpath = "unfolded_hists_negJES.root";
+      unfoldpath += "_negJES";
     }
 
   else if (JER_sys > 0)
     {
-      unfoldpath = "unfolded_hists_posJER.root";
+      unfoldpath += "_posJER";
     }
   else if (JER_sys < 0)
     {
-      unfoldpath = "unfolded_hists_negJER.root";
+      unfoldpath += "_negJER";
     }
   else if (njet_sys > 0)
     {
-      unfoldpath = "unfolded_hists_NJET.root";
+      unfoldpath += "_NJET";
     }
-
-  else if (prior_sys > 0)
+  else if (prior_sys)
     {
-      unfoldpath = "unfolded_hists_PRIOR.root";
+      unfoldpath += "_PRIOR";
     }
 
+  if (primer)
+    {
+      unfoldpath = "unfolded_hists/unfolded_hists_r0" + std::to_string(cone_size) + "_PRIMER" + std::to_string(primer);
+    }
+
+  unfoldpath += ".root";
+  
   TFile *fout = new TFile(unfoldpath.Data(),"recreate");
   h_flat_data_skim->Write();
   h_flat_data_pt1pt2->Write();
   h_flat_reco_pt1pt2->Write();
   h_flat_truth_pt1pt2->Write();
   h_mbd_vertex->Write();
+  h_njets->Write();
   
   for (int iter = 0; iter < niterations; ++iter)
     {
