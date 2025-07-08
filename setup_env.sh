@@ -4,6 +4,7 @@ export DIJET_TNTUPLE_PATH=/sphenix/user/dlis/Projects/jet/tntuples/
 if [[ ! -d final_plots ]];
 then 
     mkdir final_plots
+    mkdir jer_plots
     mkdir njet
     mkdir response_matrices
     mkdir setup_env.sh
