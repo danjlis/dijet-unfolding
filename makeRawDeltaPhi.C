@@ -7,9 +7,9 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
   dlutility::SetyjPadStyle();
 
   std::string data_file = "TNTUPLE_DIJET_v6_2_ana462_2024p010_v001_gl10-00047289-00048291.root";
-  std::string j10_file = "TREE_MATCH_v5_10_new_ProdA_2024-00000021.root";
-  std::string j20_file = "TREE_MATCH_v5_20_new_ProdA_2024-00000021.root";
-  std::string j30_file = "TREE_MATCH_v5_30_new_ProdA_2024-00000021.root";
+  std::string j10_file = "TREE_MATCH_v6_10_new_ProdA_2024-00000021.root";
+  std::string j20_file = "TREE_MATCH_v6_20_new_ProdA_2024-00000021.root";
+  std::string j30_file = "TREE_MATCH_v6_30_new_ProdA_2024-00000021.root";
 
   float maxpttruth[3];
   float pt1_truth[3];

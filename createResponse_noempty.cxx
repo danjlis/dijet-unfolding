@@ -18,9 +18,9 @@ int createResponse_noempty(const std::string configfile = "binning.config", cons
   dlutility::SetyjPadStyle();
 
   
-  std::string j10_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v5_10_new_ProdA_2024-00000021.root";
-  std::string j20_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v5_20_new_ProdA_2024-00000021.root";
-  std::string j30_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v5_30_new_ProdA_2024-00000021.root";
+  std::string j10_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";
+  std::string j20_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_20_new_ProdA_2024-00000021.root";
+  std::string j30_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_30_new_ProdA_2024-00000021.root";
 
   float maxpttruth[3];
   float pt1_truth[3];
