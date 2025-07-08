@@ -1,6 +1,7 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
+
 const bool NUCLEAR = true;
 const int color_unfold_fill = kAzure - 4;
 const int color_unfold = kAzure - 5;
@@ -101,7 +102,7 @@ void drawFullClosure(const int cone_size = 4)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
   
 
-  TFile *fin = new TFile(Form("response_matrices/response_matrix_r%02d.root", cone_size),"r");
+  TFile *fin = new TFile(Form("%s/response_matrices/response_matrix_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
   if (!fin)
     {
       std::cout << " no file " << std::endl;
@@ -272,8 +273,8 @@ void drawFullClosure(const int cone_size = 4)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxj->Print(Form("unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter %d.png", cone_size, irange, niter));
-	  cxj->Print(Form("unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter_%d.pdf", cone_size, irange, niter));
+	  cxj->Print(Form("%s/unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter %d.png", rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxj->Print(Form("%s/unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter_%d.pdf", rb.get_code_location().c_str(), cone_size, irange, niter));
 	}
     }
   return;

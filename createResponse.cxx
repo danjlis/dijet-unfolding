@@ -7,7 +7,7 @@ using std::endl;
 #include "RooUnfoldBayes.h"
 
 #endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 
 int createResponse(const int niterations = 10)
 {

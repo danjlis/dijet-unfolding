@@ -1,4 +1,3 @@
-#if !(defined(__CINT__) || defined(__CLING__)) || defined(__ACLIC__)
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -6,8 +5,7 @@ using std::endl;
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldBayes.h"
 
-#endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 
@@ -15,10 +13,10 @@ int makeTruth_dist(const std::string configfile = "binning.config", const int co
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-  
-  std::string j10_file = "../tntuples/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";
-  std::string j20_file = "../tntuples/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_20_new_ProdA_2024-00000021.root";
-  std::string j30_file = "../tntuples/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_30_new_ProdA_2024-00000021.root";
+  read_binning rb(configfile.c_str());  
+  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";
+  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_20_new_ProdA_2024-00000021.root";
+  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_30_new_ProdA_2024-00000021.root";
 
 
   float maxpttruth[3];
@@ -62,7 +60,6 @@ int makeTruth_dist(const std::string configfile = "binning.config", const int co
   //scale_factor[1] = (3.646e-6)/(2.505e-9);//4.197e-2;
   scale_factor[2] = 1;//4.197e-2;
   
-  read_binning rb(configfile.c_str());
 
   Int_t minentries = rb.get_minentries();
   Int_t read_nbins = rb.get_nbins();
@@ -207,7 +204,7 @@ int makeTruth_dist(const std::string configfile = "binning.config", const int co
     }
 
 
-  TString responsepath = "truth_hists/truth_hist_r0" + std::to_string(cone_size)+".root";
+  TString responsepath = rb.get_code_location() + "/truth_hists/truth_hist_r0" + std::to_string(cone_size)+".root";
   
   TFile *fr = new TFile(responsepath.Data(),"recreate");
   for (int i = 0; i < 3; i++)

@@ -8,9 +8,17 @@ public:
   read_binning(const std::string configfile)
     {
       penv = new TEnv(configfile.c_str());
-
+      tntuple_location = std::getenv("DIJET_TNTUPLE_PATH");
+      code_location = std::getenv("DIJET_UNFOLDING_PATH");	
     }
-
+  std::string get_tntuple_location() 
+  {
+    return tntuple_location;      
+  }
+  std::string get_code_location() 
+  {
+    return code_location;      
+  }
   Int_t get_nbins(){ return penv->GetValue("nbins", 1); }
   Int_t get_bbins(){ return penv->GetValue("bbins", 1); }
   Int_t get_minentries(){ return penv->GetValue("minentries", 1); }
@@ -139,9 +147,16 @@ public:
       }
     return;
   }
+
+  
  private:
+
+  
   TEnv *penv{nullptr};
 
+  std::string tntuple_location = ".";
+  std::string code_location = ".";
+  
   float sample_boundary_goal[4] = {13.99, 19.99, 29.99, 100};
 
   float sample_boundary[4] = {0, 0, 0, 100};

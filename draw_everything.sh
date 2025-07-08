@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 i=$1
-source ./roounfold/RooUnfold-master/build/setup.sh
 
 root -l -q -b "makeTruth_dist.C(\"binning.config\", ${i})"
 

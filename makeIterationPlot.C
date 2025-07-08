@@ -1,4 +1,4 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 
@@ -75,7 +75,7 @@ void makeIterationPlot(const int cone_size = 4)
   
   std::cout << __LINE__ << std::endl;
 
-  TFile *f_uncertainties = new TFile(Form("uncertainties/uncertainties_r%02d.root", cone_size),"r");
+  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
 
   if (!f_uncertainties)
     {
@@ -84,7 +84,7 @@ void makeIterationPlot(const int cone_size = 4)
     }
   TProfile *hp_xj[niterations];
     
-  TFile *fin = new TFile(Form("unfolded_hists/unfolded_hists_r%02d.root", cone_size),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
   if (!fin)
     {
       std::cout << "no file" << std::endl;
@@ -232,7 +232,7 @@ void makeIterationPlot(const int cone_size = 4)
   leg->AddEntry(h_total_uncertainties, "#sigma_{conv}","p");
   leg->Draw("same");
 
-  c_unc->SaveAs(Form("unfolding_plots/iteration_tune_r%02d.pdf", cone_size));
-  c_unc->SaveAs(Form("unfolding_plots/iteration_tune_r%02d.png", cone_size));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_r%02d.pdf",rb.get_code_location().c_str(), cone_size));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_r%02d.png", rb.get_code_location().c_str(), cone_size));
   return;
 }

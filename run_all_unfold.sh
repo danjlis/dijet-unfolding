@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
 conesize=$1
-source ./roounfold/RooUnfold-master/build/setup.sh
-
 
 #root -l -q -b "unfoldDataUncertainties_noempty.cxx(\"binning.config\"${conesize})"
 

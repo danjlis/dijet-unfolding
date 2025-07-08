@@ -1,4 +1,4 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 void makeRawXJ()
 {
@@ -8,7 +8,7 @@ void makeRawXJ()
   std::string mb_file = "TREE_MATCH_v4_8_new_ProdA_2024-00000021.root";
   std::string j10_file = "TREE_MATCH_v6_10_new_ProdA_2024-00000021.root";
   std::string j30_file = "TREE_MATCH_v6_30_new_ProdA_2024-00000021.root";
-  std::string data_file = "TNTUPLE_DIJET_v6_1_ana462_2024p010_v001_gl10-00047352-00047733.root";//TNTUPLE_DIJET_v4_2_ana450_2024p009_gl10-00047352-00047733.root";
+  std::string data_file = "TNTUPLE_DIJET_v6_1_ana468_2024p012_v001_gl10-00047352-00047733.root";//TNTUPLE_DIJET_v4_2_ana450_2024p009_gl10-00047352-00047733.root";
 
   float maxpttruth[3];
   float pt1_truth[3];

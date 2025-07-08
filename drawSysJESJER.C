@@ -1,4 +1,4 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 
@@ -120,14 +120,14 @@ void drawSysJESJER(const int cone_size = 4)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
   
   const int niterations = 10;
-  TFile *finu = new TFile(Form("uncertainties/uncertainties_r%02d.root", cone_size),"r");
+  TFile *finu = new TFile(Form("%s/uncertainties/uncertainties_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
 
   TProfile *h_xj_rms[niterations];
   for (int iter = 0; iter < niterations; ++iter)
     {
       h_xj_rms[iter] = (TProfile*) finu->Get(Form("hp_xj_%d", iter));
     }
-  TFile *fin = new TFile(Form("unfolded_hists/unfolded_hists_r%02d.root", cone_size),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_flat_data_pt1pt2 = (TH1D*) fin->Get("h_data_flat_pt1pt2");
   TH1D *h_flat_reco_pt1pt2 = (TH1D*) fin->Get("h_reco_flat_pt1pt2");
@@ -139,7 +139,7 @@ void drawSysJESJER(const int cone_size = 4)
     }
 
   // JES +
-  TFile *finpjes = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_posJES.root", cone_size),"r");
+  TFile *finpjes = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_posJES.root", rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_pjes_flat_data_pt1pt2 = (TH1D*) finpjes->Get("h_data_flat_pt1pt2");
   h_pjes_flat_data_pt1pt2->SetName("h_pjes_flat_data_pt1pt2");
@@ -154,7 +154,7 @@ void drawSysJESJER(const int cone_size = 4)
       h_pjes_flat_unfold_pt1pt2[iter]->SetName(Form("h_pjes_flat_unfold_pt1pt2_%d", iter));
     }
   // JES +
-  TFile *finnjes = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_negJES.root", cone_size),"r");
+  TFile *finnjes = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_negJES.root", rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_njes_flat_data_pt1pt2 = (TH1D*) finnjes->Get("h_data_flat_pt1pt2");
   h_njes_flat_data_pt1pt2->SetName("h_njes_flat_data_pt1pt2");
@@ -169,7 +169,7 @@ void drawSysJESJER(const int cone_size = 4)
       h_njes_flat_unfold_pt1pt2[iter]->SetName(Form("h_njes_flat_unfold_pt1pt2_%d", iter));
     }
   // posJER
-  TFile *finposjer = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_posJER.root", cone_size),"r");
+  TFile *finposjer = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_posJER.root",  rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_posjer_flat_data_pt1pt2 = (TH1D*) finposjer->Get("h_data_flat_pt1pt2");
   h_posjer_flat_data_pt1pt2->SetName("h_posjer_flat_data_pt1pt2");
@@ -184,7 +184,7 @@ void drawSysJESJER(const int cone_size = 4)
       h_posjer_flat_unfold_pt1pt2[iter]->SetName(Form("h_posjer_flat_unfold_pt1pt2_%d", iter));
     }
   // negJER
-  TFile *finnegjer = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_negJER.root", cone_size),"r");
+  TFile *finnegjer = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_negJER.root",  rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_negjer_flat_data_pt1pt2 = (TH1D*) finnegjer->Get("h_data_flat_pt1pt2");
   h_negjer_flat_data_pt1pt2->SetName("h_negjer_flat_data_pt1pt2");
@@ -200,7 +200,7 @@ void drawSysJESJER(const int cone_size = 4)
     }
 
   /* // VTX */
-  /* TFile *finvtx = new TFile("unfolded_hists_VTX.root","r"); */
+  /* TFile *finvtx = new TFile("%s/unfolding_hists_VTX.root","r"); */
 
   /* TH1D *h_vtx_flat_data_pt1pt2 = (TH1D*) finvtx->Get("h_data_flat_pt1pt2"); */
   /* h_vtx_flat_data_pt1pt2->SetName("h_vtx_flat_data_pt1pt2"); */
@@ -216,7 +216,7 @@ void drawSysJESJER(const int cone_size = 4)
   /*   } */
 
   // NJET 
-  TFile *finnjet = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_NJET.root", cone_size),"r");
+  TFile *finnjet = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_NJET.root",  rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_njet_flat_data_pt1pt2 = (TH1D*) finnjet->Get("h_data_flat_pt1pt2");
   h_njet_flat_data_pt1pt2->SetName("h_njet_flat_data_pt1pt2");
@@ -232,7 +232,7 @@ void drawSysJESJER(const int cone_size = 4)
     }
 
   // PRIOR 
-  TFile *finprior = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_PRIOR.root", cone_size),"r");
+  TFile *finprior = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_PRIOR.root",  rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_prior_flat_data_pt1pt2 = (TH1D*) finprior->Get("h_data_flat_pt1pt2");
   h_prior_flat_data_pt1pt2->SetName("h_prior_flat_data_pt1pt2");
@@ -984,8 +984,8 @@ void drawSysJESJER(const int cone_size = 4)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxjjes->SaveAs(Form("systematic_plots/h_JES_xj_unfolded_r%02d_range_%d_iter_%d.png", cone_size, irange, niter));
-	  cxjjes->SaveAs(Form("systematic_plots/h_JES_xj_unfolded_r%02d_range_%d_iter_%d.pdf", cone_size, irange, niter));
+	  cxjjes->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxjjes->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange, niter));
 	}
 
   
@@ -1062,8 +1062,8 @@ void drawSysJESJER(const int cone_size = 4)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxjjer->SaveAs(Form("systematic_plots/h_JER_xj_unfolded_r%02d_range_%d_iter_%d.png", cone_size, irange, niter));
-	  cxjjer->SaveAs(Form("systematic_plots/h_JER_xj_unfolded_r%02d_range_%d_iter_%d.pdf", cone_size, irange, niter));
+	  cxjjer->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxjjer->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange, niter));
 
 	}
       /* TCanvas *cxjvtx = new TCanvas("cxjvtx","cxjvtx", 500, 700); */
@@ -1189,8 +1189,8 @@ void drawSysJESJER(const int cone_size = 4)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxjnjet->SaveAs(Form("systematic_plots/h_NJET_xj_unfolded_r%02d_range_%d_iter_%d.png", cone_size, irange, niter));
-	  cxjnjet->SaveAs(Form("systematic_plots/h_NJET_xj_unfolded_r%02d_range_%d_iter_%d.pdf", cone_size, irange, niter));
+	  cxjnjet->SaveAs(Form("%s/systematic_plots/h_NJET_xj_unfolded_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxjnjet->SaveAs(Form("%s/systematic_plots/h_NJET_xj_unfolded_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange, niter));
 	}
 
 
@@ -1253,8 +1253,8 @@ void drawSysJESJER(const int cone_size = 4)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxjprior->SaveAs(Form("systematic_plots/h_PRIOR_xj_unfolded_r%02d_range_%d_iter_%d.png", cone_size, irange, niter));
-	  cxjprior->SaveAs(Form("systematic_plots/h_PRIOR_xj_unfolded_r%02d_range_%d_iter_%d.pdf", cone_size, irange, niter));
+	  cxjprior->SaveAs(Form("%s/systematic_plots/h_PRIOR_xj_unfolded_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxjprior->SaveAs(Form("%s/systematic_plots/h_PRIOR_xj_unfolded_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange, niter));
 	}
 
       // all systematics on one plot
@@ -1415,12 +1415,12 @@ void drawSysJESJER(const int cone_size = 4)
 	  leg4->AddEntry(h_sys_njet_flip, "Event Jet Multiplicity");
 	  leg4->AddEntry(h_sys_prior_flip, "Sensitivity to Prior");
 	  leg4->Draw();
-	  cxjsys->SaveAs(Form("systematic_plots/h_SYS_xj_unfolded_r%02d_range_%d_iter_%d.png", cone_size, irange, niter));
-	  cxjsys->SaveAs(Form("systematic_plots/h_SYS_xj_unfolded_r%02d_range_%d_iter_%d.pdf", cone_size, irange, niter));
+	  cxjsys->SaveAs(Form("%s/systematic_plots/h_SYS_xj_unfolded_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxjsys->SaveAs(Form("%s/systematic_plots/h_SYS_xj_unfolded_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange, niter));
 
 	}
     }
-  TFile *fsys = new TFile(Form("uncertainties/systematics_r%02d.root", cone_size), "recreate");
+  TFile *fsys = new TFile(Form("%s/uncertainties/systematics_r%02d.root",  rb.get_code_location().c_str(), cone_size), "recreate");
   for (int iter = 0; iter < niterations; iter++)
     {
       for (int irange = 0; irange < mbins; irange++)

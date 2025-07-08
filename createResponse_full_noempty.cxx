@@ -8,7 +8,7 @@ using std::endl;
 #include "RooUnfoldBayes.h"
 
 #endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 
@@ -216,7 +216,7 @@ int createResponse_full_noempty(const std::string configfile = "binning.config",
   if (!prior_sys && !primer)
     {
       std::cout << "doing prior" << std::endl;
-      TFile *fun = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_PRIMER2.root", cone_size), "r");
+      TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_r%02d_PRIMER2.root", cone_size), "r");
       TH1D *h_unfold_flat = (TH1D*) fun->Get(Form("h_flat_unfold_pt1pt2_%d", prior_iteration));
       TFile *ftr = new TFile(Form("response_matrices/response_matrix_r%02d_PRIMER2.root", cone_size), "r");
       std::cout << "doing prior" << std::endl;
