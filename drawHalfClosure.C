@@ -1,4 +1,4 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 const bool NUCLEAR = true;
@@ -101,7 +101,7 @@ void drawHalfClosure(const int cone_size = 4)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
   
 
-  TFile *fin = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_HALF.root", cone_size),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_HALF.root", rb.get_code_location().c_str(), cone_size),"r");
   if (!fin)
     {
       std::cout << " no file " << std::endl;
@@ -289,8 +289,8 @@ void drawHalfClosure(const int cone_size = 4)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxj->Print(Form("unfolding_plots/h_xj_half_closure_r%02d_range_%d_iter %d.png", cone_size, irange, niter));
-	  cxj->Print(Form("unfolding_plots/h_xj_half_closure_r%02d_range_%d_iter_%d.pdf", cone_size, irange, niter));
+	  cxj->Print(Form("%s/unfolding_plots/h_xj_half_closure_r%02d_range_%d_iter %d.png", rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxj->Print(Form("%s/unfolding_plots/h_xj_half_closure_r%02d_range_%d_iter_%d.pdf", rb.get_code_location().c_str(), cone_size, irange, niter));
 	}
     }
   return;

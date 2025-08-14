@@ -1,4 +1,4 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 const bool NUCLEAR = true;
@@ -101,7 +101,7 @@ void drawFinalUnfold(const int cone_size = 4)
   
 
   if (NUCLEAR) std::cout << __LINE__ << std::endl;
-  TFile *fintr = new TFile(Form("truth_hists/truth_hist_r%02d.root", cone_size),"r");
+  TFile *fintr = new TFile(Form("%s/truth_hists/truth_hist_r%02d.root",  rb.get_code_location().c_str(), cone_size),"r");
   if (!fintr)
     {
       std::cout << "no truth hists" << std::endl;
@@ -142,7 +142,7 @@ void drawFinalUnfold(const int cone_size = 4)
   if (NUCLEAR) std::cout << __LINE__ << std::endl;
   
   const int niterations = 10;
-  TFile *finu = new TFile(Form("uncertainties/uncertainties_r%02d.root", cone_size),"r");
+  TFile *finu = new TFile(Form("%s/uncertainties/uncertainties_r%02d.root",  rb.get_code_location().c_str(), cone_size),"r");
   if (!finu)
     {
       std::cout << " no unc " << std::endl;
@@ -158,7 +158,7 @@ void drawFinalUnfold(const int cone_size = 4)
     }
   if (NUCLEAR) std::cout << __LINE__ << std::endl;
 
-  TFile *fins = new TFile(Form("uncertainties/systematics_r%02d.root", cone_size),"r");
+  TFile *fins = new TFile(Form("%s/uncertainties/systematics_r%02d.root",  rb.get_code_location().c_str(), cone_size),"r");
   if (!fins)
     {
       std::cout << " no sys " << std::endl;
@@ -175,7 +175,7 @@ void drawFinalUnfold(const int cone_size = 4)
 	}
     }
 
-  TFile *fin = new TFile(Form("unfolded_hists/unfolded_hists_r%02d.root", cone_size),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d.root",  rb.get_code_location().c_str(), cone_size),"r");
   if (!fin)
     {
       std::cout << " no file " << std::endl;
@@ -480,8 +480,8 @@ void drawFinalUnfold(const int cone_size = 4)
       line->SetLineColor(kRed + 3);
       line->SetLineWidth(2);
       line->Draw("same");
-      cxj->Print(Form("final_plots/h_xj_unfolded_r%02d_range_%d.png", cone_size, irange));
-      cxj->Print(Form("final_plots/h_xj_unfolded_r%02d_range_%d.pdf", cone_size, irange));
+      cxj->Print(Form("%s/final_plots/h_xj_unfolded_r%02d_range_%d.png",  rb.get_code_location().c_str(), cone_size, irange));
+      cxj->Print(Form("%s/final_plots/h_xj_unfolded_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange));
     }
 
   
@@ -567,8 +567,8 @@ void drawFinalUnfold(const int cone_size = 4)
       //leg->AddEntry(h_linear_herwig_xj[irange], "HERWIG 7.3","l");
       leg->Draw("same");
 
-      cxj_money->Print(Form("final_plots/h_final_xj_unfolded_r%02d_range_%d.png", cone_size, irange));
-      cxj_money->Print(Form("final_plots/h_final_xj_unfolded_r%02d_range_%d.pdf", cone_size, irange));
+      cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_r%02d_range_%d.png",  rb.get_code_location().c_str(), cone_size, irange));
+      cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange));
     }
 
   return;

@@ -1,4 +1,3 @@
-#if !(defined(__CINT__) || defined(__CLING__)) || defined(__ACLIC__)
 #include <iostream>
 
 using std::cout;
@@ -7,8 +6,7 @@ using std::endl;
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldBayes.h"
 
-#endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 
@@ -17,10 +15,11 @@ int createResponse_noempty(const std::string configfile = "binning.config", cons
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
+  read_binning rb(configfile.c_str());
   
-  std::string j10_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";
-  std::string j20_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_20_new_ProdA_2024-00000021.root";
-  std::string j30_file = "../tntuples/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_30_new_ProdA_2024-00000021.root";
+  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";
+  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_20_new_ProdA_2024-00000021.root";
+  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_30_new_ProdA_2024-00000021.root";
 
   float maxpttruth[3];
   float pt1_truth[3];
@@ -70,8 +69,6 @@ int createResponse_noempty(const std::string configfile = "binning.config", cons
   //scale_factor[1] = (3.646e-6)/(2.505e-9);//4.197e-2;
   scale_factor[2] = 1;//4.197e-2;
   
-  read_binning rb(configfile.c_str());
-
   Int_t minentries = rb.get_minentries();
   Int_t read_nbins = rb.get_nbins();
   Int_t primer = rb.get_primer();
@@ -217,7 +214,7 @@ int createResponse_noempty(const std::string configfile = "binning.config", cons
   if (!prior_sys && !primer)
     {
       std::cout << "doing prior" << std::endl;
-      TFile *fun = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_PRIMER2.root", cone_size), "r");
+      TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_r%02d_PRIMER2.root", cone_size), "r");
       TH1D *h_unfold_flat = (TH1D*) fun->Get(Form("h_flat_unfold_pt1pt2_%d", prior_iteration));
       TFile *ftr = new TFile(Form("response_matrices/response_matrix_r%02d_PRIMER2.root", cone_size), "r");
       std::cout << "doing prior" << std::endl;
@@ -677,7 +674,7 @@ int createResponse_noempty(const std::string configfile = "binning.config", cons
 	  h_pt1pt2_unfold[niter]->Draw("colz");
 
 
-	  cpt1pt2->Print(Form("pt1pt2_r%02d.pdf", cone_size));
+	  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
 
 	  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
 	  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
@@ -880,7 +877,7 @@ int createResponse_noempty(const std::string configfile = "binning.config", cons
 	  leg3->SetTextSize(0.08);
 	  leg3->Draw("same");
 
-	  cjetdiv->Print(Form("combined_sample_r%02d.pdf", cone_size));
+	  cjetdiv->Print(Form("%s/unfolding_plots/combined_sample_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
 
 	  TCanvas *cmjet = new TCanvas("cmjet","cmjet", 700, 500);
 	  dlutility::createCutCanvas(cmjet);

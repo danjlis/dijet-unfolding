@@ -1,4 +1,3 @@
-#if !(defined(__CINT__) || defined(__CLING__)) || defined(__ACLIC__)
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -6,8 +5,7 @@ using std::endl;
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldBayes.h"
 
-#endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 
@@ -15,15 +13,16 @@ int unfoldDataUncertainties_noempty(const int niterations = 20, const int cone_s
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-
-  std::string data_file = "../tntuples/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_4_ana462_2024p010_v001_gl10-all.root";
-  //std::string data_file = "TNTUPLE_DIJET_v6_2_ana462_2024p010_v001_gl10-00047289-00048291.root";//TNTUPLE_DIJET_v6_1_ana462_2024p010_v001_gl10-00047352-00047733.root";
+  read_binning rb("binning.config");
+  
+  std::string data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_6_ana468_2024p012_v001_gl10-all.root";
+  //std::string data_file = "TNTUPLE_DIJET_v6_2_ana468_2024p012_v001_gl10-00047289-00048291.root";//TNTUPLE_DIJET_v6_1_ana468_2024p012_v001_gl10-00047352-00047733.root";
 
   float pt1_reco;
   float pt2_reco;
   float dphi_reco;
 
-  TFile *fresponse = new TFile(Form("response_matrices/response_matrix_r%02d.root", cone_size),"r");
+  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
   
   TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
   if (!h_flat_truth_pt1pt2)
@@ -93,7 +92,6 @@ int unfoldDataUncertainties_noempty(const int niterations = 20, const int cone_s
   tn->SetBranchAddress("pt2_reco", &pt2_reco);
   tn->SetBranchAddress("dphi_reco", &dphi_reco);
 
-  read_binning rb("binning.config");
 
   Int_t read_nbins = rb.get_nbins();
   
@@ -367,7 +365,7 @@ int unfoldDataUncertainties_noempty(const int niterations = 20, const int cone_s
   
 
   
-  TFile *fout = new TFile(Form("uncertainties/uncertainties_r%02d.root", cone_size),"recreate");
+  TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_r%02d.root", rb.get_code_location().c_str(), cone_size),"recreate");
   TEnv *penv = new TEnv("binning.config");
   penv->Write();
   for (int iter = 0; iter < niterations; iter++)

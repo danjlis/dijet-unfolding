@@ -1,11 +1,15 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
+#include "read_binning.h"
+
 int color_sim = kRed - 2;
 int color_data = kAzure - 6;
 
-void getVtxReweighting(const int cone_size = 4)
+void getVtxReweighting(const int cone_size = 4, const std::string configfile = "binning.config")
 {
   dlutility::SetyjPadStyle();
-  TFile *f_sim = new TFile(Form("response_matrices/response_matrix_r%02d_PRIMER1.root", cone_size),"r");
+  read_binning rb(configfile.c_str());
+
+  TFile *f_sim = new TFile(Form("%s/response_matrices/response_matrix_r%02d_PRIMER1.root", rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_mbd_sim = (TH1D*) f_sim->Get("h_mbd_vertex");
   h_mbd_sim->SetName("h_mbd_sim");
@@ -13,7 +17,7 @@ void getVtxReweighting(const int cone_size = 4)
   TH1D *h_njet_sim = (TH1D*) f_sim->Get("h_njets");
   h_njet_sim->SetName("h_njet_sim");
 
-  TFile *f_data = new TFile(Form("unfolded_hists/unfolded_hists_r%02d_PRIMER1.root", cone_size),"r");
+  TFile *f_data = new TFile(Form("%s/unfolding_hists/unfolding_hists_r%02d_PRIMER1.root", rb.get_code_location().c_str(), cone_size),"r");
 
   TH1D *h_mbd_data = (TH1D*) f_data->Get("h_mbd_vertex");
   h_mbd_data->SetName("h_mbd_data");
@@ -83,8 +87,8 @@ void getVtxReweighting(const int cone_size = 4)
   /* dlutility::SetLineAtt(lin0, kBlack, 2, 1); */
   /* lin0->Draw("same"); */
 
-  c5->Print("unfolding_plots/datasim_mbd.png");
-  c5->Print("unfolding_plots/datasim_mbd.pdf");
+  c5->Print(Form("%s/unfolding_plots/datasim_mbd.png", rb.get_code_location().c_str()));
+  c5->Print(Form("%s/unfolding_plots/datasim_mbd.pdf", rb.get_code_location().c_str()));
 
   c5->cd(1);
 
@@ -141,15 +145,15 @@ void getVtxReweighting(const int cone_size = 4)
   /* dlutility::SetLineAtt(lin0, kBlack, 2, 1); */
   /* lin0->Draw("same"); */
 
-  c5->Print("unfolding_plots/datasim_njet.png");
-  c5->Print("unfolding_plots/datasim_njet.pdf");
+  c5->Print(Form("%s/unfolding_plots/datasim_njet_r%02d.png", rb.get_code_location().c_str(), cone_size));
+  c5->Print(Form("%s/unfolding_plots/datasim_njet_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
 
-  TFile *fout = new TFile(Form("vertex/vertex_reweight_r%02d.root", cone_size),"recreate");
+  TFile *fout = new TFile(Form("%s/vertex/vertex_reweight_r%02d.root", rb.get_code_location().c_str(), cone_size),"recreate");
   h_compare->Write();
   fout->Write();
   fout->Close();
 
-  fout = new TFile(Form("njet/njet_reweight_r%02d.root", cone_size),"recreate");
+  fout = new TFile(Form("%s/njet/njet_reweight_r%02d.root", rb.get_code_location().c_str(), cone_size),"recreate");
   h_njet_compare->Write();
   fout->Write();
   fout->Close();

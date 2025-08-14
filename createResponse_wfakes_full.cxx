@@ -7,7 +7,7 @@ using std::endl;
 #include "RooUnfoldBayes.h"
 
 #endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 
 

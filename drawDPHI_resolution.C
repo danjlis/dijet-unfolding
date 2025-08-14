@@ -1,4 +1,4 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 
 const int colorsys[5] = {kBlack, kMagenta + 2, kPink + 2, kGreen - 2, kAzure + 4};

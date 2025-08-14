@@ -1,4 +1,4 @@
-#if !(defined(__CINT__) || defined(__CLING__)) || defined(__ACLIC__)
+
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -6,8 +6,7 @@ using std::endl;
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldBayes.h"
 
-#endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 
@@ -15,8 +14,11 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-  std::string data_file = "../tntuples/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_4_ana462_2024p010_v001_gl10-all.root";
-  //std::string data_file = "../tntuples/TNTUPLE_DIJET_v6_2_ana462_2024p010_v001_gl10-00047289-00048291.root";//TNTUPLE_DIJET_v6_1_ana462_2024p010_v001_gl10-00047352-00047733.root";//TNTUPLE_DIJET_v4_2_ana450_2024p009_gl10-00047352-00047733.root";
+
+  read_binning rb(configfile.c_str());
+
+  std::string data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_6_ana468_2024p012_v001_gl10-all.root";
+  //std::string data_file = "../tntuples/TNTUPLE_DIJET_v6_2_ana468_2024p012_v001_gl10-00047289-00048291.root";//TNTUPLE_DIJET_v6_1_ana468_2024p012_v001_gl10-00047352-00047733.root";//TNTUPLE_DIJET_v4_2_ana450_2024p009_gl10-00047352-00047733.root";
 
   float mbd_vertex;
   float pt1_reco;
@@ -36,8 +38,6 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   tn->SetBranchAddress("njets", &nrecojets);
   tn->SetBranchAddress("trigger", &trigger);
   tn->SetBranchAddress("mbd_vertex", &mbd_vertex);
-
-  read_binning rb(configfile.c_str());
 
   Int_t read_nbins = rb.get_nbins();
   Int_t primer = rb.get_primer();
@@ -332,7 +332,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   h_pt1pt2_unfold[niter]->Draw("colz");
 
 
-  cpt1pt2->Print(Form("pt1pt2_r%02d.pdf", cone_size));
+  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2data_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
 
   histo_opps::project_xj(h_pt1pt2_data, h_xj_data, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
   histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
@@ -492,9 +492,9 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   line3->SetLineColor(kRed + 3);
   line3->SetLineWidth(2);
   line3->Draw("same");
-  cproj->Print(Form("proj_compar_r%02d.pdf", cone_size));
+  cproj->Print(Form("%s/unfolding_plots/proj_compar_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
   
-  TString unfoldpath = "unfolded_hists/unfolded_hists_r0" + std::to_string(cone_size);
+  TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_r0" + std::to_string(cone_size);
   if (JES_sys > 0)
     {
       unfoldpath += "_posJES";
@@ -523,7 +523,7 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
 
   if (primer)
     {
-      unfoldpath = "unfolded_hists/unfolded_hists_r0" + std::to_string(cone_size) + "_PRIMER" + std::to_string(primer);
+      unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_r0" + std::to_string(cone_size) + "_PRIMER" + std::to_string(primer);
     }
 
   unfoldpath += ".root";

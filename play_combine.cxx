@@ -6,7 +6,7 @@ using std::endl;
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldBayes.h"
 #endif
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 int play()
 {
   gStyle->SetOptStat(0);

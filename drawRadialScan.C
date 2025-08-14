@@ -1,4 +1,4 @@
-#include "../macros/dlUtility.h"
+#include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
 const bool NUCLEAR = true;
@@ -141,7 +141,7 @@ void drawRadialScan()
 	     }
 	 }
 
-       fin[ic] = new TFile(Form("unfolded_hists/unfolded_hists_r%02d.root", cone_sizes[ic]),"r");
+       fin[ic] = new TFile(Form("unfolding_hists/unfolding_hists_r%02d.root", cone_sizes[ic]),"r");
        if (!fin[ic])
 	 {
 	   std::cout << " no file " << std::endl;
