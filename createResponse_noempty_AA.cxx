@@ -14,12 +14,20 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-
+  bool ispp = (centrality_bin < 0);
   read_binning rb(configfile.c_str());
-  
+
+  std::string system_string = (ispp ? "pp" : "AA_cent_" + std::to_string(centrality_bin));
+
   std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_10_new_ProdA_2024-00000030.root";
   std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_20_new_ProdA_2024-00000030.root";
   std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_30_new_ProdA_2024-00000030.root";
+  if (ispp)
+    {
+      j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";
+      j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_20_new_ProdA_2024-00000021.root";
+      j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_30_new_ProdA_2024-00000021.root";
+    }
 
   float maxpttruth[3];
   float pt1_truth[3];
@@ -79,7 +87,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   scale_factor[0] = (n_events[2]/n_events[0]) * cs_10/cs_30;
   scale_factor[1] = (n_events[2]/n_events[1]) * cs_20/cs_30; 
   scale_factor[2] = 1;
-  
+
   Int_t minentries = rb.get_minentries();
   Int_t read_nbins = rb.get_nbins();
   //Int_t primer = rb.get_primer();
@@ -94,10 +102,23 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   Double_t JER_sys = rb.get_jer_sys();
   Int_t prior_sys = rb.get_prior_sys();
   int using_sys = 0;
+
+  TF1 *f_smear = nullptr;
+  if (!ispp)
+    {
+      f_smear  = (TF1*) rb.get_smear_function(centrality_bin);
+      if (!f_smear)
+	{
+	  std::cout << " NO SMEAR " << std::endl;
+	  exit(-1);
+	}
+    }
+
   std::string sys_name = "nominal";
   std::cout << "JES = " << JES_sys << std::endl;
   std::cout << "JER = " << JER_sys << std::endl;
-  float width = 0.1 + JER_sys;
+  float width = 0.8 + JER_sys;
+
   fgaus->SetParameters(1, 0, width);
   if (prior_sys)
     {
@@ -142,6 +163,8 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
       std::cout << ipt_bins[i] << " -- " << ixj_bins[i] << std::endl;
     }
 
+  Int_t max_reco_bin = rb.get_maximum_reco_bin();
+
   const int centrality_bins = rb.get_number_centrality_bins();
 
   float icentrality_bins[centrality_bins + 1];
@@ -154,9 +177,9 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 
 
   std::vector<std::pair<float, float>> centrality_scales;
-  if (primer != 1 && !full_or_half)
+  if (primer != 1 && !full_or_half && !ispp)
     {
-      TFile *fcent = new TFile(Form("centrality/centrality_reweight_AA_cent_%d_r%02d_%s.root", centrality_bin, cone_size, sys_name.c_str()),"r");
+      TFile *fcent = new TFile(Form("centrality/centrality_reweight_%s_r%02d_%s.root", system_string.c_str(), cone_size, sys_name.c_str()),"r");
       TH1D *h_centrality_reweight = (TH1D*) fcent->Get("h_centrality_reweight");
       for (int ib = 0; ib < h_centrality_reweight->GetNbinsX(); ib++)
 	{
@@ -170,7 +193,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   if (primer != 1 && !full_or_half)
     {
 
-      TFile *fvtx = new TFile(Form("vertex/vertex_reweight_AA_cent_%d_r%02d_%s.root", centrality_bin, cone_size, sys_name.c_str()),"r");
+      TFile *fvtx = new TFile(Form("vertex/vertex_reweight_%s_r%02d_%s.root", system_string.c_str(), cone_size, sys_name.c_str()),"r");
       TH1D *h_mbd_reweight = (TH1D*) fvtx->Get("h_mbd_reweight");
       for (int ib = 0; ib < h_mbd_reweight->GetNbinsX(); ib++)
 	{
@@ -202,7 +225,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
       sample_boundary[ib] = rb.get_sample_boundary(ib);
       std::cout <<  sample_boundary[ib] << std::endl;
     }
-
+  std::cout << "Max reco bin: " << max_reco_bin << std::endl;
   std::cout << "Truth1: " << truth_leading_cut << std::endl;
   std::cout << "Reco 1: " <<  reco_leading_cut << std::endl;
   std::cout << "Meas 1: " <<  measure_leading_cut << std::endl;
@@ -250,15 +273,17 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   // For the prior sensitivity
   TH1D *h_flatreweight_pt1pt2 = new TH1D("h_unfold_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
 
+
   if (!prior_sys && !primer)
     {
       std::cout << "doing prior" << std::endl;
-      TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_PRIMER2_%s.root", centrality_bin, cone_size, sys_name.c_str()), "r");
+      TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_%s_r%02d_PRIMER2_%s.root", system_string.c_str(), cone_size, sys_name.c_str()), "r");
       TH1D *h_unfold_flat = (TH1D*) fun->Get(Form("h_flat_unfold_pt1pt2_%d", prior_iteration));
-      TFile *ftr = new TFile(Form("response_matrices/response_matrix_AA_cent_%d_r%02d_PRIMER2_%s.root", centrality_bin, cone_size, sys_name.c_str()), "r");
+      TFile *ftr = new TFile(Form("response_matrices/response_matrix_%s_r%02d_PRIMER2_%s.root", system_string.c_str(), cone_size, sys_name.c_str()), "r");
       std::cout << "doing prior" << std::endl;
       TH1D *h_truth_flat = (TH1D*) ftr->Get("h_truth_flat_pt1pt2");
-
+      TH2D *h2_flatreweight_pt1pt2 = new TH2D("h2_flatreweight_pt1pt2",";p_{T,1}^{truth} [GeV]; p_{T,2}^{truth} [GeV] ; Reweight Factor", nbins, ipt_bins, nbins, ipt_bins);
+      
       if (h_unfold_flat->Integral() != 0)
 	h_unfold_flat->Scale(1./h_unfold_flat->Integral());
       if (h_truth_flat->Integral() != 0)
@@ -268,14 +293,33 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  float v = h_unfold_flat->GetBinContent(ibin+1);
 	  float b = h_truth_flat->GetBinContent(ibin+1);
 
-	  std::cout << "ibin : " << ibin << " : " << v << " / " << b << " = " << v/b << std::endl;
+	  float pt1_bin = ibin/nbins;
+	  float pt2_bin = ibin%nbins;
 
-	    //	    h_flatreweight_pt1pt2->SetBinContent(ibin+1, 1);
+	  std::cout << "ibin : " << ibin << " : " << v << " / " << b << " = " << v/b << std::endl;
+	  int gbin = h2_flatreweight_pt1pt2->GetBin(pt1_bin+1, pt2_bin+1);
 	  if (b > 0)
-	    h_flatreweight_pt1pt2->SetBinContent(ibin+1, v/b);
+	    {
+	      h_flatreweight_pt1pt2->SetBinContent(ibin+1, v/b);
+	      h2_flatreweight_pt1pt2->SetBinContent(gbin, v/b);
+	    }
 	  else
-	    h_flatreweight_pt1pt2->SetBinContent(ibin+1, 1);
+	    {
+	      h_flatreweight_pt1pt2->SetBinContent(ibin+1, 1);
+	      h2_flatreweight_pt1pt2->SetBinContent(gbin, 0);
+	    }
 	}
+
+      TCanvas *cre = new TCanvas("cre","cre", 500, 500);
+      cre->SetLeftMargin(0.1);
+      cre->SetRightMargin(0.19);
+      h2_flatreweight_pt1pt2->GetYaxis()->SetRangeUser(ipt_bins[0], ipt_bins[13]);
+      h2_flatreweight_pt1pt2->GetXaxis()->SetRangeUser(ipt_bins[0], ipt_bins[13]);
+      h2_flatreweight_pt1pt2->Draw("colz");
+      dlutility::DrawSPHENIX(0.2, 0.87);
+      dlutility::drawText("Prior Reweighting Matrix", 0.2, 0.77);
+      dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.2, 0.72);
+      cre->Print(Form("%s/unfolding_plots/prior_matrix_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
     }
   int nbin_response = nbins*nbins;
   
@@ -294,8 +338,8 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  tn[isample]->GetEntry(i);
 	  int inrecojets = nrecojets[isample];
 	  double event_scale = scale_factor[isample];
-
-	  if (centrality[isample] < icentrality_bins[centrality_bin] || centrality[isample] >= icentrality_bins[centrality_bin+1]) continue;
+	  
+	  if (!(ispp) &&  centrality[isample] < icentrality_bins[centrality_bin] || centrality[isample] >= icentrality_bins[centrality_bin+1]) continue;
 	  // Vertex Rewieghting
 	  if (primer != 1 && !full_or_half)
 	    {
@@ -308,13 +352,16 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 		      break;
 		    }
 		}
-	      for (int ib = 0; ib < centrality_scales.size(); ib++)
+	      if (!ispp)
 		{
-		  if (centrality[isample] < centrality_scales.at(ib).first)
+		  for (int ib = 0; ib < centrality_scales.size(); ib++)
 		    {
-		      event_scale *= centrality_scales.at(ib).second;
-		      //if (i < 100) std:cout << "found z = " << vertex_scales.at(ib).first << " " <<vertex_scales.at(ib).second<<std::endl;
-		      break;
+		      if (centrality[isample] < centrality_scales.at(ib).first)
+			{
+			  event_scale *= centrality_scales.at(ib).second;
+			  //if (i < 100) std:cout << "found z = " << vertex_scales.at(ib).first << " " <<vertex_scales.at(ib).second<<std::endl;
+			  break;
+			}
 		    }
 		}
 	    }
@@ -353,9 +400,23 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
 
 
-	  double smear1 = fgaus->GetRandom();
-	  double smear2 = fgaus->GetRandom();
 
+	  double smear1 = 0;
+	  
+	  double smear2 = 0;
+	  if (ispp)
+	    {
+	      smear1 = fgaus->GetRandom();
+	      smear2 = fgaus->GetRandom();
+	    }
+	  else
+	    {
+	      fgaus->SetParameter(2, f_smear->Eval(e1));
+	      smear1 = fgaus->GetRandom();
+	      fgaus->SetParameter(2, f_smear->Eval(e2));
+	      smear2 = fgaus->GetRandom();
+	    }
+	  
 	  if (JES_sys != 0)
 	    {
 	      es1 = es1 + (JES_sys + smear1)*e1;
@@ -369,6 +430,8 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  
 	  float maxi = std::max(es1, es2);
 	  float mini = std::min(es1, es2);
+
+	  if (maxi >= ipt_bins[max_reco_bin]) continue;
 	  if (e1 > truth_leading_cut) h_truth_lead->Fill(e1, event_scale);
 	  if (e2 >  truth_subleading_cut) h_truth_sublead->Fill(e2, event_scale);
 
@@ -482,7 +545,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 		  h_linear_reco_xj->Fill(mini/maxi, event_scale);
 		}
 	      h_mbd_vertex->Fill(mbd_vertex[isample], event_scale);
-	      h_centrality->Fill(centrality[isample], event_scale);
+	      if (!ispp) h_centrality->Fill(centrality[isample], event_scale);
 	      h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
 	      h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
 	      h_flat_truth_to_response_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
@@ -724,7 +787,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  h_pt1pt2_unfold[niter]->Draw("colz");
 
 
-	  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
+	  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
 
 	  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
 	  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
@@ -927,7 +990,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  leg3->SetTextSize(0.08);
 	  leg3->Draw("same");
 
-	  cjetdiv->Print(Form("%s/unfolding_plots/combined_sample_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin,  cone_size));
+	  cjetdiv->Print(Form("%s/unfolding_plots/combined_sample_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()));
 
 	  TCanvas *cmjet = new TCanvas("cmjet","cmjet", 700, 500);
 	  dlutility::createCutCanvas(cmjet);
@@ -975,7 +1038,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  dlutility::DrawSPHENIXppsize(0.1, 0.84, 0.1);
 
 
-	  TString responsepath = "response_matrices/response_matrix_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size);
+	  TString responsepath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
 	  
 	  if (primer > 0)
 	    {
@@ -983,7 +1046,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	    }
 	  if (full_or_half)
 	    {
-	      responsepath = "response_matrices/response_matrix_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size) + "_HALF";
+	      responsepath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size) + "_HALF";
 	    }
 	  responsepath += "_" + sys_name;
 
@@ -1015,7 +1078,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	}
       else
 	{
-	  TString responsepath = "response_matrices/response_matrix_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size) + "_min_" + std::to_string(imin) + ".root";
+	  TString responsepath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size) + "_min_" + std::to_string(imin) + ".root";
 
 	  TFile *fr = new TFile(responsepath.Data(),"recreate");
 	  rooResponsehist.Write();

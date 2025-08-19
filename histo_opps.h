@@ -38,6 +38,16 @@ namespace histo_opps
 	h1->SetBinError(i+1, new_error);
       }
   }
+  void set_xj_errors(TH1D *h1, TH1D *hp, const int nbins)
+  {
+    for (int i = 0; i < nbins; i++)
+      {
+	float old_error = h1->GetBinError(i+1);
+	float stat_error = hp->GetBinError(i+1);
+	float new_error = sqrt(TMath::Power(old_error, 2) + TMath::Power(stat_error, 2));
+	h1->SetBinError(i+1, new_error);
+      }
+  }
 
 
   void finalize_xj(TH1D *h1, TH1D *h2, const int nbins, float first_xj)

@@ -13,16 +13,21 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
+  bool ispp = (centrality_bin < 0);
+  std::string system_string = (ispp ? "pp" : "AA_cent_" + std::to_string(centrality_bin));
 
   read_binning rb("binning_AA.config");
   std::string data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v10_1_492_2024p020_v007_gl10-all.root";
+  if (ispp)
+    data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_6_ana468_2024p012_v001_gl10-all.root";
 
   float pt1_reco;
   float pt2_reco;
   float dphi_reco;
   float centrality;
   
-  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_AA_cent_%d_r%02d_nominal.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_nominal.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
+
   
   TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
 
@@ -120,6 +125,9 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
       ixj_bins[i] = fixj_bins[i];
       std::cout << ipt_bins[i] << " -- " << ixj_bins[i] << std::endl;
     }
+
+  Int_t max_reco_bin = rb.get_maximum_reco_bin();
+  
   float truth_leading_cut = rb.get_truth_leading_cut();
   float truth_subleading_cut = rb.get_truth_subleading_cut();
 
@@ -185,7 +193,7 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   for (int i = 0; i < entries; i++)
     {
       tn->GetEntry(i);
-      if (centrality < icentrality_bins[centrality_bin] || centrality >= icentrality_bins[centrality_bin + 1]) continue;
+      if (!ispp && centrality < icentrality_bins[centrality_bin] || centrality >= icentrality_bins[centrality_bin + 1]) continue;
       float maxi = std::max(pt1_reco, pt2_reco);
       float mini = std::min(pt1_reco, pt2_reco);
 
@@ -194,7 +202,7 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
 
       float es1 = pt1_reco;
       float es2 = pt2_reco;
-
+      if (es1 >= ipt_bins[max_reco_bin] ) continue;
       for (int ib = 0; ib < nbins; ib++)
 	{
 
@@ -233,12 +241,15 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
 
   TProfile2D *hp_pt1pt2_stats[niterations];
   TProfile *hp_xj[niterations];
+  TProfile *hp_pt1pt2[niterations];
   TProfile *hp_xj_range[mbins][niterations];
 
+  int nbins_pt1pt2 = nbins*nbins;
+  
   for (int iter = 0; iter < niterations; iter++)
     {
       hp_pt1pt2_stats[iter] = new TProfile2D(Form("hp_pt1pt2_stats_%d", iter),";p_{T,1}; p_{T,2}; average +/- rms", nbins, ipt_bins, nbins, ipt_bins, "s");
-      
+      hp_pt1pt2[iter] = new TProfile(Form("hp_pt1pt2_%d", iter),";pt1pt2 bin; Avg +/- RMS", nbins_pt1pt2, 0, nbins_pt1pt2,"s");
       hp_xj[iter] = new TProfile(Form("hp_xj_%d", iter),";x_{J}; Avg +/- RMS", nbins, ixj_bins,"s");
       for (int i = 0; i < mbins; i++)
 	{
@@ -349,6 +360,10 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
 		  hp_pt1pt2_stats[iter]->Fill(hp_pt1pt2_stats[iter]->GetXaxis()->GetBinCenter(ib+1), hp_pt1pt2_stats[iter]->GetYaxis()->GetBinCenter(ib2+1), h_pt1pt2_unfold_sym[iter]->GetBinContent(ijbin));
 		}
 	    }
+	  for (int ib = 0; ib < nbins_pt1pt2; ib++)
+	    {
+	      hp_pt1pt2[iter]->Fill(hp_pt1pt2[iter]->GetBinCenter(ib+1), h_flat_unfold_pt1pt2[iter]->GetBinContent(ib+1));
+	    }
 
 	}
 
@@ -371,12 +386,13 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   
 
   
-  TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_AA_cent_%d_r%02d_nominal.root", rb.get_code_location().c_str(), centrality_bin,  cone_size),"recreate");
+  TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_%s_r%02d_nominal.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size),"recreate");
   TEnv *penv = new TEnv("binning_AA.config");
   penv->Write();
   for (int iter = 0; iter < niterations; iter++)
     {
-      hp_xj[iter]->Write();            
+      hp_xj[iter]->Write();
+      hp_pt1pt2[iter]->Write();            
       for (int irange = 0; irange < mbins; irange++)
 	{
 	  hp_xj_range[irange][iter]->Write();            

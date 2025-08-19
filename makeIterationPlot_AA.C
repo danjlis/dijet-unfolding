@@ -11,7 +11,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
 
   read_binning rb("binning_AA.config");
 
-    Int_t read_nbins = rb.get_nbins();
+  Int_t read_nbins = rb.get_nbins();
   
   Double_t dphicut = rb.get_dphicut();
 
@@ -92,7 +92,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
   
   std::cout << __LINE__ << std::endl;
 
-  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_AA_cent_%d_r%02d.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_AA_cent_%d_r%02d_nominal.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
 
   if (!f_uncertainties)
     {
@@ -100,8 +100,9 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
       return;
     }
   TProfile *hp_xj[niterations];
+  TProfile *hp_pt1pt2[niterations];
     
-  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_nominal.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
   if (!fin)
     {
       std::cout << "no file" << std::endl;
@@ -113,8 +114,11 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
   for (int iter = 0; iter < niterations; iter++)
     {
       hp_xj[iter] = (TProfile*) f_uncertainties->Get(Form("hp_xj_%d", iter));
+      hp_pt1pt2[iter] = (TProfile*) f_uncertainties->Get(Form("hp_pt1pt2_%d", iter));
       h_flat_unfold_pt1pt2[iter] = (TH1D*) fin->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
     }
+  int nbins_pt1pt2 = hp_pt1pt2[0]->GetNbinsX();
+  
   std::cout << __LINE__ << std::endl;
   TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
   TH2D *h_pt1pt2_unfold[niterations];
@@ -127,11 +131,13 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
   std::cout << __LINE__ << std::endl;
   TH1D *h_xj_data = new TH1D("h_xj_data", ";x_{J};", nbins, ixj_bins);
   TH1D *h_xj_unfold[niterations];
-  TH1D *h_xj_profile_unfold[niterations];  
+  TH1D *h_xj_profile_unfold[niterations];
+  TH1D *h_pt1pt2_profile_unfold[niterations];  
   for (int iter = 0; iter < niterations; iter++)
     {
       h_xj_unfold[iter] = new TH1D(Form("h_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
       h_xj_profile_unfold[iter] = new TH1D(Form("h_xj_profile_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+      h_pt1pt2_profile_unfold[iter] = new TH1D(Form("h_pt1pt2_profile_unfold_iter%d", iter), ";p_{T1} + p_{T2} bin;",nbins_pt1pt2, 0, nbins_pt1pt2);
     }
 
   std::cout << __LINE__ << std::endl;
@@ -150,6 +156,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
     {
       histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins, measure_leading_bin + 1, measure_leading_bin + 3, measure_subleading_bin, nbins - 2);//measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
       histo_opps::tprofile_to_histo(hp_xj[iter], h_xj_profile_unfold[iter], nbins);
+      histo_opps::tprofile_to_histo(hp_pt1pt2[iter], h_pt1pt2_profile_unfold[iter], nbins_pt1pt2);
     }
   histo_opps::normalize_histo(h_xj_data, nbins);
   for (int iter = 0; iter < niterations; iter++)
@@ -176,49 +183,52 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
       histo_opps::finalize_xj(h_xj_unfold[iter], h_final_xj_unfold[iter], nbins, 0.4);
       histo_opps::finalize_xj(h_xj_profile_unfold[iter], h_final_xj_profile_unfold[iter], nbins, 0.4);
     }  
+
+
+  int nbins_flat = h_flat_unfold_pt1pt2[0]->GetNbinsX();
   
   TH1D *h_statistical_uncertainties = new TH1D("h_statistical_uncertainties","; N_{iter}; #sigma_{conv}",niterations + 1, -0.5, niterations + 0.5);
   TH1D *h_unfold_uncertainties = new TH1D("h_unfold_uncertainties","; N_{iter}; #sigma_{conv}",niterations + 1, -0.5, niterations + 0.5);
-  TH1D *h_conv_uncertainties = new TH1D("h_conv_uncertainties","; N_{iter}; #sigma_{conv}",niterations + 1, -0.5, niterations + 0.5);
   TH1D *h_binbybin_uncertainties = new TH1D("h_binbybin_uncertainties","; N_{iter}; #sigma_{conv}",niterations + 1, -0.5, niterations + 0.5);
   TH1D *h_total_uncertainties = new TH1D("h_total_uncertainties","; N_{iter}; #sigma_{conv}",niterations + 1, -0.5, niterations + 0.5);
   std::cout << __LINE__ << std::endl;
-  for (int iter = 1; iter < niterations; ++iter)
-    {
 
+  h_flat_data_pt1pt2->Scale(1./h_flat_data_pt1pt2->Integral());
+  for (int iter = 0; iter < niterations; ++iter)
+    {
+      h_flat_unfold_pt1pt2[iter]->Scale(1./h_flat_unfold_pt1pt2[iter]->Integral());
+      h_pt1pt2_profile_unfold[iter]->Scale(1./h_pt1pt2_profile_unfold[iter]->Integral());
       Double_t stat_unc = 0;
       Double_t unfold_unc = 0;
       Double_t binbybin_unc = 0;
-      for (int ibin = 0; ibin < nbins; ibin++)
-	{
-	  if (iter == 0)
-	    {
-	      binbybin_unc += TMath::Power(h_final_xj_data->GetBinContent(ibin+1) - h_final_xj_unfold[iter]->GetBinContent(ibin+1),2);
-	    }
-	  else
-	    {
-	      binbybin_unc += TMath::Power(h_final_xj_unfold[iter - 1]->GetBinContent(ibin+1) - h_final_xj_unfold[iter]->GetBinContent(ibin+1),2);
-	    }
 
-	  stat_unc+= TMath::Power(h_final_xj_profile_unfold[iter]->GetBinError(ibin + 1), 2);
-	  unfold_unc+= TMath::Power(h_final_xj_unfold[iter]->GetBinError(ibin + 1), 2);
+      for (int ibin = 0; ibin < nbins_flat; ibin++)
+	{
+	  	  
+	  float bin_cont = h_flat_unfold_pt1pt2[iter]->GetBinContent(ibin+1);
+	  float prev_cont = h_flat_data_pt1pt2->GetBinContent(ibin+1);
+	  if (iter > 0)
+	    {
+	      prev_cont = h_flat_unfold_pt1pt2[iter - 1]->GetBinContent(ibin+1);
+	    }
+	  float err1 = fabs(prev_cont - bin_cont);
+	  binbybin_unc += TMath::Power(err1,2);	  	  
+	  stat_unc+= TMath::Power(h_pt1pt2_profile_unfold[iter]->GetBinError(ibin + 1), 2);
+	  unfold_unc+= TMath::Power(h_flat_unfold_pt1pt2[iter]->GetBinError(ibin + 1), 2);
 
 	}
 
       std::cout << stat_unc << " + " << unfold_unc <<" + " << binbybin_unc << " = " <<  sqrt(stat_unc + unfold_unc + binbybin_unc) << std::endl;
-      Double_t conv_unc = stat_unc + unfold_unc;
+
+
+      Double_t total_unc = sqrt(binbybin_unc + unfold_unc + stat_unc); 
 
       stat_unc = sqrt(stat_unc);
       unfold_unc = sqrt(unfold_unc);
-
-      Double_t total_unc = sqrt(binbybin_unc + conv_unc); 
-
       binbybin_unc = sqrt(binbybin_unc);
-      conv_unc = sqrt(conv_unc);
 
       h_statistical_uncertainties->Fill(iter + 1, stat_unc);
       h_unfold_uncertainties->Fill(iter + 1, unfold_unc);
-      h_conv_uncertainties->Fill(iter + 1, conv_unc);
       h_binbybin_uncertainties->Fill(iter + 1, binbybin_unc);
       h_total_uncertainties->Fill(iter + 1, total_unc);
     }
@@ -230,23 +240,27 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
 
   dlutility::SetMarkerAtt(h_binbybin_uncertainties, kRed, 1, 8);
   dlutility::SetLineAtt(h_binbybin_uncertainties, kRed, 1, 1);
-  dlutility::SetMarkerAtt(h_conv_uncertainties, kBlue, 1, 8);
-  dlutility::SetLineAtt(h_conv_uncertainties, kBlue, 1, 1);
+  dlutility::SetMarkerAtt(h_statistical_uncertainties, kBlue, 1, 8);
+  dlutility::SetLineAtt(h_statistical_uncertainties, kBlue, 1, 1);
+  dlutility::SetMarkerAtt(h_unfold_uncertainties, kGreen, 1, 8);
+  dlutility::SetLineAtt(h_unfold_uncertainties, kGreen, 1, 1);
 
-  //h_total_uncertainties->SetMaximum(0.2);
+  h_total_uncertainties->SetMaximum(1.2);
   h_total_uncertainties->Draw("p hist");
-  h_conv_uncertainties->Draw("same p hist");
+  h_statistical_uncertainties->Draw("same p hist");
+  h_unfold_uncertainties->Draw("same p hist");
   h_binbybin_uncertainties->Draw("same p hist");
-
-  dlutility::DrawSPHENIXpp(0.22, 0.87);
-  dlutility::drawText("#sigma_{conv} = #sqrt{#sigma^{2}_{stat} + #sigma^{2}_{unfold} + #sigma^{2}_{bin-by-bin}}", 0.22, 0.77);
+  h_total_uncertainties->Draw("p hist same");
+  dlutility::DrawSPHENIX(0.22, 0.87);
+  dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.77);
   TLegend *leg = new TLegend(0.218, 0.566, 0.397, 0.726);
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
-  leg->SetTextSize(0.04);
-  leg->AddEntry(h_conv_uncertainties, "#sqrt{#sigma^{2}_{stat} + #sigma^{2}_{unfold}}","p");
+  leg->SetTextSize(0.03);
+  leg->AddEntry(h_statistical_uncertainties, "#sigma_{sim}","p");
+  leg->AddEntry(h_unfold_uncertainties, "#sigma_{data}","p");
   leg->AddEntry(h_binbybin_uncertainties, "#sigma_{bin-by-bin}","p");
-  leg->AddEntry(h_total_uncertainties, "#sigma_{conv}","p");
+  leg->AddEntry(h_total_uncertainties, "#sigma_{conv} = #sqrt{#sigma^{2}_{sim} + #sigma^{2}_{data} + #sigma^{2}_{bin-by-bin}}","p");
   leg->Draw("same");
 
   c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_AA_cent_%d_r%02d.pdf",rb.get_code_location().c_str(), centrality_bin, cone_size));

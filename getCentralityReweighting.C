@@ -4,11 +4,15 @@
 int color_sim = kRed - 2;
 int color_data = kAzure - 6;
 
-void getCentralityReweighting(const int cone_size = 4, const int centrality_bin = 9,  const std::string configfile = "binning.config")
+void getCentralityReweighting(const int cone_size = 4, const int centrality_bin = 9,  const std::string configfile = "binning_AA.config")
 {
+
+  bool ispp = ( centrality_bin < 0 );
+  std::string system_string = (ispp?"pp":"AA_cent_" + std::to_string(centrality_bin));
   dlutility::SetyjPadStyle();
   read_binning rb(configfile.c_str());
 
+  
   Int_t zyam_sys = rb.get_zyam_sys();
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
@@ -35,7 +39,7 @@ void getCentralityReweighting(const int cone_size = 4, const int centrality_bin 
     sys_name = "posJES";
     
 
-  TFile *f_sim = new TFile(Form("%s/response_matrices/response_matrix_AA_cent_%d_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), centrality_bin, cone_size, sys_name.c_str()),"r");
+  TFile *f_sim = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()),"r");
 
   TH1D *h_mbd_sim = (TH1D*) f_sim->Get("h_mbd_vertex");
   h_mbd_sim->SetName("h_mbd_sim");
@@ -43,7 +47,7 @@ void getCentralityReweighting(const int cone_size = 4, const int centrality_bin 
   TH1D *h_centrality_sim = (TH1D*) f_sim->Get("h_centrality");
   h_centrality_sim->SetName("h_centrality_sim");
 
-  TFile *f_data = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), centrality_bin,  cone_size, sys_name.c_str()),"r");
+  TFile *f_data = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()),"r");
 
   TH1D *h_mbd_data = (TH1D*) f_data->Get("h_mbd_vertex");
   h_mbd_data->SetName("h_mbd_data");
@@ -112,8 +116,8 @@ void getCentralityReweighting(const int cone_size = 4, const int centrality_bin 
   /* dlutility::SetLineAtt(lin0, kBlack, 2, 1); */
   /* lin0->Draw("same"); */
 
-  c5->Print(Form("%s/unfolding_plots/datasim_mbd_AA_cent_%d_r%02d.png", rb.get_code_location().c_str(), centrality_bin, cone_size));
-  c5->Print(Form("%s/unfolding_plots/datasim_mbd_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
+  c5->Print(Form("%s/unfolding_plots/datasim_mbd_%s_r%02d.png", rb.get_code_location().c_str(), system_string.c_str(), cone_size));
+  c5->Print(Form("%s/unfolding_plots/datasim_mbd_%s_r%02d.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size));
 
   c5->cd(1);
 
@@ -168,17 +172,19 @@ void getCentralityReweighting(const int cone_size = 4, const int centrality_bin 
   /* dlutility::SetLineAtt(lin0, kBlack, 2, 1); */
   /* lin0->Draw("same"); */
 
-  c5->Print(Form("%s/unfolding_plots/datasim_centrality_AA_cent_%d_r%02d.png", rb.get_code_location().c_str(), centrality_bin, cone_size));
-  c5->Print(Form("%s/unfolding_plots/datasim_centrality_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
+  c5->Print(Form("%s/unfolding_plots/datasim_centrality_%s_r%02d.png", rb.get_code_location().c_str(), system_string.c_str(), cone_size));
+  c5->Print(Form("%s/unfolding_plots/datasim_centrality_%s_r%02d.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size));
 
-  TFile *fout = new TFile(Form("%s/vertex/vertex_reweight_AA_cent_%d_r%02d_%s.root", rb.get_code_location().c_str(), centrality_bin, cone_size, sys_name.c_str()),"recreate");
+  TFile *fout = new TFile(Form("%s/vertex/vertex_reweight_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()),"recreate");
   h_compare->Write();
   fout->Write();
   fout->Close();
 
-  fout = new TFile(Form("%s/centrality/centrality_reweight_AA_cent_%d_r%02d_%s.root", rb.get_code_location().c_str(), centrality_bin, cone_size, sys_name.c_str()),"recreate");
-  h_centrality_compare->Write();
-  fout->Write();
-  fout->Close();
-  
+  if (!ispp)
+    {
+      fout = new TFile(Form("%s/centrality/centrality_reweight_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()),"recreate");
+      h_centrality_compare->Write();
+      fout->Write();
+      fout->Close();
+    }
 }

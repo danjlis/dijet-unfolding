@@ -329,6 +329,11 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 
 	      h_dphi_eta_inclusive[i][j]->Fit("ffitline", "0RlQ");
 
+	      fits_o[i][j] = (TF1*) ffitline->Clone();
+	      fits_o[i][j]->SetName(Form("ffit_o_%d_%d", i, j));
+
+	      fits_o[i][j]->SetParameter(0, ffitline->GetParameter(0));
+	      
 	      if (njet_lead[i] > 0)
 		{
 		  //h_dphi_inclusive[i][j]->Scale(1./njet_lead[i]);
@@ -373,20 +378,6 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 		  h_pt1_pt2_ZYAM->SetBinContent(gbin, 0);
 		}
 
-	      fits_o[i][j] = (TF1*) ffitline->Clone();
-	      fits_o[i][j]->SetName(Form("ffit_o_%d_%d", i, j));
-	      first_bin = h_dphi_exclusive[i][j]->FindBin(zyam_integral_low);
-	      second_bin = h_dphi_exclusive[i][j]->FindBin(zyam_integral_high);
-
-	      bin_diff = second_bin - first_bin;
-
-	      dphi_zyam_integral = h_dphi_eta_inclusive[i][j]->Integral(first_bin, second_bin)/bin_diff;
-
-	      integral_diff = dphi_zyam_integral - dphi_flow_integral;
-	      par1 += integral_diff;
-
-	      fits_o[i][j]->SetParameter(0,par1);
-	      fits_o[i][j]->SetRange(0, TMath::Pi());
 
 	      if (j > i) continue;
 	      std::cout << "Fitting Summary: " << i << "-" << j << std::endl;
@@ -419,6 +410,9 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 
 	      h_dphi_eta_inclusive[i][j]->Fit("ffit", "0RlQ");
 
+	      fits_o[i][j] = (TF1*) ffit->Clone();
+	      fits_o[i][j]->SetName(Form("ffit_o_%d_%d", i, j));
+	      fits_o[i][j]->SetParameters(ffit->GetParameter(0), ffit->GetParameter(1), ffit->GetParameter(2));
 	      // normalize
 	      if (njet_lead[i] > 0)
 		{
@@ -463,22 +457,7 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 		{
 		  h_pt1_pt2_ZYAM->SetBinContent(gbin, 0);
 		}
-	      fits_o[i][j] = (TF1*) ffit->Clone();
-	      fits_o[i][j]->SetName(Form("ffit_o_%d_%d", i, j));
 
-	      first_bin = h_dphi_exclusive[i][j]->FindBin(zyam_integral_low);
-	      second_bin = h_dphi_exclusive[i][j]->FindBin(zyam_integral_high);
-
-	      bin_diff = second_bin - first_bin;
-
-	      dphi_zyam_integral = h_dphi_eta_inclusive[i][j]->Integral(first_bin, second_bin)/bin_diff;
-
-	      integral_diff = dphi_zyam_integral / dphi_flow_integral;
-	      float par2 = ffit->GetParameter(0);
-	      par2 *= integral_diff;
-
-	      fits_o[i][j]->SetParameter(0,par2);
-	      fits_o[i][j]->SetRange(0, TMath::Pi());
 	      if (j > i) continue;
 	      std::cout << "Fitting Summary: " << i << "-" << j << std::endl;
 	      std::cout << "    Parameters fit: " << ffit->GetParameter(0) <<  " ,  " << ffit->GetParameter(1) <<  " ,  " << ffit->GetParameter(2) <<  std::endl;

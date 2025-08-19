@@ -9,7 +9,7 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int makeTruth_dist(const std::string configfile = "binning.config", const int cone_size = 4)
+int makeTruth_dist(const std::string configfile = "binning.config", const int cone_size = 3)
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();

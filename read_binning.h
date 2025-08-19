@@ -7,6 +7,8 @@ class read_binning
 public:
   read_binning(const std::string configfile)
     {
+      fjer = new TFile(jerfile.c_str(), "r");
+      
       penv = new TEnv(configfile.c_str());
       tntuple_location = std::getenv("DIJET_TNTUPLE_PATH");
       code_location = std::getenv("DIJET_UNFOLDING_PATH");	
@@ -24,6 +26,9 @@ public:
   Int_t get_minentries(){ return penv->GetValue("minentries", 1); }
   Int_t get_measure_bins(){ return penv->GetValue("measure_bins", 1); }
   Double_t get_minimum(){ return penv->GetValue("minimum", 1.0); }
+  Double_t get_maximum_reco(){ return penv->GetValue("maximum", 50.0); }
+  Int_t get_maximum_reco_bin() {return max_reco_bin; }
+  
   Double_t get_fixed(){ return penv->GetValue("fixed", 1.0); }
   Int_t get_primer(){ return penv->GetValue("primer", 0); }
   Int_t get_njet_sys(){ return penv->GetValue("NJET", 0); }
@@ -77,16 +82,33 @@ public:
   float get_measure_leading_cut(){ return measure_leading_cut;}
   float get_measure_subleading_cut(){ return measure_subleading_cut;}
 
-  float get_zyam_low() {return 9.*TMath::Pi()/32.;};
-  float get_zyam_high() {return 16.*TMath::Pi()/32.;};
+  float get_zyam_low() {return 10.*TMath::Pi()/32.;};
+  float get_zyam_high() {return 14.*TMath::Pi()/32.;};
 
   int get_number_centrality_bins() { return centrality_bins;}
 
+  TF1* get_smear_function(int centrality_bin)
+  {
+    Double_t jer_sys = get_jer_sys();
+
+    std::string sys_name = "f_nominal";
+    if (jer_sys < 0)
+      {
+	sys_name = "f_negative";
+      }
+    else if (jer_sys > 0)
+      {
+	sys_name = "f_positive";
+      }
+    f_smear_function = (TF1*) fjer->Get(Form("%s_%d", sys_name.c_str(), centrality_bin));
+
+    return f_smear_function;
+  }
   void get_centrality_bins(float icentrality_bins[])
   {
     icentrality_bins[0] = 0;
     icentrality_bins[1] = 10;
-    icentrality_bins[2] = 20;
+    icentrality_bins[2] = 30;
     icentrality_bins[3] = 50;
     icentrality_bins[4] = 90;
   }
@@ -96,7 +118,8 @@ public:
     Float_t fixed = get_fixed();
     Int_t beforebin = get_bbins();
     Float_t low_trigger_goal = get_low_trigger_goal();
-    
+
+    Float_t reco_max_goal = get_maximum_reco();
     float alpha = TMath::Power(fixed/minimum, 1/(float)beforebin);
 
     Float_t truth_leading_goal = get_truth_leading_goal();
@@ -119,6 +142,7 @@ public:
 	if (ireg2 <= get_measure_bins() && subleading_measure_region[ireg2] == 0 && ipt >= get_pt2_regions(ireg2)) subleading_measure_region[ireg2++] = i;
 	if (ireg <= get_measure_bins() && measure_region[ireg] == 0 && ipt >= get_pt_regions(ireg)) measure_region[ireg++] = i;
 	if (truth_leading_bin == 0 && ipt >= truth_leading_goal) truth_leading_bin = i;
+	if (ipt >= reco_max_goal && max_reco_bin == 0) max_reco_bin = i;
       }
 
     low_trigger[0] = ipt_bins[low_trigger_bin];
@@ -166,9 +190,11 @@ public:
   
  private:
 
-  
+  TFile *fjer{nullptr};
   TEnv *penv{nullptr};
+  TF1 *f_smear_function{nullptr};
 
+  std::string jerfile = "jer/jer_smear_functions.root";
   std::string tntuple_location = ".";
   std::string code_location = ".";
   
@@ -176,6 +202,7 @@ public:
 
   float sample_boundary[4] = {0, 0, 0, 100};
 
+  int max_reco_bin = 0;
   float low_trigger[3] = {0};
   int low_trigger_bin = 0;
   int measure_region[10] = {0};
