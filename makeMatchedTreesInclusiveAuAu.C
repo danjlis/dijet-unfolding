@@ -47,10 +47,10 @@ double getDR(struct jet j1, struct jet j2)
   double dR = sqrt(TMath::Power(j1.eta - j2.eta, 2) + TMath::Power(dphi, 2));
   return dR;
 }
-void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_size_int = 3)
+void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_size_int = 3) // 0 - no_smear, 1 - nominal_smear, 2 - negative smear, 3 positive smear
 {
 
-  std::string infile = Form("/sphenix/tg/tg01/jets/dlis/sim/hijing/v14/TREE_JET_SIM_v14_%d_new_ProdA_2024-00000030.root", sim_version);
+  std::string infile = Form("/sphenix/tg/tg01/jets/dlis/sim/hijing/v15/TREE_JET_SIM_v15_%d_new_ProdA_2024-00000030.root", sim_version);
 
   std::string mycopy = infile;
   mycopy = mycopy.substr(mycopy.rfind("/")+1);
@@ -60,7 +60,6 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
   mycopy.replace(mycopy.find(oldname), oldname.length(), newname);
 
   std::cout << mycopy << std::endl;
-
 
   cone_size = (float) cone_size_int;
   TFile *f = new TFile(infile.c_str(), "r");
@@ -78,6 +77,7 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
   
   std::vector<float> *truth_jet_pt_ref = 0;
   std::vector<float> *truth_jet_pt = 0;
+  std::vector<int> *truth_jet_flavor = 0;
   std::vector<float> *truth_jet_eta = 0;
   std::vector<float> *truth_jet_phi = 0;
 
@@ -95,6 +95,7 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
 
   t->SetBranchAddress("truth_jet_pt_4", &truth_jet_pt_ref);
   t->SetBranchAddress(Form("truth_jet_pt_%d", cone_size_int), &truth_jet_pt);
+  t->SetBranchAddress(Form("truth_jet_flavor_%d", cone_size_int), &truth_jet_flavor);
   t->SetBranchAddress(Form("truth_jet_eta_%d", cone_size_int), &truth_jet_eta);
   t->SetBranchAddress(Form("truth_jet_phi_%d", cone_size_int), &truth_jet_phi);
   t->SetBranchAddress(Form("jet_pt_%d_sub", cone_size_int), &reco_jet_pt);
@@ -122,9 +123,21 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
   TEfficiency *he_pt_truth[10];
   TEfficiency *he_pt_dijet[10];
   TH2D *h2_ptt_ptrptt[10];
+  TH2D *h2_ptt_ptrptt_q[10];
+  TH2D *h2_ptt_ptrptt_g[10];
+  TProfile *hp_ptt_ptrptt[10];
+  TProfile *hp_ptt_ptrptt_q[10];
+  TProfile *hp_ptt_ptrptt_g[10];
+  
   for (int i = 0; i < 10; i++)
     {
       h2_ptt_ptrptt[i] = new TH2D(Form("h2_ptt_ptrptt_%d", i),"", 25, 0, 50, 120, 0, 1.2);
+      h2_ptt_ptrptt_q[i] = new TH2D(Form("h2_ptt_ptrptt_q_%d", i),"", 25, 0, 50, 120, 0, 1.2);
+      h2_ptt_ptrptt_g[i] = new TH2D(Form("h2_ptt_ptrptt_g_%d", i),"", 25, 0, 50, 120, 0, 1.2);
+      hp_ptt_ptrptt[i] = new TProfile(Form("hp_ptt_ptrptt_%d", i),"", 25, 0, 50,"s");
+      hp_ptt_ptrptt_q[i] = new TProfile(Form("hp_ptt_ptrptt_q_%d", i),"", 25, 0, 50,"s");
+      hp_ptt_ptrptt_g[i] = new TProfile(Form("hp_ptt_ptrptt_g_%d", i),"", 25, 0, 50, "s");
+
       he_pt_truth[i] = new TEfficiency(Form("he_pt_truth_%d", i),"", 25, 0, 50);
       he_pt_dijet[i] = new TEfficiency(Form("he_pt_dijet_%d", i),"", 25, 0, 50);
     }
@@ -228,7 +241,20 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
 	{
 	  float ptt = mjets.first.pt;
 	  float ptr = mjets.second.pt;
+
+	  int flavor = truth_jet_flavor->at(mjets.first.id);
+	  if (fabs(flavor) <= 6)
+	    {	      
+	      h2_ptt_ptrptt_q[cent_bin]->Fill(ptt, ptr/ptt);
+	      hp_ptt_ptrptt_q[cent_bin]->Fill(ptt, ptr/ptt);
+	    }
+	  else if(flavor == 21)
+	    {
+	      h2_ptt_ptrptt_g[cent_bin]->Fill(ptt, ptr/ptt);
+	      hp_ptt_ptrptt_g[cent_bin]->Fill(ptt, ptr/ptt);
+	    }
 	  h2_ptt_ptrptt[cent_bin]->Fill(ptt, ptr/ptt);
+	  hp_ptt_ptrptt[cent_bin]->Fill(ptt, ptr/ptt);
 	}
 
       // if top reco jets match a dijet, fill, if not, a fake
@@ -324,6 +350,12 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
       he_pt_truth[i]->Write();
       he_pt_dijet[i]->Write();
       h2_ptt_ptrptt[i]->Write();
+      h2_ptt_ptrptt_q[i]->Write();
+      h2_ptt_ptrptt_g[i]->Write();
+      hp_ptt_ptrptt[i]->Write();
+      hp_ptt_ptrptt_q[i]->Write();
+      hp_ptt_ptrptt_g[i]->Write();
+
     }
   tn_match->Write();
   tn_stats->Write();

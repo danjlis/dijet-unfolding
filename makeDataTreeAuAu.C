@@ -104,8 +104,8 @@ void makeDataTreeAuAu(const std::string infile, const int cone_size_int = 4, con
       id_leaders[0] = std::make_pair(0, 0);
       id_leaders[1] = std::make_pair(0, 0);
       int njet_good = 0;
-      float cut_value = fcut->Eval(centrality);
       int bad_event = 0;
+      float cut_value = fcut->Eval(centrality);
       for (int j = 0; j < nrecojets;j++)
 	{
 	  if (reco_jet_pt->at(j) < reco_cut) continue;
@@ -118,7 +118,6 @@ void makeDataTreeAuAu(const std::string infile, const int cone_size_int = 4, con
 
 	  if (pt_unsub > cut_value)
 	    {
-
 	      bad_event = 1;
 	      continue;
 	    }
@@ -137,7 +136,6 @@ void makeDataTreeAuAu(const std::string infile, const int cone_size_int = 4, con
 
 	}
       if (bad_event) continue;
-      
       if (njet_good < 2) continue;
       
       struct jet tempjet1;
