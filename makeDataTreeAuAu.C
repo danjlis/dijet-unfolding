@@ -1,4 +1,7 @@
 #include <iostream>
+#include "read_binning.h"
+
+
 using std::cout;
 using std::endl;
 
@@ -29,6 +32,9 @@ const float vertex_cut = 60;
 void makeDataTreeAuAu(const std::string infile, const int cone_size_int = 4, const int isAuAu = 0)
 {
 
+  read_binning rb("binning_AA.config");
+
+  std::string infile = rb.get_data_location() + "/TREE_DIJET_v10_2_502_2024p022_v001_gl10-all.root";
   cone_size = (float) cone_size_int;
   std::cout << cone_size << std::endl;
   std::string mycopy = infile;
@@ -37,8 +43,8 @@ void makeDataTreeAuAu(const std::string infile, const int cone_size_int = 4, con
   std::string newname = "TNTUPLE_DIJET_r0" + std::to_string(cone_size_int);
   std::string oldname = "TREE_DIJET";
   mycopy.replace(mycopy.find(oldname), oldname.length(), newname);
-
-  std::cout << mycopy << std::endl;
+  std::string newfile = rb.get_tntuple_location() + "/" + mycopy;
+  std::cout << newfile << std::endl;
 
   TFile *f = new TFile(infile.c_str(), "r");
   TTree *t = (TTree*) f->Get("ttree");
@@ -74,7 +80,7 @@ void makeDataTreeAuAu(const std::string infile, const int cone_size_int = 4, con
   
   int entries = t->GetEntries();
 
-  TFile *fout = new TFile(mycopy.c_str(), "recreate");
+  TFile *fout = new TFile(newfile.c_str(), "recreate");
   TNtuple *tn_dijet = new TNtuple("tn_dijet","matched truth and reco","pt1_reco:pt2_reco:dphi_reco:deta_reco:trigger:njets:centrality:mbd_vertex");
 
   std::pair<int, float> id_leaders[2];

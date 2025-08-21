@@ -1,4 +1,6 @@
 #include <iostream>
+#include "read_binning.h"
+
 using std::cout;
 using std::endl;
 
@@ -50,7 +52,9 @@ double getDR(struct jet j1, struct jet j2)
 void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_size_int = 3) // 0 - no_smear, 1 - nominal_smear, 2 - negative smear, 3 positive smear
 {
 
-  std::string infile = Form("/sphenix/tg/tg01/jets/dlis/sim/hijing/v15/TREE_JET_SIM_v15_%d_new_ProdA_2024-00000030.root", sim_version);
+  read_binning rb("binning_AA.config");
+  
+  std::string infile = Form("%s/TREE_JET_SIM_v15_%d_new_ProdA_2024-00000030.root", rb.get_sim_location().c_str(), sim_version);
 
   std::string mycopy = infile;
   mycopy = mycopy.substr(mycopy.rfind("/")+1);
@@ -60,7 +64,7 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
   mycopy.replace(mycopy.find(oldname), oldname.length(), newname);
 
   std::cout << mycopy << std::endl;
-
+  std::string newfile = rb.get_tntuple_location() + "/" + mycopy;
   cone_size = (float) cone_size_int;
   TFile *f = new TFile(infile.c_str(), "r");
   if (!f)
@@ -115,7 +119,7 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
   int entries = t->GetEntries();
   if (Debug) entries = 100000;
   std::cout << entries << std::endl;
-  TFile *fout = new TFile(mycopy.c_str(), "recreate");
+  TFile *fout = new TFile(newfile.c_str(), "recreate");
   TNtuple *tn_stats = new TNtuple("tn_stats","run stats","nevents");
   tn_stats->Fill(entries);
   
