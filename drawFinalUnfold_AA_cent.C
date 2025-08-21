@@ -41,8 +41,8 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
   dlutility::SetyjPadStyle();
 
 
-  int color_unfold_fill[4] = {kRed + 2, kOrange + 3, kGreen + 2, kAzure - 4};
-  int color_unfold[4] = {kRed + 2, kOrange + 7, kGreen + 1, kAzure + 2};
+  int color_unfold_fill[4] = {kRed + 1, kOrange, kGreen + 2, kAzure - 4};
+  int color_unfold[4] = {kRed + 1, kAzure + 2, kGreen+3, kViolet -1};
   float marker_unfold = 20;
   float msize_unfold = 0.9;
   float lsize_unfold = 2.2;

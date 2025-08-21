@@ -2,10 +2,14 @@
 #include "read_binning.h"
 #include "histo_opps.h"
 
-void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
+void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0, const int prior = 0)
 {
   const int niterations = 10;
 
+  std::string sysname = "nominal";
+  if (prior == 1) sysname = "PRIMER1";
+  if (prior == 2) sysname = "PRIMER2";
+  
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
@@ -92,7 +96,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
   
   std::cout << __LINE__ << std::endl;
 
-  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_AA_cent_%d_r%02d_nominal.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_AA_cent_%d_r%02d_%s.root", rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()),"r");
 
   if (!f_uncertainties)
     {
@@ -102,7 +106,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
   TProfile *hp_xj[niterations];
   TProfile *hp_pt1pt2[niterations];
     
-  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_nominal.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_%s.root", rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()),"r");
   if (!fin)
     {
       std::cout << "no file" << std::endl;
@@ -263,7 +267,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0)
   leg->AddEntry(h_total_uncertainties, "#sigma_{conv} = #sqrt{#sigma^{2}_{sim} + #sigma^{2}_{data} + #sigma^{2}_{bin-by-bin}}","p");
   leg->Draw("same");
 
-  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_AA_cent_%d_r%02d.pdf",rb.get_code_location().c_str(), centrality_bin, cone_size));
-  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_AA_cent_%d_r%02d.png", rb.get_code_location().c_str(), centrality_bin, cone_size));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_AA_cent_%d_r%02d_%s.pdf",rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_AA_cent_%d_r%02d_%s.png", rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()));
   return;
 }

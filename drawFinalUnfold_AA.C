@@ -6,14 +6,14 @@ const bool NUCLEAR = true;
 
 const int color_pp_unfold_fill = kBlack;
 const int color_pp_unfold = kBlack;
-const float marker_pp_unfold = 20;
-const float msize_pp_unfold = 0.9;
+const float marker_pp_unfold = 33;
+const float msize_pp_unfold = 1.1;
 const float lsize_pp_unfold = 1.1;
 
 const int color_unfold_fill = kAzure - 4;
 const int color_unfold = kAzure - 5;
 const float marker_unfold = 20;
-const float msize_unfold = 0.9;
+const float msize_unfold = 0.7;
 const float lsize_unfold = 1.1;
 
 const int color_pythia = kRed;
@@ -128,8 +128,8 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
   TH1D *h_jewel_xj_vac = (TH1D*) finjw->Get("h1_vacuum");
   TH1D *h_jewel_xj_med = (TH1D*) finjw->Get(Form("h1_medium_%d_%d", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin + 1]));
 
-  dlutility::SetLineAtt(h_jewel_xj_med, kGreen + 2, 3, 1);
-  dlutility::SetLineAtt(h_jewel_xj_vac, kRed + 3, 3, 1);
+  dlutility::SetLineAtt(h_jewel_xj_med, kGreen + 1, 3, 1);
+  dlutility::SetLineAtt(h_jewel_xj_vac, kRed + 2, 3, 1);
   
   TFile *fintr = new TFile(Form("%s/truth_hists/truth_hist_r%02d.root",  rb.get_code_location().c_str(),  cone_size),"r");
   if (!fintr)

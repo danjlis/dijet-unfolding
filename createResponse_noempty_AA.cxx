@@ -171,7 +171,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   rb.get_centrality_bins(icentrality_bins);
   
 
-  int prior_iteration = 0;
+  int prior_iteration = 1;
   
   // Vertex Reweight
 
@@ -274,7 +274,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   TH1D *h_flatreweight_pt1pt2 = new TH1D("h_unfold_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
 
 
-  if (!prior_sys && !primer)
+  if (!full_or_half && !prior_sys && !primer)
     {
       std::cout << "doing prior" << std::endl;
       TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_%s_r%02d_PRIMER2_%s.root", system_string.c_str(), cone_size, sys_name.c_str()), "r");
@@ -352,7 +352,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 		      break;
 		    }
 		}
-	      if (!ispp)
+	      if (!ispp && !full_or_half)
 		{
 		  for (int ib = 0; ib < centrality_scales.size(); ib++)
 		    {
@@ -466,7 +466,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  if (!truth_good && !reco_good) continue;
 
 
-	  if (!prior_sys && !primer)
+	  if (!prior_sys && !primer && !full_or_half)
 	    {
 	      int recorrectbin = pt1_truth_bin*nbins + pt2_truth_bin;
 	      

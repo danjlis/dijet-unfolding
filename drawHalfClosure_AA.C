@@ -64,7 +64,8 @@ void drawHalfClosure_AA(const int cone_size = 3, const int centrality_bin = 0)
     }
 
   
-
+  Int_t max_reco_bin = rb.get_maximum_reco_bin();
+  
   float truth_leading_cut = rb.get_truth_leading_cut();
   float truth_subleading_cut = rb.get_truth_subleading_cut();
 
@@ -228,76 +229,122 @@ void drawHalfClosure_AA(const int cone_size = 3, const int centrality_bin = 0)
 
   TCanvas *cxj = new TCanvas("cxj","cxj", 500, 700);
   dlutility::ratioPanelCanvas(cxj);
+
+  TH1D *h_closure_test[niterations];
+  
   for (int niter = 0; niter < niterations; niter++)
     {
-      for (int irange = 0; irange < mbins; irange++)
-	{
-	  cxj->cd(1);
-	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
+      int irange = 1;
+      //for (int irange = 0; irange < mbins; irange++)
+      //{
+      cxj->cd(1);
+      dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
+      dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
 
-	  dlutility::SetLineAtt(h_final_xj_truth_range[irange], color_pythia, lsize_pythia, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_truth_range[irange], color_pythia, msize_pythia, marker_pythia);
+      dlutility::SetLineAtt(h_final_xj_truth_range[irange], color_pythia, lsize_pythia, 1);
+      dlutility::SetMarkerAtt(h_final_xj_truth_range[irange], color_pythia, msize_pythia, marker_pythia);
 
-	  dlutility::SetLineAtt(h_final_xj_data_range[irange], color_data, lsize_data, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_data_range[irange], color_data, msize_data, marker_data);
-	  dlutility::SetLineAtt(h_final_xj_reco_range[irange], color_reco, lsize_reco, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_reco_range[irange], color_reco, msize_reco, marker_reco);
+      dlutility::SetLineAtt(h_final_xj_data_range[irange], color_data, lsize_data, 1);
+      dlutility::SetMarkerAtt(h_final_xj_data_range[irange], color_data, msize_data, marker_data);
+      dlutility::SetLineAtt(h_final_xj_reco_range[irange], color_reco, lsize_reco, 1);
+      dlutility::SetMarkerAtt(h_final_xj_reco_range[irange], color_reco, msize_reco, marker_reco);
 
-	  dlutility::SetFont(h_final_xj_truth_range[irange], 42, 0.05);
+      dlutility::SetFont(h_final_xj_truth_range[irange], 42, 0.05);
 
-	  h_final_xj_truth_range[irange]->SetMaximum(5);
-	  h_final_xj_truth_range[irange]->SetMinimum(0);
-	  h_final_xj_truth_range[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
+      h_final_xj_truth_range[irange]->SetMaximum(5);
+      h_final_xj_truth_range[irange]->SetMinimum(0);
+      h_final_xj_truth_range[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
-	  TH1D *ht = (TH1D*) h_final_xj_truth_range[irange]->Rebin(nbins - first_bin, Form("h_rebin_truth_%d", irange), &dxj_bins[first_bin]);
-	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
+      TH1D *ht = (TH1D*) h_final_xj_truth_range[irange]->Rebin(nbins - first_bin, Form("h_rebin_truth_%d", irange), &dxj_bins[first_bin]);
+      TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
 
-	  ht->Draw("p E1");
-	  hu->Draw("same p E1");
+      ht->Draw("p E1");
+      hu->Draw("same p E1");
 
-	  h_final_xj_data_range[irange]->Draw("same p");
-	  h_final_xj_reco_range[irange]->Draw("same p");
+      h_final_xj_data_range[irange]->Draw("same p");
+      h_final_xj_reco_range[irange]->Draw("same p");
 
       
-	  dlutility::DrawSPHENIX(0.22, 0.84);
-	  dlutility::drawText(Form("anti-#it{k_{t}} #it{R} = %0.1f", cone_size*0.1), 0.22, 0.74);
-	  dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
-	  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
+      dlutility::DrawSPHENIX(0.22, 0.84);
+      dlutility::drawText(Form("anti-#it{k_{t}} #it{R} = %0.1f", cone_size*0.1), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
-	  TLegend *leg = new TLegend(0.2, 0.4, 0.4, 0.56);
-	  leg->SetLineWidth(0);
-	  leg->SetTextSize(0.04);
-	  leg->SetTextFont(42);
-	  leg->AddEntry(h_final_xj_truth_range[irange], "Training Truth","p");
-	  leg->AddEntry(h_final_xj_reco_range[irange], "Training Reco ","p");
-	  leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Testing Unfold","p");
-	  leg->AddEntry(h_final_xj_data_range[irange], "Testing Reco","p");
-	  leg->Draw("same");
+      TLegend *leg = new TLegend(0.2, 0.4, 0.4, 0.56);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.04);
+      leg->SetTextFont(42);
+      leg->AddEntry(h_final_xj_truth_range[irange], "Training Truth","p");
+      leg->AddEntry(h_final_xj_reco_range[irange], "Training Reco ","p");
+      leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Testing Unfold","p");
+      leg->AddEntry(h_final_xj_data_range[irange], "Testing Reco","p");
+      leg->Draw("same");
 
-	  cxj->cd(2);
+      cxj->cd(2);
 
-	  TH1D *h_data_compare = (TH1D*) h_final_xj_truth_range[irange]->Clone();
-	  h_data_compare->Divide(h_final_xj_unfold_range[irange][niter]);
-	  h_data_compare->SetTitle(";x_{J}; Testing / Training");
-	  dlutility::SetFont(h_data_compare, 42, 0.1, 0.07, 0.07, 0.07);
-	  dlutility::SetLineAtt(h_data_compare, kBlack, 1,1);
-	  dlutility::SetMarkerAtt(h_data_compare, kBlack, 1,8);
-	  h_data_compare->SetMaximum(2.3);
-	  h_data_compare->SetMinimum(0.0);
-	  TH1D *hd = (TH1D*) h_data_compare->Rebin(nbins - first_bin, "h_rebin_compare", &dxj_bins[first_bin]);
+      TH1D *h_data_compare = (TH1D*) h_final_xj_truth_range[irange]->Clone();
+      h_data_compare->Divide(h_final_xj_unfold_range[irange][niter]);
+      h_data_compare->SetTitle(";x_{J}; Testing / Training");
+      dlutility::SetFont(h_data_compare, 42, 0.1, 0.07, 0.07, 0.07);
+      dlutility::SetLineAtt(h_data_compare, kBlack, 1,1);
+      dlutility::SetMarkerAtt(h_data_compare, kBlack, 1,8);
+      h_data_compare->SetMaximum(2.3);
+      h_data_compare->SetMinimum(0.0);
+      TH1D *hd = (TH1D*) h_data_compare->Rebin(nbins - first_bin, "h_rebin_compare", &dxj_bins[first_bin]);
 
-	  hd->Draw("p");
+      hd->Draw("p");
 
-	  TLine *line = new TLine(hd->GetBinLowEdge(1), 1, 1, 1);
-	  line->SetLineStyle(4);
-	  line->SetLineColor(kRed + 3);
-	  line->SetLineWidth(2);
-	  line->Draw("same");
-	  cxj->Print(Form("%s/unfolding_plots/h_xj_half_closure_AA_cent_%d_r%02d_range_%d_iter %d.png", rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
-	  cxj->Print(Form("%s/unfolding_plots/h_xj_half_closure_AA_cent_%d_r%02d_range_%d_iter_%d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
-	}
+      h_closure_test[niter] = (TH1D*) hd->Clone();
+      h_closure_test[niter]->SetName(Form("h_closure_test_%d", niter));
+	  
+      TLine *line = new TLine(hd->GetBinLowEdge(1), 1, 1, 1);
+      line->SetLineStyle(4);
+      line->SetLineColor(kRed + 3);
+      line->SetLineWidth(2);
+      line->Draw("same");
+      cxj->Print(Form("%s/unfolding_plots/h_xj_half_closure_AA_cent_%d_r%02d_range_%d_iter %d.png", rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
+      cxj->Print(Form("%s/unfolding_plots/h_xj_half_closure_AA_cent_%d_r%02d_range_%d_iter_%d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
     }
+  //}
+
+  TCanvas *cxjclos = new TCanvas("cxjclos","cxjclos", 700, 500);
+  dlutility::createCutCanvas(cxjclos);
+  cxjclos->cd(1);
+
+  dlutility::SetLineAtt(h_closure_test[0], kBlue, 2, 1);
+  dlutility::SetLineAtt(h_closure_test[1], kRed, 2, 1);
+  dlutility::SetLineAtt(h_closure_test[3], kGreen, 2, 1);
+  dlutility::SetLineAtt(h_closure_test[5], kViolet, 2, 1);
+  dlutility::SetLineAtt(h_closure_test[7], kPink, 2, 1);
+
+  h_closure_test[0]->SetMinimum(0.8);
+  h_closure_test[0]->SetMaximum(1.2);
+  h_closure_test[0]->Draw("hist");
+  h_closure_test[1]->Draw("hist same");
+  h_closure_test[3]->Draw("hist same");
+  h_closure_test[5]->Draw("hist same");
+  h_closure_test[7]->Draw("hist same");    
+
+  cxjclos->cd(2);
+  int mrange = 1;
+  dlutility::DrawSPHENIX(0.02, 0.9, 0.08);
+  dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.3]{#it{R}} = %0.1f", 0.1*cone_size), 0.02, 0.78, 0, kBlack, 0.08);
+  dlutility::drawText(Form("%2.1f #kern[-0.1]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[mrange]], ipt_bins[measure_bins[mrange+1]]), 0.02, 0.73, 0, kBlack, 0.08);
+  dlutility::drawText(Form("p_{T,2} #kern[-0.15]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.02,0.68, 0, kBlack, 0.08);
+  dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 7#pi/8}", 0.02,0.63, 0, kBlack, 0.08);
+
+  TLegend *leg4 = new TLegend(0.02, 0.25, 0.9, 0.53);
+  leg4->SetTextSize(0.08);
+  leg4->SetTextFont(42);
+  leg4->SetLineWidth(0);
+  leg4->AddEntry(h_closure_test[0],"1 iteration");
+  leg4->AddEntry(h_closure_test[1],"2 iteration");
+  leg4->AddEntry(h_closure_test[3],"4 iteration");
+  leg4->AddEntry(h_closure_test[5],"6 iteration");
+  leg4->AddEntry(h_closure_test[7],"8 iteration");
+  leg4->Draw();
+  cxjclos->Print(Form("%s/unfolding_plots/h_xj_half_closure_AA_cent_%d_r%02d_range_1_iter_all.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
+  cxjclos->Print(Form("%s/unfolding_plots/h_xj_half_closure_AA_cent_%d_r%02d_range_1_iter_all.png", rb.get_code_location().c_str(), centrality_bin, cone_size));
   return;
 }

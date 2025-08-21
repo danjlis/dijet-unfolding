@@ -9,8 +9,19 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int cone_size = 4, const int centrality_bin = 0)
+int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int cone_size = 4, const int centrality_bin = 0, const int prior = 0)
 {
+
+  std::string sysname = "nominal";
+  if (prior == 1)
+    {
+      sysname = "PRIMER1";
+    }
+  else if (prior == 2)
+    {
+      sysname = "PRIMER2";
+    }
+  
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
   bool ispp = (centrality_bin < 0);
@@ -26,7 +37,7 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   float dphi_reco;
   float centrality;
   
-  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_nominal.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
+  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sysname.c_str()),"r");
 
   
   TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
@@ -386,7 +397,7 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   
 
   
-  TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_%s_r%02d_nominal.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size),"recreate");
+  TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sysname.c_str()),"recreate");
   TEnv *penv = new TEnv("binning_AA.config");
   penv->Write();
   for (int iter = 0; iter < niterations; iter++)
