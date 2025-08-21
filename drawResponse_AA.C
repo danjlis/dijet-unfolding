@@ -76,7 +76,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
 
-  TString responsepath = Form("response_matrices/response_matrix_AA_cent_%d_r%02d.root", centrality_bin, cone_size);
+  TString responsepath = Form("response_matrices/response_matrix_AA_cent_%d_r%02d_nominal.root", centrality_bin, cone_size);
   TFile *fr = new TFile(responsepath.Data(),"r");
 
   TH2D *h_flat_response_skim = (TH2D*) fr->Get("h_flat_response_skim");
@@ -107,10 +107,11 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
   gPad->SetRightMargin(0.05);
   h_flat_response_skim->SetTitle(";p_{T1}^{reco, bin} #times nbins + p_{T2}^{reco, bin};p_{T1}^{truth, bin} #times nbins + p_{T2}^{truth, bin}");
   h_flat_response_skim->Draw("col");
-  dlutility::DrawSPHENIXpp(0.93, 0.3, 1, 1, 0, 1, "PYTHIA-8");
+  dlutility::DrawSPHENIX(0.1, 0.95, 0.04, 0, 1, 1);
+  dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.93, 0.25, 1);
   dlutility::drawText("Response matrix", 0.93, 0.2, 1);
 
-  cresponseskim->Print("response_matrix.pdf");
+  cresponseskim->Print(Form("%s/unfolding_plots/response_matrix_AA_cent_%d.pdf", rb.get_code_location().c_str(), centrality_bin));
 
   std::cout << "bins: " << h_flat_response_skim->GetXaxis()->GetNbins() << " by " << h_flat_response_skim->GetYaxis()->GetNbins() << std::endl;
   TCanvas *cresponseskimzoom = new TCanvas("fdsz","fdsz", 500, 500);
@@ -120,7 +121,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
   h_flat_response_skim->GetXaxis()->SetRangeUser(46, 60);
   h_flat_response_skim->GetYaxis()->SetRangeUser(121, 140);
   h_flat_response_skim->Draw("col");
-  dlutility::DrawSPHENIXpp(0.93, 0.4, 1, 1, 0, 1, "PYTHIA-8");
+  dlutility::DrawSPHENIX(0.93, 0.4);
   dlutility::drawText("Response matrix", 0.93, 0.3, 1);
 
   cresponseskimzoom->Print("response_matrix_zoom.pdf");
@@ -147,7 +148,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
       h_xj_unfold[iter]->Draw("same p");
       h_xj_reco->Draw("p same");
 
-      dlutility::DrawSPHENIXpp(0.22, 0.84);
+      dlutility::DrawSPHENIX(0.22, 0.84);
       dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
       dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
       dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
@@ -201,7 +202,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
       h_xj_half_unfold[iter]->Draw("same p");
       h_xj_half_reco->Draw("p same");
 
-      dlutility::DrawSPHENIXpp(0.22, 0.84);
+      dlutility::DrawSPHENIX(0.22, 0.84);
       dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
       dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
       dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);

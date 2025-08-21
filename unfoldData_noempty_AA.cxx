@@ -14,11 +14,15 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-
+  bool ispp = (centrality_bin < 0);
+  std::string system_string = (ispp ? "pp" : "AA_cent_" + std::to_string(centrality_bin));
+    
   read_binning rb(configfile.c_str());
 
   std::string data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v10_1_492_2024p020_v007_gl10-all.root";
-
+  if (ispp)
+    data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_6_ana468_2024p012_v001_gl10-all.root";
+  
   float mbd_vertex;
   float pt1_reco;
   float pt2_reco;
@@ -121,6 +125,8 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
       std::cout <<  sample_boundary[ib] << std::endl;
     }
 
+  Int_t max_reco_bin = rb.get_maximum_reco_bin();
+  std::cout << "Max reco: " << max_reco_bin << " - ( " << ipt_bins[max_reco_bin] << ")" << std::endl;
   std::cout << "Truth1: " << truth_leading_cut << std::endl;
   std::cout << "Reco 1: " <<  reco_leading_cut << std::endl;
   std::cout << "Meas 1: " <<  measure_leading_cut << std::endl;
@@ -128,35 +134,47 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
-  TString bkgpath = rb.get_code_location() + "/unfolding_hists/background_hists_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size) + ".root";
-  
-  TFile *fbkg = new TFile(bkgpath.Data(),"read");
-
-  //float nbins_diff = (TMath::Pi() - dphicut)/(TMath::Pi()/32.);
   double scale_to_signal[nbins][nbins];
   for (int i = 0; i < nbins; i++)
     {
-      for (int j =0 ; j < nbins; j++)
+      for (int j = 0; j < nbins; j++)
 	{
-	  if (j > i) continue;
-	  TF1 *background_fits = (TF1*) fbkg->Get(Form("ffit_%d_%d", i , j));
-	  double flow_signal = background_fits->Integral(dphicut, TMath::Pi())/(TMath::Pi()/32.);
-	  
-	  std::cout << "ij : " << i << " / " << j << " " << flow_signal << std::endl;
-	  if (i == j)
+	  scale_to_signal[i][j] = 1;
+	}
+    }
+  if (!ispp)
+    {
+      TString bkgpath = rb.get_code_location() + "/unfolding_hists/background_hists_" + system_string + "_r0" + std::to_string(cone_size) + ".root";
+  
+      TFile *fbkg = new TFile(bkgpath.Data(),"read");
+      
+      //float nbins_diff = (TMath::Pi() - dphicut)/(TMath::Pi()/32.);
+      
+      for (int i = 0; i < nbins; i++)
+	{
+	  for (int j =0 ; j < nbins; j++)
 	    {
-	      scale_to_signal[i][j] = 2*flow_signal;
+	      if (j > i) continue;
+	      TF1 *background_fits = (TF1*) fbkg->Get(Form("ffit_%d_%d", i , j));
+	      double flow_signal = background_fits->Integral(dphicut, TMath::Pi())/(TMath::Pi()/32.);
+	      
+	      std::cout << "ij : " << i << " / " << j << " " << flow_signal << std::endl;
+	      if (i == j)
+		{
+		  scale_to_signal[i][j] = 2*flow_signal;
+		}
+	      else
+		{
+		  scale_to_signal[j][i] = flow_signal;
+		  scale_to_signal[i][j] = flow_signal;
+		}
+	      
 	    }
-	  else
-	    {
-	      scale_to_signal[j][i] = flow_signal;
-	      scale_to_signal[i][j] = flow_signal;
-	    }
-	  
 	}
     }
   
-  TString responsepath = "response_matrices/response_matrix_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size);
+  
+  TString responsepath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
 
   if (primer)
     {
@@ -244,7 +262,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
     {
       tn->GetEntry(i);
 
-      if (centrality < icentrality_bins[centrality_bin] || centrality >= icentrality_bins[centrality_bin + 1]) continue;
+      if (!ispp && centrality < icentrality_bins[centrality_bin] || centrality >= icentrality_bins[centrality_bin + 1]) continue;
 
       float maxi = std::max(pt1_reco, pt2_reco);
       float mini = std::min(pt1_reco, pt2_reco);
@@ -254,7 +272,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
 
       float es1 = pt1_reco;
       float es2 = pt2_reco;
-      if (es1 > ipt_bins[nbins] ) continue;
+      if (es1 >= ipt_bins[max_reco_bin] ) continue;
       for (int ib = 0; ib < nbins; ib++)
 	{
 
@@ -305,7 +323,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
 	  h_flat_data_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin);
 	  h_reco_xj->Fill(mini/maxi);
 	  h_mbd_vertex->Fill(mbd_vertex);
-	  h_centrality->Fill(centrality);
+	  if (!ispp) h_centrality->Fill(centrality);
 	  h_dphi_reco_SIGNAL->Fill(dphi_reco);
 
 	  if (maxi >= 30)
@@ -365,7 +383,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   TH1D *h_flat_data_pt1pt2_raw = (TH1D*) h_flat_data_pt1pt2->Clone();
   h_flat_data_pt1pt2_raw->SetName("h_flat_data_pt1pt2_raw");
 
-  if (zyam_sys)
+  if (zyam_sys && !ispp)
     {
 
       std::cout << "doing the ZYAM" << std::endl;
@@ -392,7 +410,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
 	    }
 	}
     }
-  else
+  else if (!ispp)
     {	
       for (int ix = 0; ix < h_pt1pt2->GetXaxis()->GetNbins(); ix++)
 	{
@@ -500,7 +518,9 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   gPad->SetLogz();
   gPad->SetRightMargin(0.2);
   h_pt1pt2_data->Draw("colz");
-  dlutility::DrawSPHENIX(0.22, 0.85);
+  if (!ispp) dlutility::DrawSPHENIX(0.22, 0.85);
+  else dlutility::DrawSPHENIXpp(0.22, 0.85);
+  //  dlutility::DrawSPHENIX(0.22, 0.85);
 
 
   cpt1pt2->cd(2);
@@ -513,7 +533,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_pt1pt2_unfold[niter]->Draw("colz");
 
 
-  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2data_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin,  cone_size));
+  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2data_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()));
 
   cpt1pt2->cd(1);
 
@@ -526,8 +546,8 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   dlutility::SetLineAtt(id_l, kBlack, 2, 2);
   h_pt1pt2_raw->Draw("colz");
   id_l->Draw("same");
-  dlutility::DrawSPHENIX(0.22, 0.85);
-  
+  if (!ispp) dlutility::DrawSPHENIX(0.22, 0.85);
+  else dlutility::DrawSPHENIXpp(0.22, 0.85);
   cpt1pt2->cd(2);
   h_pt1pt2_ZYAM->GetYaxis()->SetTitleSize(0.06);
   h_pt1pt2_ZYAM->GetXaxis()->SetTitleSize(0.06);
@@ -535,7 +555,8 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_pt1pt2_ZYAM->GetXaxis()->SetRangeUser(h_pt1pt2_raw->GetXaxis()->GetBinLowEdge(1), 45);
   h_pt1pt2_ZYAM->Draw("colz");
   id_l->Draw("same");
-  dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.85);
+  if (!ispp) dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.85);
+
   cpt1pt2->cd(3);
   h_pt1pt2->GetYaxis()->SetTitleSize(0.06);
   h_pt1pt2->GetXaxis()->SetTitleSize(0.06);
@@ -544,7 +565,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_pt1pt2->GetXaxis()->SetRangeUser(h_pt1pt2_raw->GetXaxis()->GetBinLowEdge(1), 45);
   h_pt1pt2->Draw("colz");
   id_l->Draw("same");
-  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2dataZYAM_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin,  cone_size));
+  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2dataZYAM_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()));
 
   TCanvas *ctext = new TCanvas("ctext","ctext", 600, 500);
   ctext->SetRightMargin(0.2);
@@ -559,10 +580,12 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_pt1pt2_text->Draw("colz");
   h_pt1pt2_text->Draw("text,same");
   id_l->Draw("same");
-  dlutility::DrawSPHENIX(0.22, 0.85);
-  dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.75);
+  if (!ispp) dlutility::DrawSPHENIX(0.22, 0.85);
+  else dlutility::DrawSPHENIXpp(0.22, 0.85);
+  //  dlutility::DrawSPHENIX(0.22, 0.85);
+  if (!ispp) dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.75);
   dlutility::drawText("Background Fraction", 0.22, 0.7);
-  ctext->Print(Form("%s/unfolding_plots/pt1pt2dataTEXT_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin,  cone_size));
+  ctext->Print(Form("%s/unfolding_plots/pt1pt2dataTEXT_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()));
 
   histo_opps::project_xj(h_pt1pt2_data, h_xj_data, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
   histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
@@ -611,7 +634,7 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   // lc->AddEntry(h_dphi_reco_SIGNAL, "Signal region");
   // lc->AddEntry(h_dphi_reco_ZYAM, "ZYAM region");
   // lc->Draw("same");
-  // cdphi->Print(Form("%s/unfolding_plots/dphi_ZYAM_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
+  // cdphi->Print(Form("%s/unfolding_plots/dphi_ZYAM_%s_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
 
   // for (int j = 0; j < 4; j++)
   //   {
@@ -713,7 +736,9 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_xj_data->Draw("p same");
   h_xj_unfold[niter]->Draw("same hist");
   h_xj_unfold[niter]->Draw("same p");
-  dlutility::DrawSPHENIX(0.22, 0.84);
+  if (!ispp) dlutility::DrawSPHENIX(0.22, 0.85);
+  else dlutility::DrawSPHENIXpp(0.22, 0.85);
+  //dlutility::DrawSPHENIX(0.22, 0.84);
   dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
   dlutility::drawText(Form("%2.1f GeV #leq p_{T1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
   dlutility::drawText(Form("p_{T2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
@@ -794,7 +819,9 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   
   h_xj_data->Draw();
   h_reco_xj->Draw("same");
-  dlutility::DrawSPHENIX(0.22, 0.84);
+  if (!ispp) dlutility::DrawSPHENIX(0.22, 0.85);
+  else dlutility::DrawSPHENIXpp(0.22, 0.85);
+  //  dlutility::DrawSPHENIX(0.22, 0.84);
   dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
   dlutility::drawText(Form("%2.1f GeV #leq p_{T1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
   dlutility::drawText(Form("p_{T2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
@@ -826,9 +853,9 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   line3->SetLineColor(kRed + 3);
   line3->SetLineWidth(2);
   line3->Draw("same");
-  cproj->Print(Form("%s/unfolding_plots/proj_compar_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
+  cproj->Print(Form("%s/unfolding_plots/proj_compar_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
   
-  TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size);
+  TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_" + system_string + "_r0" + std::to_string(cone_size);
 
   if (primer)
     {

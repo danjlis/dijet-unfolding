@@ -57,6 +57,13 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 
   read_binning rb("binning_AA.config");
 
+  bool ispp = (centrality_bin < 0);
+  std::string system_string = (ispp?"pp":"AA_cent_" + std::to_string(centrality_bin));
+  
+  const int cent_bins = rb.get_number_centrality_bins();
+  float icentrality_bins[cent_bins+1];
+  rb.get_centrality_bins(icentrality_bins);
+
   Double_t first_xj = rb.get_first_xj();
   int first_bin = 0;
   Int_t read_nbins = rb.get_nbins();
@@ -120,14 +127,14 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
   
   const int niterations = 10;
-  TFile *finu = new TFile(Form("%s/uncertainties/uncertainties_AA_cent_%d_r%02d.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *finu = new TFile(Form("%s/uncertainties/uncertainties_%s_r%02d_nominal.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TProfile *h_xj_rms[niterations];
   for (int iter = 0; iter < niterations; ++iter)
     {
       h_xj_rms[iter] = (TProfile*) finu->Get(Form("hp_xj_%d", iter));
     }
-  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_nominal.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TH1D *h_flat_data_pt1pt2 = (TH1D*) fin->Get("h_data_flat_pt1pt2");
   TH1D *h_flat_reco_pt1pt2 = (TH1D*) fin->Get("h_reco_flat_pt1pt2");
@@ -139,7 +146,7 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
     }
 
   // JES +
-  TFile *finpjes = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_posJES.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *finpjes = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_posJES.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TH1D *h_pjes_flat_data_pt1pt2 = (TH1D*) finpjes->Get("h_data_flat_pt1pt2");
   h_pjes_flat_data_pt1pt2->SetName("h_pjes_flat_data_pt1pt2");
@@ -154,7 +161,7 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
       h_pjes_flat_unfold_pt1pt2[iter]->SetName(Form("h_pjes_flat_unfold_pt1pt2_%d", iter));
     }
   // JES +
-  TFile *finnjes = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_negJES.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *finnjes = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_negJES.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TH1D *h_njes_flat_data_pt1pt2 = (TH1D*) finnjes->Get("h_data_flat_pt1pt2");
   h_njes_flat_data_pt1pt2->SetName("h_njes_flat_data_pt1pt2");
@@ -169,7 +176,7 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
       h_njes_flat_unfold_pt1pt2[iter]->SetName(Form("h_njes_flat_unfold_pt1pt2_%d", iter));
     }
   // posJER
-  TFile *finposjer = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_posJER.root",  rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *finposjer = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_posJER.root",  rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TH1D *h_posjer_flat_data_pt1pt2 = (TH1D*) finposjer->Get("h_data_flat_pt1pt2");
   h_posjer_flat_data_pt1pt2->SetName("h_posjer_flat_data_pt1pt2");
@@ -184,7 +191,7 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
       h_posjer_flat_unfold_pt1pt2[iter]->SetName(Form("h_posjer_flat_unfold_pt1pt2_%d", iter));
     }
   // negJER
-  TFile *finnegjer = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_negJER.root",  rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *finnegjer = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_negJER.root",  rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TH1D *h_negjer_flat_data_pt1pt2 = (TH1D*) finnegjer->Get("h_data_flat_pt1pt2");
   h_negjer_flat_data_pt1pt2->SetName("h_negjer_flat_data_pt1pt2");
@@ -216,23 +223,29 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
   /*   } */
 
   // ZYAM 
-  TFile *finZYAM = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_ZYAM.root",  rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+
+  TFile *finZYAM = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_ZYAM.root",  rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TH1D *h_ZYAM_flat_data_pt1pt2 = (TH1D*) finZYAM->Get("h_data_flat_pt1pt2");
-  h_ZYAM_flat_data_pt1pt2->SetName("h_ZYAM_flat_data_pt1pt2");
+  
   TH1D *h_ZYAM_flat_reco_pt1pt2 = (TH1D*) finZYAM->Get("h_reco_flat_pt1pt2");
-  h_ZYAM_flat_reco_pt1pt2->SetName("h_ZYAM_flat_reco_pt1pt2");
   TH1D *h_ZYAM_flat_truth_pt1pt2 = (TH1D*) finZYAM->Get("h_truth_flat_pt1pt2");
-  h_ZYAM_flat_truth_pt1pt2->SetName("h_ZYAM_flat_truth_pt1pt2");
-  TH1D *h_ZYAM_flat_unfold_pt1pt2[niterations];
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      h_ZYAM_flat_unfold_pt1pt2[iter] = (TH1D*) finZYAM->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
-      h_ZYAM_flat_unfold_pt1pt2[iter]->SetName(Form("h_ZYAM_flat_unfold_pt1pt2_%d", iter));
-    }
 
+  TH1D *h_ZYAM_flat_unfold_pt1pt2[niterations];
+  if (!ispp)
+    {
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_ZYAM_flat_unfold_pt1pt2[iter] = (TH1D*) finZYAM->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+	  h_ZYAM_flat_unfold_pt1pt2[iter]->SetName(Form("h_ZYAM_flat_unfold_pt1pt2_%d", iter));
+	  
+	}
+      h_ZYAM_flat_truth_pt1pt2->SetName("h_ZYAM_flat_truth_pt1pt2");
+      h_ZYAM_flat_data_pt1pt2->SetName("h_ZYAM_flat_data_pt1pt2");
+      h_ZYAM_flat_reco_pt1pt2->SetName("h_ZYAM_flat_reco_pt1pt2");
+    }
   // PRIOR 
-  TFile *finprior = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_PRIOR.root",  rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
+  TFile *finprior = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_PRIOR.root",  rb.get_code_location().c_str(), system_string.c_str(), cone_size),"r");
 
   TH1D *h_prior_flat_data_pt1pt2 = (TH1D*) finprior->Get("h_data_flat_pt1pt2");
   h_prior_flat_data_pt1pt2->SetName("h_prior_flat_data_pt1pt2");
@@ -591,24 +604,26 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
   /*   } */
 
   //ZYAM
-  histo_opps::make_sym_pt1pt2(h_ZYAM_flat_reco_pt1pt2, h_ZYAM_pt1pt2_reco, nbins);
-  for (int iter = 0; iter < niterations; iter++)
+  if (!ispp)
     {
-      histo_opps::make_sym_pt1pt2(h_ZYAM_flat_unfold_pt1pt2[iter], h_ZYAM_pt1pt2_unfold[iter], nbins);
-    }
+      histo_opps::make_sym_pt1pt2(h_ZYAM_flat_reco_pt1pt2, h_ZYAM_pt1pt2_reco, nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::make_sym_pt1pt2(h_ZYAM_flat_unfold_pt1pt2[iter], h_ZYAM_pt1pt2_unfold[iter], nbins);
+	}
 
-  histo_opps::project_xj(h_ZYAM_pt1pt2_reco, h_ZYAM_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      histo_opps::project_xj(h_ZYAM_pt1pt2_unfold[iter], h_ZYAM_xj_unfold[iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
-    }
+      histo_opps::project_xj(h_ZYAM_pt1pt2_reco, h_ZYAM_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::project_xj(h_ZYAM_pt1pt2_unfold[iter], h_ZYAM_xj_unfold[iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	}
   
-  histo_opps::normalize_histo(h_ZYAM_xj_reco, nbins);
-  for (int iter = 0; iter < niterations; iter++)
-    {
-      histo_opps::normalize_histo(h_ZYAM_xj_unfold[iter], nbins);
+      histo_opps::normalize_histo(h_ZYAM_xj_reco, nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_ZYAM_xj_unfold[iter], nbins);
+	}
     }
-
   //prior
   histo_opps::make_sym_pt1pt2(h_prior_flat_reco_pt1pt2, h_prior_pt1pt2_reco, nbins);
   for (int iter = 0; iter < niterations; iter++)
@@ -850,25 +865,27 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
       /* 	  histo_opps::finalize_xj(h_vtx_xj_unfold_range[irange][iter], h_vtx_final_xj_unfold_range[irange][iter], nbins, first_xj); */
       /* 	} */
       //ZYAM
-      histo_opps::project_xj(h_ZYAM_pt1pt2_reco, h_ZYAM_xj_reco_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
-      for (int iter = 0; iter < niterations; iter++)
+      if (!ispp)
 	{
-	  histo_opps::project_xj(h_ZYAM_pt1pt2_unfold[iter], h_ZYAM_xj_unfold_range[irange][iter], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_ZYAM_pt1pt2_reco, h_ZYAM_xj_reco_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      histo_opps::project_xj(h_ZYAM_pt1pt2_unfold[iter], h_ZYAM_xj_unfold_range[irange][iter], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	    }
+	  
+	  
+	  histo_opps::normalize_histo(h_ZYAM_xj_reco_range[irange], nbins);
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      histo_opps::normalize_histo(h_ZYAM_xj_unfold_range[irange][iter], nbins);
+	    }
+	  
+	  histo_opps::finalize_xj(h_ZYAM_xj_reco_range[irange], h_ZYAM_final_xj_reco_range[irange], nbins, first_xj);
+	  for (int iter = 0; iter < niterations; iter++)
+	    {
+	      histo_opps::finalize_xj(h_ZYAM_xj_unfold_range[irange][iter], h_ZYAM_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	    }
 	}
-
-
-      histo_opps::normalize_histo(h_ZYAM_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_ZYAM_xj_unfold_range[irange][iter], nbins);
-	}
-
-      histo_opps::finalize_xj(h_ZYAM_xj_reco_range[irange], h_ZYAM_final_xj_reco_range[irange], nbins, first_xj);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::finalize_xj(h_ZYAM_xj_unfold_range[irange][iter], h_ZYAM_final_xj_unfold_range[irange][iter], nbins, first_xj);
-	}
-
       //prior
       histo_opps::project_xj(h_prior_pt1pt2_reco, h_prior_xj_reco_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
       for (int iter = 0; iter < niterations; iter++)
@@ -938,21 +955,21 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  h_pjes_final_xj_unfold_range[irange][niter]->Draw("same p");
 	  h_njes_final_xj_unfold_range[irange][niter]->Draw("same p");
 
-	  dlutility::DrawSPHENIXpp(0.22, 0.84);
+	  if (!ispp) {dlutility::DrawSPHENIX(0.22, 0.84);} else {dlutility::DrawSPHENIXpp(0.22, 0.84);}
 	  dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.22, 0.74);
 	  dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
 	  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
-	  dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54);
+	  dlutility::drawText("#Delta#phi #geq 7#pi/8", 0.22, 0.59);
+	  if (!ispp) dlutility::drawText(Form("%d - %d %%", (int)icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, 0.54);
 	  dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49);
-	  TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44);
+	  TLegend *leg = new TLegend(0.55, 0.7, 0.87, 0.84);
 	  leg->SetLineWidth(0);
 	  leg->SetTextSize(0.04);
 	  leg->SetTextFont(42);
-	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 Truth");
+	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 - Reweight");
 	  leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Unfolded");
-	  leg->AddEntry(h_pjes_final_xj_unfold_range[irange][niter], "Unfolded + 6% JES");
-	  leg->AddEntry(h_njes_final_xj_unfold_range[irange][niter], "Unfolded - 6% JES");
+	  leg->AddEntry(h_pjes_final_xj_unfold_range[irange][niter], "Unfolded + 6.6% JES");
+	  leg->AddEntry(h_njes_final_xj_unfold_range[irange][niter], "Unfolded - 6.6% JES");
 	  leg->Draw("same");
 
     
@@ -965,8 +982,8 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  dlutility::SetLineAtt(h_pjes_compare, color_pjes, 1,1);
 	  dlutility::SetMarkerAtt(h_pjes_compare, color_pjes, 1,8);
 
-	  h_pjes_compare->SetMaximum(3.0);
-	  h_pjes_compare->SetMinimum(0);
+	  h_pjes_compare->SetMaximum(1.5);
+	  h_pjes_compare->SetMinimum(0.5);
 	  h_pjes_compare->Draw("p");
 
 	  TH1D *h_njes_compare = (TH1D*) h_final_xj_unfold_range[irange][niter]->Clone();
@@ -984,8 +1001,8 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxjjes->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
-	  cxjjes->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
+	  cxjjes->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_%s_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
+	  cxjjes->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_%s_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
 	}
 
   
@@ -1018,21 +1035,21 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  h_posjer_final_xj_unfold_range[irange][niter]->Draw("same p");
 	  h_negjer_final_xj_unfold_range[irange][niter]->Draw("same p");
 
-	  dlutility::DrawSPHENIXpp(0.22, 0.84);
+	  if (!ispp) {dlutility::DrawSPHENIX(0.22, 0.84);} else {dlutility::DrawSPHENIXpp(0.22, 0.84);}
 	  dlutility::drawText(Form("anti-k_{t} R = %0.1f", 0.1*cone_size), 0.22, 0.74);
 	  dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
 	  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
-	  dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54);
+	  dlutility::drawText("#Delta#phi #geq 7#pi/8", 0.22, 0.59);
+	  if (!ispp) dlutility::drawText(Form("%d - %d %%", (int)icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, 0.54);//	  dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54);
 	  dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49);
-	  TLegend *leg = new TLegend(0.22, 0.24, 0.4, 0.44);
+	  TLegend *leg = new TLegend(0.55, 0.64, 0.87, 0.84);
 	  leg->SetLineWidth(0);
 	  leg->SetTextSize(0.04);
 	  leg->SetTextFont(42);
-	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 Truth");
+	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 - Reweight");
 	  leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Unfolded");
-	  leg->AddEntry(h_posjer_final_xj_unfold_range[irange][niter], "Unfolded + 5% JER");
-	  leg->AddEntry(h_negjer_final_xj_unfold_range[irange][niter], "Unfolded - 5% JER");
+	  leg->AddEntry(h_posjer_final_xj_unfold_range[irange][niter], "Unfolded + Sys.");
+	  leg->AddEntry(h_negjer_final_xj_unfold_range[irange][niter], "Unfolded - Sys.");
 	  leg->Draw("same");
 
     
@@ -1051,8 +1068,8 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  dlutility::SetLineAtt(h_negjer_compare, color_negjer, 1,1);
 	  dlutility::SetMarkerAtt(h_negjer_compare, color_negjer, 1,8);
 
-	  h_posjer_compare->SetMaximum(3.0);
-	  h_posjer_compare->SetMinimum(0.0);
+	  h_posjer_compare->SetMaximum(1.5);
+	  h_posjer_compare->SetMinimum(0.5);
 	  h_posjer_compare->Draw("p");
 	  h_negjer_compare->Draw("p same");
 	  h_sys_posjer[irange][niter] = (TH1D*) h_posjer_compare->Clone();
@@ -1062,8 +1079,8 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxjjer->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
-	  cxjjer->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
+	  cxjjer->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_%s_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
+	  cxjjer->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_%s_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
 
 	}
       /* TCanvas *cxjvtx = new TCanvas("cxjvtx","cxjvtx", 500, 700); */
@@ -1090,18 +1107,18 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
       /* 	  h_final_xj_unfold_range[irange][niter]->Draw("same p"); */
       /* 	  h_vtx_final_xj_unfold_range[irange][niter]->Draw("same p"); */
 
-      /* 	  dlutility::DrawSPHENIXpp(0.22, 0.84); */
+      /* 	  if (!ispp) {dlutility::DrawSPHENIX(0.22, 0.84);} else {dlutility::DrawSPHENIXpp(0.22, 0.84);} */
       /* 	  dlutility::drawText("anti-k_{t} R = 0.4", 0.22, 0.74); */
       /* 	  dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69); */
       /* 	  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64); */
-      /* 	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59); */
+      /* 	  dlutility::drawText("#Delta#phi #geq 7#pi/8", 0.22, 0.59); */
       /* 	  dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54); */
       /* 	  dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49); */
-      /* 	  TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44); */
+      /* 	  TLegend *leg = new TLegend(0.55, 0.7, 0.87, 0.84); */
       /* 	  leg->SetLineWidth(0); */
       /* 	  leg->SetTextSize(0.04); */
       /* 	  leg->SetTextFont(42); */
-      /* 	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 Truth"); */
+      /* 	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 - Reweight"); */
       /* 	  leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Unfolded"); */
       /* 	  leg->AddEntry(h_vtx_final_xj_unfold_range[irange][niter], "Unfolded + z_{vtx} reweight"); */
       /* 	  leg->Draw("same"); */
@@ -1129,70 +1146,72 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
       /* 	  cxjvtx->SaveAs(Form("systematic_plots/h_VTX_xj_unfolded_range_%d_iter_%d.pdf", irange, niter)); */
       /* 	} */
 
-      TCanvas *cxjZYAM = new TCanvas("cxjZYAM","cxjZYAM", 500, 700);
-      dlutility::ratioPanelCanvas(cxjZYAM);
-
-      for (int irange = 0; irange < mbins; irange++)
+      if (!ispp)
 	{
-	  cxjZYAM->cd(1);
-	  dlutility::SetLineAtt(h_ZYAM_final_xj_unfold_range[irange][niter], color_ZYAM, lsize_ZYAM, 1);
-	  dlutility::SetMarkerAtt(h_ZYAM_final_xj_unfold_range[irange][niter], color_ZYAM, msize_ZYAM, marker_ZYAM);
+	  TCanvas *cxjZYAM = new TCanvas("cxjZYAM","cxjZYAM", 500, 700);
+	  dlutility::ratioPanelCanvas(cxjZYAM);
 
-	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
+	  for (int irange = 0; irange < mbins; irange++)
+	    {
+	      cxjZYAM->cd(1);
+	      dlutility::SetLineAtt(h_ZYAM_final_xj_unfold_range[irange][niter], color_ZYAM, lsize_ZYAM, 1);
+	      dlutility::SetMarkerAtt(h_ZYAM_final_xj_unfold_range[irange][niter], color_ZYAM, msize_ZYAM, marker_ZYAM);
 
-	  dlutility::SetLineAtt(h_final_xj_truth_range[irange], color_pythia, lsize_pythia, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_truth_range[irange], color_pythia, msize_pythia, marker_pythia);
+	      dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
+	      dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
 
-	  dlutility::SetFont(h_final_xj_truth_range[irange], 42, 0.04);
-	  h_final_xj_truth_range[irange]->SetMaximum(4.5);
-	  h_final_xj_truth_range[irange]->SetMinimum(0);
-	  h_final_xj_truth_range[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");
+	      dlutility::SetLineAtt(h_final_xj_truth_range[irange], color_pythia, lsize_pythia, 1);
+	      dlutility::SetMarkerAtt(h_final_xj_truth_range[irange], color_pythia, msize_pythia, marker_pythia);
 
-	  h_final_xj_truth_range[irange]->Draw("p");
-	  h_final_xj_unfold_range[irange][niter]->Draw("same p");
-	  h_ZYAM_final_xj_unfold_range[irange][niter]->Draw("same p");
+	      dlutility::SetFont(h_final_xj_truth_range[irange], 42, 0.04);
+	      h_final_xj_truth_range[irange]->SetMaximum(4.5);
+	      h_final_xj_truth_range[irange]->SetMinimum(0);
+	      h_final_xj_truth_range[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");
 
-	  dlutility::DrawSPHENIXpp(0.22, 0.84);
-	  dlutility::drawText(Form("anti-k_{t} R = %0.1f", 0.1*cone_size), 0.22, 0.74);
-	  dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
-	  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
-	  dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54);
-	  dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49);
-	  TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44);
-	  leg->SetLineWidth(0);
-	  leg->SetTextSize(0.04);
-	  leg->SetTextFont(42);
-	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 Truth");
-	  leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Unfolded");
-	  leg->AddEntry(h_ZYAM_final_xj_unfold_range[irange][niter], "Unfolded w/ ZYAM ");
-	  leg->Draw("same");
+	      h_final_xj_truth_range[irange]->Draw("p");
+	      h_final_xj_unfold_range[irange][niter]->Draw("same p");
+	      h_ZYAM_final_xj_unfold_range[irange][niter]->Draw("same p");
+
+	      if (!ispp) {dlutility::DrawSPHENIX(0.22, 0.84);} else {dlutility::DrawSPHENIXpp(0.22, 0.84);}
+	      dlutility::drawText(Form("anti-k_{t} R = %0.1f", 0.1*cone_size), 0.22, 0.74);
+	      dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
+	      dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+	      dlutility::drawText("#Delta#phi #geq 7#pi/8", 0.22, 0.59);
+	      if (!ispp) dlutility::drawText(Form("%d - %d %%", (int)icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, 0.54);//dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54);
+	      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49);
+	      TLegend *leg = new TLegend(0.55, 0.7, 0.87, 0.84);
+	      leg->SetLineWidth(0);
+	      leg->SetTextSize(0.04);
+	      leg->SetTextFont(42);
+	      leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 - Reweight");
+	      leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Unfolded w/ Flow Bkg.");
+	      leg->AddEntry(h_ZYAM_final_xj_unfold_range[irange][niter], "Unfolded w/ Flat bkg. ");
+	      leg->Draw("same");
 
     
-	  cxjZYAM->cd(2);
+	      cxjZYAM->cd(2);
 
-	  TH1D *h_ZYAM_compare = (TH1D*) h_final_xj_unfold_range[irange][niter]->Clone();
-	  h_ZYAM_compare->Divide(h_ZYAM_final_xj_unfold_range[irange][niter]);
-	  h_ZYAM_compare->SetTitle(";x_{J}; Unfold / Unfold w/ N_{Jet} Weighting");
-	  dlutility::SetFont(h_ZYAM_compare, 42, 0.06);
-	  dlutility::SetLineAtt(h_ZYAM_compare, color_ZYAM, 1,1);
-	  dlutility::SetMarkerAtt(h_ZYAM_compare, color_ZYAM, 1,8);
+	      TH1D *h_ZYAM_compare = (TH1D*) h_final_xj_unfold_range[irange][niter]->Clone();
+	      h_ZYAM_compare->Divide(h_ZYAM_final_xj_unfold_range[irange][niter]);
+	      h_ZYAM_compare->SetTitle(";x_{J}; Unfold / Unfold w/ N_{Jet} Weighting");
+	      dlutility::SetFont(h_ZYAM_compare, 42, 0.06);
+	      dlutility::SetLineAtt(h_ZYAM_compare, color_ZYAM, 1,1);
+	      dlutility::SetMarkerAtt(h_ZYAM_compare, color_ZYAM, 1,8);
 
-	  h_ZYAM_compare->SetMaximum(3.0);
-	  h_ZYAM_compare->SetMinimum(0.0);
-	  h_ZYAM_compare->Draw("p");
+	      h_ZYAM_compare->SetMaximum(1.5);
+	      h_ZYAM_compare->SetMinimum(0.5);
+	      h_ZYAM_compare->Draw("p");
 
-	  h_sys_ZYAM[irange][niter] = (TH1D*) h_ZYAM_compare->Clone();
-	  TLine *line = new TLine(0.1, 1, 1, 1);
-	  line->SetLineStyle(4);
-	  line->SetLineColor(kRed + 3);
-	  line->SetLineWidth(2);
-	  line->Draw("same");
-	  cxjZYAM->SaveAs(Form("%s/systematic_plots/h_ZYAM_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
-	  cxjZYAM->SaveAs(Form("%s/systematic_plots/h_ZYAM_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
+	      h_sys_ZYAM[irange][niter] = (TH1D*) h_ZYAM_compare->Clone();
+	      TLine *line = new TLine(0.1, 1, 1, 1);
+	      line->SetLineStyle(4);
+	      line->SetLineColor(kRed + 3);
+	      line->SetLineWidth(2);
+	      line->Draw("same");
+	      cxjZYAM->SaveAs(Form("%s/systematic_plots/h_ZYAM_xj_unfolded_%s_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
+	      cxjZYAM->SaveAs(Form("%s/systematic_plots/h_ZYAM_xj_unfolded_%s_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
+	    }
 	}
-
 
       TCanvas *cxjprior = new TCanvas("cxjprior","cxjprior", 500, 700);
       dlutility::ratioPanelCanvas(cxjprior);
@@ -1218,18 +1237,19 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  h_final_xj_unfold_range[irange][niter]->Draw("same p");
 	  h_prior_final_xj_unfold_range[irange][niter]->Draw("same p");
 
-	  dlutility::DrawSPHENIXpp(0.22, 0.84);
+	  if (!ispp) {dlutility::DrawSPHENIX(0.22, 0.84);} else {dlutility::DrawSPHENIXpp(0.22, 0.84);}
 	  dlutility::drawText(Form("anti-k_{t} R = %0.1f", 0.1*cone_size), 0.22, 0.74);
 	  dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
 	  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-	  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
-	  dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54);
+	  dlutility::drawText("#Delta#phi #geq 7#pi/8", 0.22, 0.59);
+	  if (!ispp) 
+	    dlutility::drawText(Form("%d - %d %%", (int)icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, 0.54);//	  dlutility::drawText("L_{int} = 25.7 pb^{-1}", 0.22, 0.54);
 	  dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49);
-	  TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44);
+	  TLegend *leg = new TLegend(0.55, 0.7, 0.87, 0.84);
 	  leg->SetLineWidth(0);
 	  leg->SetTextSize(0.04);
 	  leg->SetTextFont(42);
-	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 Truth");
+	  leg->AddEntry(h_final_xj_truth_range[irange], "Pythia8 - Reweight");
 	  leg->AddEntry(h_final_xj_unfold_range[irange][niter], "Unfolded");
 	  leg->AddEntry(h_prior_final_xj_unfold_range[irange][niter], "Unfolded w/o Prior");
 	  leg->Draw("same");
@@ -1243,8 +1263,8 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  dlutility::SetLineAtt(h_prior_compare, color_prior, 1,1);
 	  dlutility::SetMarkerAtt(h_prior_compare, color_prior, 1,8);
 
-	  h_prior_compare->SetMaximum(3.0);
-	  h_prior_compare->SetMinimum(0.0);
+	  h_prior_compare->SetMaximum(1.5);
+	  h_prior_compare->SetMinimum(0.5);
 	  h_prior_compare->Draw("p");
 
 	  h_sys_prior[irange][niter] = (TH1D*) h_prior_compare->Clone();
@@ -1253,8 +1273,8 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxjprior->SaveAs(Form("%s/systematic_plots/h_PRIOR_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
-	  cxjprior->SaveAs(Form("%s/systematic_plots/h_PRIOR_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
+	  cxjprior->SaveAs(Form("%s/systematic_plots/h_PRIOR_xj_unfolded_%s_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
+	  cxjprior->SaveAs(Form("%s/systematic_plots/h_PRIOR_xj_unfolded_%s_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
 	}
 
       // all systematics on one plot
@@ -1270,7 +1290,11 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  TH1D *h_sys_jer_flip = (TH1D*) h_sys_posjer[irange][niter]->Clone();
 
 	  //TH1D *h_sys_vtx_flip = (TH1D*) h_sys_vtx[irange][niter]->Clone();
-	  TH1D *h_sys_ZYAM_flip = (TH1D*) h_sys_ZYAM[irange][niter]->Clone();
+	  TH1D *h_sys_ZYAM_flip;
+	  if (!ispp)
+	    {
+	      h_sys_ZYAM_flip = (TH1D*) h_sys_ZYAM[irange][niter]->Clone();
+	    }
 	  TH1D *h_sys_prior_flip = (TH1D*) h_sys_prior[irange][niter]->Clone();
 
 	  TH1D *h_sys_jes = (TH1D*) h_sys_njes[irange][niter]->Clone();
@@ -1291,10 +1315,10 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  h_total_sys_neg_range[irange][niter]->SetName(Form("h_total_sys_neg_range_%d_iter_%d", irange, niter));
 
       
-	  for (int i = 0; i < h_sys_ZYAM_flip->GetNbinsX(); i++)
+	  for (int i = 0; i < h_sys_prior_flip->GetNbinsX(); i++)
 	    {
 	  
-	      h_sys_ZYAM_flip->SetBinContent(i+1, 2 - h_sys_ZYAM[irange][niter]->GetBinContent(i+1));
+	      if (!ispp) h_sys_ZYAM_flip->SetBinContent(i+1, 2 - h_sys_ZYAM[irange][niter]->GetBinContent(i+1));
 	      h_sys_prior_flip->SetBinContent(i+1, 2 - h_sys_prior[irange][niter]->GetBinContent(i+1));
 
 	      float maxjer = h_sys_posjer[irange][niter]->GetBinContent(i+1) - 1;
@@ -1321,16 +1345,19 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	      h_sys_jes->SetBinContent(i+1, maxjes + 1);
 	      h_sys_jes_flip->SetBinContent(i+1, 1 - fabs(minjes));
 
-	      float toal_neg = sqrt(TMath::Power(minjer, 2) +
-				    TMath::Power(minjes, 2) +
-				    TMath::Power(h_sys_ZYAM[irange][niter]->GetBinContent(i+1) - 1, 2) +
-				    TMath::Power(h_sys_prior[irange][niter]->GetBinContent(i+1) - 1, 2));
-      
-	      float toal_pos = sqrt(TMath::Power(maxjer, 2) +
-				    TMath::Power(maxjes, 2) +
-				    TMath::Power(h_sys_ZYAM[irange][niter]->GetBinContent(i+1) - 1, 2) +
-				    TMath::Power(h_sys_prior[irange][niter]->GetBinContent(i+1) - 1, 2));
-      
+	      float toal_neg = TMath::Power(minjer, 2) +
+		TMath::Power(minjes, 2) +
+		TMath::Power(h_sys_prior[irange][niter]->GetBinContent(i+1) - 1, 2);
+	      if (!ispp)
+		toal_neg += TMath::Power(h_sys_ZYAM[irange][niter]->GetBinContent(i+1) - 1, 2);
+	      toal_neg = sqrt(toal_neg);
+	      
+	      float toal_pos = TMath::Power(maxjer, 2) +
+		TMath::Power(maxjes, 2) +		
+		TMath::Power(h_sys_prior[irange][niter]->GetBinContent(i+1) - 1, 2);
+	      if (!ispp)
+		toal_pos += TMath::Power(h_sys_ZYAM[irange][niter]->GetBinContent(i+1) - 1, 2);
+	      toal_pos = sqrt(toal_pos);
 	      h_total_sys_range[irange][niter]->SetBinContent(i+1, toal_pos);
 	      h_total_sys_neg_range[irange][niter]->SetBinContent(i+1, toal_neg);
 	      h_total_sys->SetBinContent(i+1, 1 + toal_pos);
@@ -1349,11 +1376,13 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  dlutility::SetLineAtt(h_sys_jes_flip, color_pjes, 1 + lsize_pjes, 1);
 	  dlutility::SetMarkerAtt(h_sys_jes_flip, color_pjes, msize_pjes, 1);
 
-	  dlutility::SetLineAtt(h_sys_ZYAM[irange][niter], color_ZYAM, 1 + lsize_ZYAM, 1);
-	  dlutility::SetMarkerAtt(h_sys_ZYAM[irange][niter], color_ZYAM, msize_ZYAM, 1);
-	  dlutility::SetLineAtt(h_sys_ZYAM_flip, color_ZYAM, 1 + lsize_ZYAM, 1);
-	  dlutility::SetMarkerAtt(h_sys_ZYAM_flip, color_ZYAM, msize_ZYAM, 1);
-
+	  if (!ispp)
+	    {
+	      dlutility::SetLineAtt(h_sys_ZYAM[irange][niter], color_ZYAM, 1 + lsize_ZYAM, 1);
+	      dlutility::SetMarkerAtt(h_sys_ZYAM[irange][niter], color_ZYAM, msize_ZYAM, 1);
+	      dlutility::SetLineAtt(h_sys_ZYAM_flip, color_ZYAM, 1 + lsize_ZYAM, 1);
+	      dlutility::SetMarkerAtt(h_sys_ZYAM_flip, color_ZYAM, msize_ZYAM, 1);
+	    }
 	  dlutility::SetLineAtt(h_sys_prior[irange][niter], color_prior, 1 + lsize_prior, 1);
 	  dlutility::SetMarkerAtt(h_sys_prior[irange][niter], color_prior, msize_prior, 1);
 	  dlutility::SetLineAtt(h_sys_prior_flip, color_prior, 1 + lsize_prior, 1);
@@ -1365,8 +1394,8 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  dlutility::SetMarkerAtt(h_total_sys_flip, kBlack, 1, 8);
 
 
-	  h_total_sys->SetMinimum(0.0);
-	  h_total_sys->SetMaximum(3.0);
+	  h_total_sys->SetMinimum(0.5);
+	  h_total_sys->SetMaximum(1.5);
 	  dlutility::SetFont(h_total_sys, 42, 0.06, 0.05, 0.05, 0.05);
 	  h_total_sys->Rebin(nbins - first_bin, Form("h_rebin_sys_%d_%d", irange, niter), &dxj_bins[first_bin]);
 	  h_total_sys_flip->Rebin(nbins - first_bin, Form("h_rebin_sys_flip_%d_%d", irange, niter), &dxj_bins[first_bin]);
@@ -1377,9 +1406,11 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 
 	  h_sys_prior[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_prior_flip_%d_%d", irange, niter), &dxj_bins[first_bin]);
 	  h_sys_prior_flip->Rebin(nbins - first_bin, Form("h_rebin_prior_flip_%d_%d", irange, niter), &dxj_bins[first_bin]);
-
-	  h_sys_ZYAM[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_ZYAM_flip_%d_%d", irange, niter), &dxj_bins[first_bin]);
-	  h_sys_ZYAM_flip->Rebin(nbins - first_bin, Form("h_rebin_ZYAM_flip_%d_%d", irange, niter), &dxj_bins[first_bin]);
+	  if (!ispp)
+	    {
+	      h_sys_ZYAM[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_ZYAM_flip_%d_%d", irange, niter), &dxj_bins[first_bin]);
+	      h_sys_ZYAM_flip->Rebin(nbins - first_bin, Form("h_rebin_ZYAM_flip_%d_%d", irange, niter), &dxj_bins[first_bin]);
+	    }
 	  h_total_sys->GetXaxis()->SetRangeUser(dxj_bins[first_bin], dxj_bins[nbins]);
 	  h_total_sys->Draw("p");
 	  h_total_sys_flip->Draw("p same");
@@ -1391,36 +1422,40 @@ void drawSys_AA(const int cone_size = 3, const int centrality_bin = 0)
 	  h_sys_jer_flip->Draw("hist same");
 	  h_sys_jes->Draw("hist same");
 	  h_sys_jes_flip->Draw("hist same");
-
-	  h_sys_ZYAM[irange][niter]->Draw("hist same");
-	  h_sys_ZYAM_flip->Draw("hist same");
+	  if (!ispp)
+	    {
+	      h_sys_ZYAM[irange][niter]->Draw("hist same");
+	      h_sys_ZYAM_flip->Draw("hist same");
+	    }
 	  h_sys_prior[irange][niter]->Draw("hist same");
 	  h_sys_prior_flip->Draw("hist same");
 
 
 
 	  cxjsys->cd(2);
-	  dlutility::DrawSPHENIXppPrelimsize(0.02, 0.9, 0.1);
-	  dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.3]{#it{R}} = %0.1f", 0.1*cone_size), 0.02, 0.76, 0, kBlack, 0.1);
-	  dlutility::drawText(Form("%2.1f #kern[-0.1]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.02, 0.69, 0, kBlack, 0.1);
-	  dlutility::drawText(Form("p_{T,2} #kern[-0.15]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.02,0.62, 0, kBlack, 0.1);
-	  dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.02,0.55, 0, kBlack, 0.1);
-	  TLegend *leg4 = new TLegend(0.02, 0.20, 0.9, 0.48);
+	  if (!ispp) dlutility::DrawSPHENIX(0.02, 0.9, 0.08);
+	  else dlutility::DrawSPHENIXpp(0.02, 0.9, 0.08);
+	  dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.3]{#it{R}} = %0.1f", 0.1*cone_size), 0.02, 0.78, 0, kBlack, 0.08);
+	  dlutility::drawText(Form("%2.1f #kern[-0.1]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.02, 0.73, 0, kBlack, 0.08);
+	  dlutility::drawText(Form("p_{T,2} #kern[-0.15]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.02,0.68, 0, kBlack, 0.08);
+	  dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 7#pi/8}", 0.02,0.63, 0, kBlack, 0.08);
+	  if (!ispp) dlutility::drawText(Form("%d - %d %%", (int)icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.02, 0.58, 0, kBlack, 0.08);
+	  TLegend *leg4 = new TLegend(0.02, 0.25, 0.9, 0.53);
 	  leg4->SetTextSize(0.08);
 	  leg4->SetTextFont(42);
 	  leg4->SetLineWidth(0);
 	  leg4->AddEntry(h_total_sys, "Total Systematics","p");
 	  leg4->AddEntry(h_sys_jes_flip, "JES Systematics");
 	  leg4->AddEntry(h_sys_jer_flip, "JER Systematics");
-	  leg4->AddEntry(h_sys_ZYAM_flip, "ZYAM Bkg. Sub.");
+	  if (!ispp) leg4->AddEntry(h_sys_ZYAM_flip, "UE Bkg. Sub.");
 	  leg4->AddEntry(h_sys_prior_flip, "Sensitivity to Prior");
 	  leg4->Draw();
-	  cxjsys->SaveAs(Form("%s/systematic_plots/h_SYS_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
-	  cxjsys->SaveAs(Form("%s/systematic_plots/h_SYS_xj_unfolded_AA_cent_%d_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange, niter));
+	  cxjsys->SaveAs(Form("%s/systematic_plots/h_SYS_xj_unfolded_%s_r%02d_range_%d_iter_%d.png",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
+	  cxjsys->SaveAs(Form("%s/systematic_plots/h_SYS_xj_unfolded_%s_r%02d_range_%d_iter_%d.pdf",  rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, niter));
 
 	}
     }
-  TFile *fsys = new TFile(Form("%s/uncertainties/systematics_AA_cent_%d_r%02d.root",  rb.get_code_location().c_str(), centrality_bin, cone_size), "recreate");
+  TFile *fsys = new TFile(Form("%s/uncertainties/systematics_%s_r%02d.root",  rb.get_code_location().c_str(), system_string.c_str(), cone_size), "recreate");
   for (int iter = 0; iter < niterations; iter++)
     {
       for (int irange = 0; irange < mbins; irange++)

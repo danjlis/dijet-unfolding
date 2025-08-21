@@ -15,10 +15,12 @@ int unfoldHalf_noempty_AA(const std::string configfile = "binning.config", const
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
+  bool ispp = (centrality_bin < 0 ? true : false);
+  
   read_binning rb(configfile.c_str());  
-  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v13_10_new_ProdA_2024-00000030.root";
-  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v13_20_new_ProdA_2024-00000030.root";
-  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v13_30_new_ProdA_2024-00000030.root";
+  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_10_new_ProdA_2024-00000030.root";
+  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_20_new_ProdA_2024-00000030.root";
+  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_30_new_ProdA_2024-00000030.root";
 
   float maxpttruth[3];
   float pt1_truth[3];
@@ -69,7 +71,7 @@ int unfoldHalf_noempty_AA(const std::string configfile = "binning.config", const
       n_events[i] = b_n_events;
 
     }
-    float cs_10 = (2.889e-6);
+  float cs_10 = (2.889e-6);
   float cs_20 = 5.4067742e-8;
   float cs_30 = (2.505e-9);
   
@@ -77,13 +79,14 @@ int unfoldHalf_noempty_AA(const std::string configfile = "binning.config", const
   scale_factor[0] = (n_events[2]/n_events[0]) * cs_10/cs_30;
   scale_factor[1] = (n_events[2]/n_events[1]) * cs_20/cs_30; 
   scale_factor[2] = 1;
-Int_t minentries = rb.get_minentries();
+  Int_t minentries = rb.get_minentries();
   Int_t read_nbins = rb.get_nbins();
   Int_t primer = rb.get_primer();
 
   Double_t dphicut = rb.get_dphicut();
   Double_t dphicuttruth = dphicut;//TMath::Pi()/2.;
 
+  std::string sys_name = "nominal";
   TF1 *fgaus = new TF1("fgaus", "gaus");
   fgaus->SetRange(-0.5, 0.5);
   Double_t JES_sys = rb.get_jes_sys();
@@ -92,14 +95,41 @@ Int_t minentries = rb.get_minentries();
   std::cout << "JER = " << JER_sys << std::endl;
   float width = 0.1 + JER_sys;
   fgaus->SetParameters(1, 0, width);
+  TF1 *f_smear = nullptr;
+  if (!ispp)
+    {
+      f_smear  = (TF1*) rb.get_smear_function(centrality_bin);
+      if (!f_smear)
+	{
+	  std::cout << " NO SMEAR " << std::endl;
+	  exit(-1);
+	}
+    }
 
   if (JER_sys != 0)
     {
+      
+      if (JER_sys < 0)
+	{
+	  sys_name = "negJER";
+	}
+      if (JER_sys > 0)
+	{
+	  sys_name = "posJER";
+	}
       std::cout << "Calculating JER extra = " << JER_sys  << std::endl;
     }
 
   if (JES_sys != 0)
     {
+      if (JES_sys < 0)
+	{
+	  sys_name = "negJES";
+	}
+      if (JES_sys > 0)
+	{
+	  sys_name = "posJES";
+	}
       std::cout << "Calculating JES extra = " << JES_sys  << std::endl;
     }
 
@@ -120,7 +150,7 @@ Int_t minentries = rb.get_minentries();
       std::cout << ipt_bins[i] << " -- " << ixj_bins[i] << std::endl;
     }
 
-
+  Int_t max_reco_bin = rb.get_maximum_reco_bin();
   Int_t prior_sys = rb.get_prior_sys();
   int prior_iteration = 0;
   
@@ -130,16 +160,6 @@ Int_t minentries = rb.get_minentries();
   std::vector<std::pair<float, float>> vertex_scales;
 
   Int_t vtx_sys = rb.get_vtx_sys();
-  if (primer != 1)
-    {
-
-      TFile *fvtx = new TFile(Form("%s/vertex/vertex_reweight_AA_cent_%d_r%02d.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"r");
-      TH1D *h_mbd_reweight = (TH1D*) fvtx->Get("h_mbd_reweight");
-      for (int ib = 0; ib < h_mbd_reweight->GetNbinsX(); ib++)
-	{
-	  vertex_scales.push_back(std::make_pair(h_mbd_reweight->GetBinLowEdge(ib+1) + h_mbd_reweight->GetBinWidth(ib+1), h_mbd_reweight->GetBinContent(ib+1)));
-	}
-    }
 
   float truth_leading_cut = rb.get_truth_leading_cut();
   float truth_subleading_cut = rb.get_truth_subleading_cut();
@@ -177,7 +197,7 @@ Int_t minentries = rb.get_minentries();
 
   int nbin_response = nbins*nbins;
 
-  TString responsepath = rb.get_code_location() + "/response_matrices/response_matrix_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size) + "_HALF.root";
+  TString responsepath = rb.get_code_location() + "/response_matrices/response_matrix_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size) + "_HALF_"+ sys_name + ".root";
   
   TFile *fresponse = new TFile(responsepath.Data(),"r");
   
@@ -270,8 +290,21 @@ Int_t minentries = rb.get_minentries();
 
 	  if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
 
-	  double smear1 = fgaus->GetRandom();
-	  double smear2 = fgaus->GetRandom();
+	  double smear1 = 0;
+	  
+	  double smear2 = 0;
+	  if (ispp)
+	    {
+	      smear1 = fgaus->GetRandom();
+	      smear2 = fgaus->GetRandom();
+	    }
+	  else
+	    {
+	      fgaus->SetParameter(2, f_smear->Eval(e1));
+	      smear1 = fgaus->GetRandom();
+	      fgaus->SetParameter(2, f_smear->Eval(e2));
+	      smear2 = fgaus->GetRandom();
+	    }
 
 	  if (JES_sys != 0)
 	    {
@@ -307,13 +340,13 @@ Int_t minentries = rb.get_minentries();
 		  pt2_reco_bin = ib;
 		}
 	    }
-	  
+	  if (maxi >= ipt_bins[max_reco_bin]) continue;
+	  bool truth_good = (e1 >= truth_leading_cut && e2 >= truth_subleading_cut && dphi_truth[isample] > dphicuttruth);
 	  bool reco_good = (maxi >= reco_leading_cut && mini >= reco_subleading_cut && dphi_reco[isample] > dphicut);
-	  if (reco_good)
+	  if (reco_good && match[isample] && truth_good)
 	    {
 	      h_flat_data_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
 	      h_flat_data_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
-
 	      //h_count_flat_data_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin);
 	      //h_count_flat_data_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin);
 	      continue;
