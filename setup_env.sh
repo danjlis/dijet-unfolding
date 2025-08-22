@@ -1,8 +1,8 @@
 export DIJET_UNFOLDING_PATH=/sphenix/user/dlis/Projects/jet/ppg08-analysis/dijet-unfolding/
 export DIJET_TNTUPLE_PATH=/sphenix/user/dlis/Projects/jet/tntuples/
 
-export AUAU_DATA_PATH=/sphenix/tg/tg01/jets/dlis/data/v81/
-export AUAU_SIM_PATH=/sphenix/tg/tg01/jets/dlis/hijing/v10/
+export AUAU_DATA_PATH=/sphenix/tg/tg01/jets/dlis/data/v102/
+export AUAU_SIM_PATH=/sphenix/tg/tg01/jets/dlis/sim/hijing/v15/
 
 export PP_SIM_PATH=/sphenix/tg/tg01/jets/dlis/sim/pythia/
 export PP_DATA_PATH=/sphenix/tg/tg01/jets/dlis/data/all/
@@ -12,6 +12,7 @@ then
     mkdir final_plots
     mkdir auau_plots
     mkdir jer_plots
+    mkdir jer
     mkdir njet
     mkdir response_matrices
     mkdir setup_env.sh

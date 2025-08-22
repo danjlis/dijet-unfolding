@@ -49,6 +49,11 @@ namespace dlutility{
     h->SetLineWidth(width);
     h->SetLineStyle(style);
   }
+  void SetLineAtt(TGraphErrors *h, Color_t color, float width, int style){
+    h->SetLineColor(color);
+    h->SetLineWidth(width);
+    h->SetLineStyle(style);
+  }
 
 
   void SetMarkerAtt(TProfile *h, Color_t color, float size, int style){
@@ -63,6 +68,11 @@ namespace dlutility{
     h->SetMarkerStyle(style);
   }
   void SetMarkerAtt(TGraph *h, Color_t color, float size, int style){
+    h->SetMarkerColor(color);
+    h->SetMarkerSize(size);
+    h->SetMarkerStyle(style);
+  }
+  void SetMarkerAtt(TGraphErrors *h, Color_t color, float size, int style){
     h->SetMarkerColor(color);
     h->SetMarkerSize(size);
     h->SetMarkerStyle(style);
@@ -987,7 +997,29 @@ namespace dlutility{
     h->GetYaxis()->SetTitleFont(font);
     h->GetYaxis()->SetTitleSize(size);
   }
+  void SetFont(TGraphErrors* h, int font, float size)
+  {
+    h->GetXaxis()->SetLabelFont(font);
+    h->GetXaxis()->SetLabelSize(size);
+    h->GetXaxis()->SetTitleFont(font);
+    h->GetXaxis()->SetTitleSize(size);
+    h->GetYaxis()->SetLabelFont(font);
+    h->GetYaxis()->SetLabelSize(size);
+    h->GetYaxis()->SetTitleFont(font);
+    h->GetYaxis()->SetTitleSize(size);
+  }
   void SetFont(TH1* h, int font, float sizex, float sizey, float slabelx, float slabely)
+  {
+    h->GetXaxis()->SetLabelFont(font);
+    h->GetXaxis()->SetLabelSize(slabelx);
+    h->GetXaxis()->SetTitleFont(font);
+    h->GetXaxis()->SetTitleSize(sizex);
+    h->GetYaxis()->SetLabelFont(font);
+    h->GetYaxis()->SetLabelSize(slabely);
+    h->GetYaxis()->SetTitleFont(font);
+    h->GetYaxis()->SetTitleSize(sizey);
+  }
+  void SetFont(TGraphErrors* h, int font, float sizex, float sizey, float slabelx, float slabely)
   {
     h->GetXaxis()->SetLabelFont(font);
     h->GetXaxis()->SetLabelSize(slabelx);

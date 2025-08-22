@@ -19,9 +19,9 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 
   std::string system_string = (ispp ? "pp" : "AA_cent_" + std::to_string(centrality_bin));
 
-  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_10_new_ProdA_2024-00000030.root";
-  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_20_new_ProdA_2024-00000030.root";
-  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v14_30_new_ProdA_2024-00000030.root";
+  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v15_10_new_ProdA_2024-00000030.root";
+  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v15_20_new_ProdA_2024-00000030.root";
+  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v15_30_new_ProdA_2024-00000030.root";
   if (ispp)
     {
       j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";

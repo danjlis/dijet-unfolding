@@ -38,7 +38,6 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   float centrality;
   
   TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sysname.c_str()),"r");
-
   
   TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
 
@@ -191,61 +190,25 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
+  TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_" + system_string + "_r0" + std::to_string(cone_size);
 
-  TH1D *h_reco_xj = new TH1D("h_reco_xj",";A_{J};1/N", nbins, ixj_bins);
-
-  TH2D *h_pt1pt2 = new TH2D("h_pt1pt2",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins);
-
-  TH1D *h_flat_data_pt1pt2 = new TH1D("h_reco_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
-
-  int nbin_response = nbins*nbins;
+  unfoldpath += "_" + sysname;
+  unfoldpath += ".root";
   
-  int entries = tn->GetEntries();
-  for (int i = 0; i < entries; i++)
+  TFile *funin = new TFile(unfoldpath.Data(),"r");
+  
+  TH1D *h_flat_data_pt1pt2 = (TH1D*) funin->Get("h_data_flat_pt1pt2");
+  if (!h_flat_data_pt1pt2)
     {
-      tn->GetEntry(i);
-      if (!ispp && centrality < icentrality_bins[centrality_bin] || centrality >= icentrality_bins[centrality_bin + 1]) continue;
-      float maxi = std::max(pt1_reco, pt2_reco);
-      float mini = std::min(pt1_reco, pt2_reco);
-
-      float pt1_reco_bin = nbins;
-      float pt2_reco_bin = nbins;
-
-      float es1 = pt1_reco;
-      float es2 = pt2_reco;
-      if (es1 >= ipt_bins[max_reco_bin] ) continue;
-      for (int ib = 0; ib < nbins; ib++)
-	{
-
-	  if ( es1 < ipt_bins[ib+1] && es1 >= ipt_bins[ib])
-	    {
-	      pt1_reco_bin = ib;
-	    }
-	  if ( es2 < ipt_bins[ib+1] && es2 >= ipt_bins[ib])
-	    {
-	      pt2_reco_bin = ib;
-	    }
-	}
-	  
-	 
-      bool reco_good = (maxi >= reco_leading_cut && mini >= reco_subleading_cut && dphi_reco > dphicut);
-
-      if (!reco_good) continue;
+      std::cout << " no h_flat_data_pt1pt2 " << std::endl;
       
-      h_pt1pt2->Fill(es1, es2);
-      h_pt1pt2->Fill(es2, es1);
-      h_flat_data_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin);
-      h_flat_data_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin);
-      h_reco_xj->Fill(mini/maxi);
     }
-
-  std::cout << __LINE__ <<" :: " << "Done with going through data" << std::endl;
-  h_flat_data_pt1pt2->Scale(.5);
-
   TH1D *h_flat_data_skim = (TH1D*) h_flat_reco_skim->Clone();
   h_flat_data_skim->SetName("h_flat_data_skim");
   h_flat_data_skim->Reset();
+
   histo_opps::skim_down_histo(h_flat_data_skim, h_flat_data_pt1pt2, h_flat_reco_mapping);
+
   TH1D *h_flat_unfold_pt1pt2[niterations];
   
   int niter = 1;

@@ -28,7 +28,7 @@ const float dRcut = 1.0;
 static float cone_size = 3;
 const float truth_cut = 3;
 const float reco_cut = 3;
-const float etacut = 1.1;
+const float etacut = 0.8;
 
 const float dphicut = 3*TMath::Pi()/4.;
 const float dphicutloose = TMath::Pi()/2.;
@@ -176,7 +176,7 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
 	{
 	  struct jet tempjet;
 	  if (truth_jet_pt->at(j) < truth_cut) continue;
-	  //	  if (fabs(truth_jet_eta->at(j)) > etacut) continue;	  
+	  if (fabs(truth_jet_eta->at(j)) > etacut) continue;	  
 
 	  tempjet.pt = truth_jet_pt->at(j);
 	  tempjet.eta = truth_jet_eta->at(j);
@@ -217,7 +217,7 @@ void makeMatchedTreesInclusiveAuAu(const int sim_version = 20, const int cone_si
 	  if (reco_jet_pt->at(j) < reco_cut) continue;
 	  if (reco_jet_e->at(j) < 0) continue;
 	  if (reco_jet_e_unsub->at(j) < 0) continue;
-	  //	  if (fabs(reco_jet_eta->at(j)) > etacut) continue;
+	  if (fabs(reco_jet_eta->at(j)) > etacut) continue;
 
 	  struct jet tempjet;
 	  tempjet.pt = reco_jet_pt->at(j);

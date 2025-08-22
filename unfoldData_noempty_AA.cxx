@@ -142,8 +142,18 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
 	  scale_to_signal[i][j] = 1;
 	}
     }
+
+  TH1D *h_pt2_prob = nullptr;
+  
   if (!ispp)
     {
+
+      TString probpath = rb.get_code_location() + "/unfolding_hists/probability_hists_AA_r0" + std::to_string(cone_size) + ".root";
+  
+      TFile *fprob = new TFile(probpath.Data(),"read");
+
+      h_pt2_prob = (TH1D*) fprob->Get(Form("h_pt2_bin_log_correction_%d", centrality_bin));
+
       TString bkgpath = rb.get_code_location() + "/unfolding_hists/background_hists_" + system_string + "_r0" + std::to_string(cone_size) + ".root";
   
       TFile *fbkg = new TFile(bkgpath.Data(),"read");
@@ -389,24 +399,49 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
       std::cout << "doing the ZYAM" << std::endl;
       h_pt1pt2->Add(h_pt1pt2_ZYAM, -1);
       h_flat_data_pt1pt2->Add(h_flat_data_pt1pt2_ZYAM, -1);
+
       
       for (int ix = 0; ix < h_pt1pt2->GetXaxis()->GetNbins(); ix++)
 	{
 	  for (int iy = 0; iy < h_pt1pt2->GetXaxis()->GetNbins(); iy++)
 	    {
+	      int sbin = std::min(ix, iy);
 	      int xybin = h_pt1pt2->GetBin(ix+1, iy+1);
+	      float nen = h_pt1pt2->GetBinContent(xybin);
+	      float nerr = h_pt1pt2->GetBinError(xybin);
 	      if (h_pt1pt2->GetBinContent(xybin) < 0)
 		{
 		  h_pt1pt2->SetBinContent(xybin, 0);
 		}
+	      else
+		{
+		  nen /= h_pt2_prob->GetBinContent(sbin + 1);
+		  nerr /= h_pt2_prob->GetBinContent(sbin + 1);
+		  h_pt1pt2->SetBinContent(xybin, nen);
+		  h_pt1pt2->SetBinError(xybin, nerr);
+		}
+
 	    }
 	}
 
-      for (int ix = 0; ix < h_flat_data_pt1pt2->GetXaxis()->GetNbins(); ix++)
+      for (int ix = 0; ix < nbins; ix++)
 	{
-	  if (h_flat_data_pt1pt2->GetBinContent(ix+1) < 0)
+	  for (int iy = 0; iy < nbins; iy++)
 	    {
-	      h_flat_data_pt1pt2->SetBinContent(ix+1, 0);
+	      int xybin = 1 + ix + nbins*iy;
+
+	      int sbin = std::min(ix, iy);	      
+	      float nen = h_flat_data_pt1pt2->GetBinContent(xybin);
+	      float nerr = h_flat_data_pt1pt2->GetBinError(xybin);
+	      if (nen < 0)
+		h_flat_data_pt1pt2->SetBinContent(xybin, 0);
+	      else
+		{
+		  nen /= h_pt2_prob->GetBinContent(sbin + 1);
+		  nerr /= h_pt2_prob->GetBinContent(sbin + 1);
+		  h_flat_data_pt1pt2->SetBinContent(xybin, nen);
+		  h_flat_data_pt1pt2->SetBinError(xybin, nerr);
+		}
 	    }
 	}
     }
@@ -417,13 +452,22 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
 	  for (int iy = 0; iy < h_pt1pt2->GetXaxis()->GetNbins(); iy++)
 	    {
 	      int xybin = h_pt1pt2->GetBin(ix+1, iy+1);
+
+	      int sbin = std::min(ix, iy);
 	      
 	      float n_bkg = h_pt1pt2->GetBinContent(xybin);
+	      float nerr = h_pt1pt2->GetBinError(xybin);
+
 	      if (n_bkg < scale_to_signal[ix][iy])
 		h_pt1pt2->SetBinContent(xybin, 0);
 	      else
 		{
-		  h_pt1pt2->SetBinContent(xybin, n_bkg - scale_to_signal[ix][iy]);
+		  float nen = n_bkg - scale_to_signal[ix][iy];
+		  nen /= h_pt2_prob->GetBinContent(sbin + 1);
+		  nerr /= h_pt2_prob->GetBinContent(sbin + 1);
+
+		  h_pt1pt2->SetBinContent(xybin, nen);
+		  h_pt1pt2->SetBinError(xybin, nerr);
 		}
 	    }
 	}
@@ -431,17 +475,24 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
 	{
 	  for (int iy = 0; iy < nbins; iy++)
 	    {
-	      int gbin = 1 + ix + nbins*iy;
-	  
-	      float nen = h_flat_data_pt1pt2->GetBinContent(gbin);
+	      int xybin = 1 + ix + nbins*iy;
+	      int sbin = std::min(ix, iy);
+	      
+	      float nen = h_flat_data_pt1pt2->GetBinContent(xybin);
+	      float nerr = h_flat_data_pt1pt2->GetBinError(xybin);
+
 	      if (nen < scale_to_signal[ix][iy])
-		h_flat_data_pt1pt2->SetBinContent(gbin, 0);
+		h_flat_data_pt1pt2->SetBinContent(xybin, 0);
 	      else
-		h_flat_data_pt1pt2->SetBinContent(gbin, nen - scale_to_signal[ix][iy]);
+		{
+		  nen -= scale_to_signal[ix][iy];
+		  nen /= h_pt2_prob->GetBinContent(sbin + 1);
+		  nerr /= h_pt2_prob->GetBinContent(sbin + 1);
+		  h_flat_data_pt1pt2->SetBinContent(xybin, nen);
+		  h_flat_data_pt1pt2->SetBinError(xybin, nerr);
+		}
 	    }
 	}
-  
-
     }
 
   //  h_flat_data_pt1pt2->Add(h_flat_data_pt1pt2_ZYAM, -1);

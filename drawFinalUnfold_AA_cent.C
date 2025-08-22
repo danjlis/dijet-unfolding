@@ -10,7 +10,6 @@ const float marker_pp_unfold = 20;
 const float msize_pp_unfold = 0.9;
 const float lsize_pp_unfold = 1.1;
 
-
 const int color_pythia = kRed;
 const float msize_pythia = 0.9;
 const float marker_pythia = 20;
@@ -41,10 +40,10 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
   dlutility::SetyjPadStyle();
 
 
-  int color_unfold_fill[4] = {kRed + 1, kOrange, kGreen + 2, kAzure - 4};
-  int color_unfold[4] = {kRed + 1, kAzure + 2, kGreen+3, kViolet -1};
-  float marker_unfold = 20;
-  float msize_unfold = 0.9;
+  int color_unfold_fill[5] = {kRed + 1, kAzure + 2, kGreen + 3, kViolet - 1, kBlack};
+  int color_unfold[5] = {kRed + 1, kAzure + 2, kGreen+3, kViolet -1, kBlack};
+  int marker_unfold[5] = {20, 21, 33, 34, 43};
+  float msize_unfold[5] = {0.9, 0.8, 1.4, 1, 1.3};
   float lsize_unfold = 2.2;
 
   
@@ -561,65 +560,118 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
 
     }
 
-  TCanvas *cxj_money = new TCanvas("cxj_money","cxj_money", 500, 500);
+  TCanvas *cxj_money = new TCanvas("cxj_money","cxj_money", 700, 500);
+  
+  TGraphAsymmErrors *g_final_xj_unfold_range[5][3];
 
+  for (int i = 0; i < 3; i++)
+    {
+      for (int j = 0; j < 5; j++)
+	{	  
+
+	  TH1D *h = (TH1D*) h_final_xj_pp_unfold_range[i][niter]->Clone();
+	  if (j < 4)
+	    {
+	      h = (TH1D*) h_final_xj_unfold_range[j][i][niter]->Clone();
+	    }
+
+	  g_final_xj_unfold_range[j][i] = new TGraphAsymmErrors(h);
+
+	  int fix_shift_done = 0;
+	  float fix_shift = 0;
+	  for (int b=1; b<=h->GetNbinsX(); b++) {
+	    double binwidth = h->GetBinWidth(b);
+	    double shift = binwidth / 5.;
+	    if (!fix_shift_done) fix_shift = shift;
+	    double x = h->GetBinCenter(b);
+	    double y = h->GetBinContent(b);
+	    double ex = fix_shift/2.;
+	    double ey = h->GetBinError(b);
+	    double sx=x + (j-2)*fix_shift;
+	    double exlow = sx - h->GetBinLowEdge(b);
+	    double exhigh = (x - sx) + binwidth/2.;
+	    if (x < 0.27)
+	      {
+		g_final_xj_unfold_range[j][i]->SetPoint(b-1, -9999, -9999); // offset each histogram
+		g_final_xj_unfold_range[j][i]->SetPointError(b-1, exlow, exhigh, ey, ey);
+		if (j < 4)
+		  {
+		    g_final_xj_systematics[j][i][niter]->SetPointEXhigh(b-1, ex);
+		    g_final_xj_systematics[j][i][niter]->SetPointEXlow(b-1, ex); 
+		    g_final_xj_systematics[j][i][niter]->SetPointX(b-1, -9999);
+		  }
+		else
+		  {
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXhigh(b-1, ex);
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXlow(b-1, ex);
+		    g_final_xj_pp_systematics[i][niter]->SetPointX(b-1, -9999); 
+		  }
+
+	      }
+	    else
+	      {
+		fix_shift_done = 1;
+		g_final_xj_unfold_range[j][i]->SetPoint(b-1, sx, y); // offset each histogram
+		g_final_xj_unfold_range[j][i]->SetPointError(b-1, exlow, exhigh, ey, ey);
+		if (j < 4)
+		  {
+		    g_final_xj_systematics[j][i][niter]->SetPointEXhigh(b-1, ex);
+		    g_final_xj_systematics[j][i][niter]->SetPointEXlow(b-1, ex); 
+		    g_final_xj_systematics[j][i][niter]->SetPointX(b-1, sx);
+		  }
+		else
+		  {
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXhigh(b-1, ex);
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXlow(b-1, ex);
+		    g_final_xj_pp_systematics[i][niter]->SetPointX(b-1, sx); 
+		  }
+	      }
+	  }
+	}
+    }
   for (int irange = 0; irange < mbins; irange++)
     {
-
+      
       h_linear_truth_xj[irange]->Scale(1./h_linear_truth_xj[irange]->Integral(0, -1, "width"));
-      for (int ic = 0; ic <cent_bins; ic++)
+      for (int ic = 0; ic <cent_bins + 1; ic++)
 	{
-	  dlutility::SetLineAtt(h_final_xj_unfold_range[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[ic][irange][niter], color_unfold[ic], msize_unfold, marker_unfold);
-	  dlutility::SetLineAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
-	  dlutility::SetMarkerAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], msize_unfold, marker_unfold);
-	  g_final_xj_systematics[ic][irange][niter]->SetFillColorAlpha(color_unfold_fill[ic], 0.3); 
-	  g_final_xj_systematics[ic][irange][niter]->SetFillStyle(0);//ColorAlpha(color_unfold_fill[ic], 0.3);
-
-
+	  dlutility::SetLineAtt(g_final_xj_unfold_range[ic][irange], color_unfold[ic], lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(g_final_xj_unfold_range[ic][irange], color_unfold[ic], msize_unfold[ic], marker_unfold[ic]);
+	  if (ic < 4)
+	    {
+	      dlutility::SetLineAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
+	      dlutility::SetMarkerAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], msize_unfold[ic], marker_unfold[ic]);
+	      
+	      g_final_xj_systematics[ic][irange][niter]->SetFillColorAlpha(color_unfold_fill[ic], 0.3); 
+	    }
+	  else
+	    {
+	      dlutility::SetLineAtt(g_final_xj_pp_systematics[irange][niter], color_unfold[ic], lsize_unfold, 1);
+	      dlutility::SetMarkerAtt(g_final_xj_pp_systematics[irange][niter], color_unfold[ic], msize_unfold[ic], marker_unfold[ic]);
+	      
+	      g_final_xj_pp_systematics[irange][niter]->SetFillColorAlpha(color_unfold_fill[ic], 0.3); 
+	      
+	    }
 	}
       
-      dlutility::SetLineAtt(h_final_xj_pp_unfold_range[irange][niter], color_pp_unfold, lsize_pp_unfold, 1);
-      dlutility::SetMarkerAtt(h_final_xj_pp_unfold_range[irange][niter], color_pp_unfold, msize_pp_unfold, marker_pp_unfold);
-
-      
-      dlutility::SetLineAtt(g_final_xj_pp_systematics[irange][niter], color_pp_unfold, lsize_pp_unfold, 1);
-      dlutility::SetMarkerAtt(g_final_xj_pp_systematics[irange][niter], color_pp_unfold, msize_pp_unfold, marker_pp_unfold);
-      g_final_xj_pp_systematics[irange][niter]->SetFillColorAlpha(color_pp_unfold_fill, 0.3); 
-
-      dlutility::SetLineAtt(h_linear_truth_xj[irange], color_pythia, 3, 1);
-      dlutility::SetMarkerAtt(h_linear_truth_xj[irange], color_pythia, msize_pythia, marker_pythia);
-
-
-
-      h_linear_truth_xj[irange]->SetMaximum(4.5);
-      h_linear_truth_xj[irange]->SetMinimum(0);
-      h_linear_truth_xj[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
-
-            //h_final_xj_truth_range[irange]->Draw("E4 same");
-      //TH1D *hh = (TH1D*) h_final_xj_herwig_range[irange]->Rebin(nbins - first_bin, Form("h_rebin_herwig_%d", irange), &dxj_bins[first_bin]);
-      TH1D *hs[cent_bins];
-      TH1D *hs_pp = (TH1D*) h_final_xj_pp_systematics[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_pp_sys_%d", irange), &dxj_bins[first_bin]);
-      TH1D *hu[cent_bins];
-      for (int ic = 0; ic < cent_bins; ic++)
-	{
-	  hs[ic] = (TH1D*) h_final_xj_systematics[ic][irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_sys_%d_%d", ic, irange), &dxj_bins[first_bin]);
-	  hu[ic] = (TH1D*) h_final_xj_unfold_range[ic][irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d_%d", ic, irange), &dxj_bins[first_bin]);
-	}
-      TH1D *hpp = (TH1D*) h_final_xj_pp_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_pp_unf_%d", irange), &dxj_bins[first_bin]);
 
       gPad->SetTopMargin(0.05);
       gPad->SetRightMargin(0.05);
-      gPad->SetLeftMargin(0.17);
+      gPad->SetLeftMargin(0.16);
       gPad->SetBottomMargin(0.17);
-      hu[0]->GetYaxis()->SetTitleOffset(1.8);
-      dlutility::SetFont(hu[0], 42, 0.06, 0.04, 0.05, 0.05);
-      hu[0]->SetMaximum(5);
-      hu[0]->SetMinimum(0);
-      hu[0]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
+
+      TH1D *hh = new TH1D("hh","", 1, -0.1, 1);
+      hh->GetYaxis()->SetTitleOffset(1.8);
+
+      dlutility::SetFont(hh, 42, 0.06, 0.04, 0.05, 0.05);
+
+      hh->SetMaximum(4);
+      hh->SetMinimum(0);
+      hh->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
       //ht->Draw("E4 same");
-      hu[0]->Draw("p E1");
+      hh->Draw("hist");
+      g_final_xj_unfold_range[0][irange]->Draw("same p E1");
       for (int ic = 0; ic < cent_bins; ic ++)
 	{
 	  g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
@@ -628,33 +680,32 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
       //hs->Draw("same p E2");
       //h_linear_truth_xj[irange]->Draw("same hist C");
       //      h_linear_herwig_xj[irange]->Draw("same hist C");
-      hpp->Draw("same p E1");
-      for (int i = 0; i < cent_bins; i++)
+      for (int i = 0; i < cent_bins + 1; i++)
 	{
-	  hu[i]->Draw("same p E1");
+	  g_final_xj_unfold_range[i][irange]->Draw("same p E1");
 	}
 
-
-      float top = 0.88;
+      float xm = 0.2;
+      float top = 0.88;      
       float ss = 0.05;
-      dlutility::DrawSPHENIX(0.22, top);
+      dlutility::DrawSPHENIX(xm, top);
 
-      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.1]{#it{R = %0.1f}}", cone_size*0.1), 0.22, top - 2*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, top - 3*ss);
-      dlutility::drawText(Form("p_{T,2}^{lead} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, top - 4*ss);
-      dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, top - 5*ss);
+      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.1]{#it{R = %0.1f}}", cone_size*0.1), xm, top - 2*ss);
+      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), xm, top - 3*ss);
+      dlutility::drawText(Form("p_{T,2}^{lead} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), xm, top - 4*ss);
+      dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), xm, top - 5*ss);
       
       
-      TLegend *leg = new TLegend(0.65, top - 3*ss, 0.8, top);
+      TLegend *leg = new TLegend(xm, top - 5.5*ss, 0.3, top - 9.5*ss);
       leg->SetLineWidth(0);
       leg->SetTextSize(0.04);
       
       leg->SetTextFont(42);
-      leg->AddEntry(hu[0], "0-10%");
-      leg->AddEntry(hu[1], "10-30%");
-      leg->AddEntry(hu[2], "30-50%");
-      leg->AddEntry(hu[3], "50-90%");
-      leg->AddEntry(hpp, "pp");
+      leg->AddEntry(g_final_xj_unfold_range[0][irange], "0-10%");
+      leg->AddEntry(g_final_xj_unfold_range[1][irange], "10-30%");
+      leg->AddEntry(g_final_xj_unfold_range[2][irange], "30-50%");
+      leg->AddEntry(g_final_xj_unfold_range[3][irange], "50-90%");
+      leg->AddEntry(g_final_xj_unfold_range[4][irange], "pp");
       leg->Draw("same");
 
       cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_AA_cent_all_r%02d_range_%d.png",  rb.get_code_location().c_str(), cone_size, irange));

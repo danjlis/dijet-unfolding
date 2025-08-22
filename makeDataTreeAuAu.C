@@ -22,19 +22,19 @@ const float dRcut = 1.3;
 float cone_size = 4;
 const float truth_cut = 3;
 const float reco_cut = 8;
-const float etacut = 1.1;
+const float etacut = 0.8;
 
 const float dphicut = 0;//3*TMath::Pi()/4.;
 const float dphicutloose = 0;//3*TMath::Pi()/4.;
 
 const float vertex_cut = 60;
 
-void makeDataTreeAuAu(const std::string infile, const int cone_size_int = 4, const int isAuAu = 0)
+void makeDataTreeAuAu(const int cone_size_int = 3, const int isAuAu = 1)
 {
 
   read_binning rb("binning_AA.config");
 
-  std::string infile = rb.get_data_location() + "/TREE_DIJET_v10_2_502_2024p022_v001_gl10-all.root";
+  std::string infile = "../../trees//TREE_DIJET_v10_1_492_2024p020_v007_gl10-all.root";
   cone_size = (float) cone_size_int;
   std::cout << cone_size << std::endl;
   std::string mycopy = infile;
