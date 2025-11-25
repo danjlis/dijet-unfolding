@@ -178,22 +178,22 @@ void makeJER(const int cone_size = 4)
   TRandom *rng = new TRandom();  
 
   TH1D *h_lead_sample[6];
-  TH1D *h_lead_combined = new TH1D("h_lead_combined","; Leading Truth Jet p_{T} [GeV]; lumi scale * counts",100, 0, 100);
+  TH1D *h_lead_combined = new TH1D("h_lead_combined","; Leading Truth Jet #it{p}_{T} [GeV]; lumi scale * counts",100, 0, 100);
   for (int i = 0; i < 6; i++)
     {
-      h_lead_sample[i] = new TH1D(Form("h_lead_sample_%d", i), "; Leading Truth Jet p_{T} [GeV]; lumi scale * counts",100, 0, 100);
+      h_lead_sample[i] = new TH1D(Form("h_lead_sample_%d", i), "; Leading Truth Jet #it{p}_{T} [GeV]; lumi scale * counts",100, 0, 100);
     }
-  TH1D *h_sigp_sim = new TH1D("h_sigp_sim",";<p_{T}> [GeV];#sigma(p_{T, #psi})", 4, 20, 40);
-  TH1D *h_sigp_data = new TH1D("h_sigp_data",";<p_{T}> [GeV];#sigma(p_{T, #psi})", 4, 20, 40);
+  TH1D *h_sigp_sim = new TH1D("h_sigp_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 4, 20, 40);
+  TH1D *h_sigp_data = new TH1D("h_sigp_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 4, 20, 40);
 
-  TH1D *h_sigv_sim = new TH1D("h_sigv_sim",";<p_{T}> [GeV];#sigma(p_{T, #eta})", 4, 20, 40);
-  TH1D *h_sigv_data = new TH1D("h_sigv_data",";<p_{T}> [GeV];#sigma(p_{T, #eta})", 4, 20, 40);
+  TH1D *h_sigv_sim = new TH1D("h_sigv_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 4, 20, 40);
+  TH1D *h_sigv_data = new TH1D("h_sigv_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 4, 20, 40);
 
-  TH1D *h_jer_sim = new TH1D("h_jer_sim",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
-  TH1D *h_jer_data = new TH1D("h_jer_data",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
+  TH1D *h_jer_sim = new TH1D("h_jer_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+  TH1D *h_jer_data = new TH1D("h_jer_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
 
-  TH1D *h_ptavg_sim = new TH1D("h_ptavg_sim",";<p_{T}> [GeV];Counts", 4, 20, 40);
-  TH1D *h_ptavg_data = new TH1D("h_ptavg_data",";<p_{T}> [GeV];Counts", 4, 20, 40);
+  TH1D *h_ptavg_sim = new TH1D("h_ptavg_sim",";<#it{p}_{T}> [GeV];Counts", 4, 20, 40);
+  TH1D *h_ptavg_data = new TH1D("h_ptavg_data",";<#it{p}_{T}> [GeV];Counts", 4, 20, 40);
 
   TH2D *h_trigger_ptv_pta_sim = new TH2D("h_trigger_ptv_pta_sim",";pta;ptv", 4, 20, 40, 80, -40, 40);
   TH2D *h_trigger_ptv_pta_data = new TH2D("h_trigger_ptv_pta_data",";pta;ptv", 4, 20, 40, 80, -40, 40);
@@ -213,28 +213,28 @@ void makeJER(const int cone_size = 4)
 
 
   // 3jet cut
-  TH1D *h_sigp_sim_3jet[8]; // new TH1D("h_sigp_sim",";<p_{T}> [GeV];#sigma(p_{T, #psi})", 10, 20, 40);
-  TH1D *h_sigp_data_3jet[8]; // new TH1D("h_sigp_data",";<p_{T}> [GeV];#sigma(p_{T, #psi})", 10, 20, 40);
+  TH1D *h_sigp_sim_3jet[8]; // new TH1D("h_sigp_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 10, 20, 40);
+  TH1D *h_sigp_data_3jet[8]; // new TH1D("h_sigp_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 10, 20, 40);
 
-  TH1D *h_sigv_sim_3jet[8]; // new TH1D("h_sigv_sim",";<p_{T}> [GeV];#sigma(p_{T, #eta})", 10, 20, 40);
-  TH1D *h_sigv_data_3jet[8]; // new TH1D("h_sigv_data",";<p_{T}> [GeV];#sigma(p_{T, #eta})", 10, 20, 40);
+  TH1D *h_sigv_sim_3jet[8]; // new TH1D("h_sigv_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 10, 20, 40);
+  TH1D *h_sigv_data_3jet[8]; // new TH1D("h_sigv_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 10, 20, 40);
 
-  TH1D *h_jer_sim_3jet[8]; // new TH1D("h_jer_sim",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
-  TH1D *h_jer_data_3jet[8]; // new TH1D("h_jer_data",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
+  TH1D *h_jer_sim_3jet[8]; // new TH1D("h_jer_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
+  TH1D *h_jer_data_3jet[8]; // new TH1D("h_jer_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
 
-  TH1D *h_jer_truth_im_3jet[8]; // new TH1D("h_jer_truth",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
-  TH1D *h_jer_sim_im_3jet[8]; // new TH1D("h_jer_sim",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
-  TH1D *h_jer_data_im_3jet[8]; // new TH1D("h_jer_data",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
+  TH1D *h_jer_truth_im_3jet[8]; // new TH1D("h_jer_truth",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
+  TH1D *h_jer_sim_im_3jet[8]; // new TH1D("h_jer_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
+  TH1D *h_jer_data_im_3jet[8]; // new TH1D("h_jer_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
 
-  TH1D *h_jer_truth_im_softcorr_3jet[8]; // new TH1D("h_jer_truth",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
-  TH1D *h_jer_sim_im_softcorr_3jet[8]; // new TH1D("h_jer_sim",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
-  TH1D *h_jer_data_im_softcorr_3jet[8]; // new TH1D("h_jer_data",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
+  TH1D *h_jer_truth_im_softcorr_3jet[8]; // new TH1D("h_jer_truth",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
+  TH1D *h_jer_sim_im_softcorr_3jet[8]; // new TH1D("h_jer_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
+  TH1D *h_jer_data_im_softcorr_3jet[8]; // new TH1D("h_jer_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
 
-  TH1D *h_jer_sim_im_softcorr_part_3jet[8]; // new TH1D("h_jer_sim",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
-  TH1D *h_jer_data_im_softcorr_part_3jet[8]; // new TH1D("h_jer_data",";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 10, 20, 40);
+  TH1D *h_jer_sim_im_softcorr_part_3jet[8]; // new TH1D("h_jer_sim",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
+  TH1D *h_jer_data_im_softcorr_part_3jet[8]; // new TH1D("h_jer_data",";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 10, 20, 40);
 
-  TH1D *h_ptavg_sim_3jet[8]; // new TH1D("h_ptavg_sim",";<p_{T}> [GeV];Counts", 10, 20, 40);
-  TH1D *h_ptavg_data_3jet[8]; // new TH1D("h_ptavg_data",";<p_{T}> [GeV];Counts", 10, 20, 40);
+  TH1D *h_ptavg_sim_3jet[8]; // new TH1D("h_ptavg_sim",";<#it{p}_{T}> [GeV];Counts", 10, 20, 40);
+  TH1D *h_ptavg_data_3jet[8]; // new TH1D("h_ptavg_data",";<#it{p}_{T}> [GeV];Counts", 10, 20, 40);
 
   TH2D *h_trigger_ptv_pta_sim_3jet[8]; // new TH2D("h_trigger_ptv_pta_sim",";pta;ptv", 10, 20, 40, 40, -20, 20);
   TH2D *h_trigger_ptv_pta_data_3jet[8]; // new TH2D("h_trigger_ptv_pta_data",";pta;ptv", 10, 20, 40, 40, -20, 20);
@@ -254,27 +254,27 @@ void makeJER(const int cone_size = 4)
 
   for (int i = 0; i < 8; i++)
   {
-    h_sigp_sim_3jet[i] = new TH1D(Form("h_sigp_sim_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T, #psi})", 4, 20, 40);
-    h_sigp_data_3jet[i] = new TH1D(Form("h_sigp_data_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T, #psi})", 4, 20, 40);
+    h_sigp_sim_3jet[i] = new TH1D(Form("h_sigp_sim_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 4, 20, 40);
+    h_sigp_data_3jet[i] = new TH1D(Form("h_sigp_data_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 4, 20, 40);
 
-    h_sigv_sim_3jet[i] = new TH1D(Form("h_sigv_sim_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T, #eta})", 4, 20, 40);
-    h_sigv_data_3jet[i] = new TH1D(Form("h_sigv_data_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T, #eta})", 4, 20, 40);
-    h_jer_sim_3jet[i] = new TH1D(Form("h_jer_sim_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
-    h_jer_data_3jet[i] = new TH1D(Form("h_jer_data_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
+    h_sigv_sim_3jet[i] = new TH1D(Form("h_sigv_sim_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 4, 20, 40);
+    h_sigv_data_3jet[i] = new TH1D(Form("h_sigv_data_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 4, 20, 40);
+    h_jer_sim_3jet[i] = new TH1D(Form("h_jer_sim_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+    h_jer_data_3jet[i] = new TH1D(Form("h_jer_data_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
 
-    h_jer_sim_im_3jet[i] = new TH1D(Form("h_jer_sim_im_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
-    h_jer_data_im_3jet[i] = new TH1D(Form("h_jer_data_im_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
-    h_jer_truth_im_3jet[i] = new TH1D(Form("h_jer_truth_im_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
+    h_jer_sim_im_3jet[i] = new TH1D(Form("h_jer_sim_im_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+    h_jer_data_im_3jet[i] = new TH1D(Form("h_jer_data_im_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+    h_jer_truth_im_3jet[i] = new TH1D(Form("h_jer_truth_im_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
 
-    h_jer_sim_im_softcorr_3jet[i] = new TH1D(Form("h_jer_sim_im_softcorr_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
-    h_jer_data_im_softcorr_3jet[i] = new TH1D(Form("h_jer_data_im_softcorr_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
-    h_jer_truth_im_softcorr_3jet[i] = new TH1D(Form("h_jer_truth_im_softcorr_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
+    h_jer_sim_im_softcorr_3jet[i] = new TH1D(Form("h_jer_sim_im_softcorr_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+    h_jer_data_im_softcorr_3jet[i] = new TH1D(Form("h_jer_data_im_softcorr_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+    h_jer_truth_im_softcorr_3jet[i] = new TH1D(Form("h_jer_truth_im_softcorr_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
 
-    h_jer_sim_im_softcorr_part_3jet[i] = new TH1D(Form("h_jer_sim_im_softcorr_part_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
-    h_jer_data_im_softcorr_part_3jet[i] = new TH1D(Form("h_jer_data_im_softcorr_part_3jet%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 4, 20, 40);
+    h_jer_sim_im_softcorr_part_3jet[i] = new TH1D(Form("h_jer_sim_im_softcorr_part_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+    h_jer_data_im_softcorr_part_3jet[i] = new TH1D(Form("h_jer_data_im_softcorr_part_3jet%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
 
-    h_ptavg_sim_3jet[i] = new TH1D(Form("h_ptavg_sim_3jet%d", i),";<p_{T}> [GeV];Counts", 4, 20, 40);
-    h_ptavg_data_3jet[i] = new TH1D(Form("h_ptavg_data_3jet%d", i),";<p_{T}> [GeV];Counts", 4, 20, 40);
+    h_ptavg_sim_3jet[i] = new TH1D(Form("h_ptavg_sim_3jet%d", i),";<#it{p}_{T}> [GeV];Counts", 4, 20, 40);
+    h_ptavg_data_3jet[i] = new TH1D(Form("h_ptavg_data_3jet%d", i),";<#it{p}_{T}> [GeV];Counts", 4, 20, 40);
 
     h_trigger_ptv_pta_sim_3jet[i] = new TH2D(Form("h_trigger_ptv_pta_sim_3jet%d", i),";pta;ptv", 4, 20, 40, 80, -40, 40);
     h_trigger_ptv_pta_data_3jet[i] = new TH2D(Form("h_trigger_ptv_pta_data_3jet%d", i),";pta;ptv", 4, 20, 40, 80, -40, 40);
@@ -349,17 +349,17 @@ void makeJER(const int cone_size = 4)
   TProfile *hp_em_cosdphi_pta_data[5];
   for (int i = 0; i < 5; i++)
     {
-      h_em_sigp_sim[i] = new TH1D(Form("h_em_sigp_sim_%d", i),";<p_{T}> [GeV];#sigma(p_{T, #psi})", 5, 20, 40);
-      h_em_sigp_data[i] = new TH1D(Form("h_em_sigp_data_%d", i),";<p_{T}> [GeV];#sigma(p_{T, #psi})", 5, 20, 40);
+      h_em_sigp_sim[i] = new TH1D(Form("h_em_sigp_sim_%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 5, 20, 40);
+      h_em_sigp_data[i] = new TH1D(Form("h_em_sigp_data_%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #psi})", 5, 20, 40);
 
-      h_em_sigv_sim[i] = new TH1D(Form("h_em_sigv_sim_%d", i),";<p_{T}> [GeV];#sigma(p_{T, #eta})", 5, 20, 40);
-      h_em_sigv_data[i] = new TH1D(Form("h_em_sigv_data_%d", i),";<p_{T}> [GeV];#sigma(p_{T, #eta})", 5, 20, 40);
+      h_em_sigv_sim[i] = new TH1D(Form("h_em_sigv_sim_%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 5, 20, 40);
+      h_em_sigv_data[i] = new TH1D(Form("h_em_sigv_data_%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T, #eta})", 5, 20, 40);
 
-      h_em_jer_sim[i] = new TH1D(Form("h_em_jer_sim_%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 5, 20, 40);
-      h_em_jer_data[i] = new TH1D(Form("h_em_jer_data_%d", i),";<p_{T}> [GeV];#sigma(p_{T})/p_{T}", 5, 20, 40);
+      h_em_jer_sim[i] = new TH1D(Form("h_em_jer_sim_%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 5, 20, 40);
+      h_em_jer_data[i] = new TH1D(Form("h_em_jer_data_%d", i),";<#it{p}_{T}> [GeV];#sigma(#it{p}_{T})/#it{p}_{T}", 5, 20, 40);
 
-      h_em_ptavg_sim[i] = new TH1D(Form("h_em_ptavg_sim_%d", i),";<p_{T}> [GeV];Counts", 5, 20, 40);
-      h_em_ptavg_data[i] = new TH1D(Form("h_em_ptavg_data_%d", i),";<p_{T}> [GeV];Counts", 5, 20, 40);
+      h_em_ptavg_sim[i] = new TH1D(Form("h_em_ptavg_sim_%d", i),";<#it{p}_{T}> [GeV];Counts", 5, 20, 40);
+      h_em_ptavg_data[i] = new TH1D(Form("h_em_ptavg_data_%d", i),";<#it{p}_{T}> [GeV];Counts", 5, 20, 40);
 
       h_em_trigger_ptv_pta_sim[i] = new TH2D(Form("h_em_trigger_ptv_pta_sim_%d", i),";pta;ptv", 5, 20, 40, 80, -40, 40);
       h_em_trigger_ptv_pta_data[i] = new TH2D(Form("h_em_trigger_ptv_pta_data_%d", i),";pta;ptv", 5, 20, 40, 80, -40, 40);
@@ -590,9 +590,9 @@ void makeJER(const int cone_size = 4)
 
   for (int i = 0; i < 8; i++)
     {
-      h_truth_3jet_softcorr[i] = new TH1D(Form("h_truth_3jet_softcorr_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 4, 20, 40);
-      h_sim_3jet_softcorr[i] = new TH1D(Form("h_sim_3jet_softcorr_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 4, 20, 40);
-      h_data_3jet_softcorr[i] = new TH1D(Form("h_data_3jet_softcorr_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 4, 20, 40);
+      h_truth_3jet_softcorr[i] = new TH1D(Form("h_truth_3jet_softcorr_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+      h_sim_3jet_softcorr[i] = new TH1D(Form("h_sim_3jet_softcorr_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
+      h_data_3jet_softcorr[i] = new TH1D(Form("h_data_3jet_softcorr_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 4, 20, 40);
     }
   
   TH1D *h_sim_3jet_sigv[4];
@@ -613,17 +613,17 @@ void makeJER(const int cone_size = 4)
   for (int i = 0; i < 4; i++)
     {
       if (NUCLEAR) std::cout << __LINE__ << std::endl;
-      h_sim_3jet_sigma[i] = new TH1D(Form("h_sim_3jet_sigma_%d", i), ";p_{T,3}; #sigma(p_{T, #psi})", 10, 0.5, 10.5);
-      h_data_3jet_sigma[i] = new TH1D(Form("h_data_3jet_sigma_%d", i), ";p_{T,3}; #sigma(p_{T, #psi})", 10, 0.5, 10.5);
+      h_sim_3jet_sigma[i] = new TH1D(Form("h_sim_3jet_sigma_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T, #psi})", 10, 0.5, 10.5);
+      h_data_3jet_sigma[i] = new TH1D(Form("h_data_3jet_sigma_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T, #psi})", 10, 0.5, 10.5);
       
-      h_sim_3jet_sigp[i] = new TH1D(Form("h_sim_3jet_sigp_%d", i), ";p_{T,3}; #sigma(p_{T, #psi})", 10, 0.5, 10.5);
-      h_data_3jet_sigp[i] = new TH1D(Form("h_data_3jet_sigp_%d", i), ";p_{T,3}; #sigma(p_{T, #psi})", 10, 0.5, 10.5);
+      h_sim_3jet_sigp[i] = new TH1D(Form("h_sim_3jet_sigp_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T, #psi})", 10, 0.5, 10.5);
+      h_data_3jet_sigp[i] = new TH1D(Form("h_data_3jet_sigp_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T, #psi})", 10, 0.5, 10.5);
 
-      h_sim_3jet_sigv[i] = new TH1D(Form("h_sim_3jet_sigv_%d", i), ";p_{T,3}; #sigma(p_{T, #eta})", 10, 0.5, 10.5);
-      h_data_3jet_sigv[i] = new TH1D(Form("h_data_3jet_sigv_%d", i), ";p_{T,3}; #sigma(p_{T, #eta})", 10, 0.5, 10.5);
+      h_sim_3jet_sigv[i] = new TH1D(Form("h_sim_3jet_sigv_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T, #eta})", 10, 0.5, 10.5);
+      h_data_3jet_sigv[i] = new TH1D(Form("h_data_3jet_sigv_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T, #eta})", 10, 0.5, 10.5);
       
-      h_sim_3jet_bi_width[i] = new TH1D(Form("h_sim_3jet_bi_width_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 10, 0.5, 10.5);
-      h_data_3jet_bi_width[i] = new TH1D(Form("h_data_3jet_bi_width_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 10, 0.5, 10.5);
+      h_sim_3jet_bi_width[i] = new TH1D(Form("h_sim_3jet_bi_width_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 10, 0.5, 10.5);
+      h_data_3jet_bi_width[i] = new TH1D(Form("h_data_3jet_bi_width_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 10, 0.5, 10.5);
 
       for (int j = 0; j < 8; j++)
 	{
@@ -733,9 +733,9 @@ void makeJER(const int cone_size = 4)
     {
       
 
-      h_truth_3jet_width[i] = new TH1D(Form("h_truth_3jet_width_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 10, 0.5, 10.5);
-      h_sim_3jet_width[i] = new TH1D(Form("h_sim_3jet_width_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 10, 0.5, 10.5);
-      h_data_3jet_width[i] = new TH1D(Form("h_sim_3jet_width_%d", i), ";p_{T,3}; #sigma(p_{T})/p_{T}", 10, 0.5, 10.5);
+      h_truth_3jet_width[i] = new TH1D(Form("h_truth_3jet_width_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 10, 0.5, 10.5);
+      h_sim_3jet_width[i] = new TH1D(Form("h_sim_3jet_width_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 10, 0.5, 10.5);
+      h_data_3jet_width[i] = new TH1D(Form("h_sim_3jet_width_%d", i), ";#it{p}_{T,3}; #sigma(#it{p}_{T})/#it{p}_{T}", 10, 0.5, 10.5);
 
       
       for (int j = 0; j < 8; j++)
@@ -890,7 +890,7 @@ void makeJER(const int cone_size = 4)
       h_truth_3jet_softcorr[i3]->Draw("same p");
 
       dlutility::DrawSPHENIXpp(0.22, 0.82);
-      dlutility::drawText(Form("p_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.22, 0.65);
+      dlutility::drawText(Form("#it{p}_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.22, 0.65);
       TLegend *legg = new TLegend(0.6, 0.77, 0.75, 0.87);
       legg->SetLineWidth(0);
       legg->AddEntry(h_data_3jet_softcorr[i3], "Data");
@@ -905,7 +905,7 @@ void makeJER(const int cone_size = 4)
     }
   
   
-  TH1D *h_blank_res = new TH1D("hh", "; p_{T.3} [GeV]; #sigma(p_{T})/p_{T}", 1, 0, 10);
+  TH1D *h_blank_res = new TH1D("hh", "; #it{p}_{T.3} [GeV]; #sigma(#it{p}_{T})/#it{p}_{T}", 1, 0, 10);
   h_blank_res->SetMinimum(0.0);
   h_blank_res->SetMaximum(0.5);
   
@@ -985,9 +985,9 @@ void makeJER(const int cone_size = 4)
 	    h_aj_truth[i][j]->Draw("same p");
 	    h_aj_data[i][j]->Draw("same p");
 	    dlutility::DrawSPHENIXpp(0.22, 0.85);
-	    dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
+	    dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
 	    dlutility::drawText(Form("%d < #bar{p}_{T} #leq %d GeV", 20+i*5, 25 + i*5), 0.22, 0.7);
-	    dlutility::drawText(Form("p_{T,3} < %2.0f GeV", third_jet_cuts[j]), 0.22, 0.65);
+	    dlutility::drawText(Form("#it{p}_{T,3} < %2.0f GeV", third_jet_cuts[j]), 0.22, 0.65);
 	    TLegend *leg = new TLegend(0.6, 0.77, 0.75, 0.87);
 	    leg->SetLineWidth(0);
 	    leg->AddEntry(h_aj_data[i][j], "Data");
@@ -1031,18 +1031,18 @@ void makeJER(const int cone_size = 4)
       h_sim_3jet_sigma[i]->Draw("same p");
 
       dlutility::DrawSPHENIXpp(0.22, 0.85);
-      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
       dlutility::drawText(Form("%d < #bar{p}_{T} #leq %d GeV", 20+i*5, 25 + i*5), 0.22, 0.7);
       TLegend *legtg = new TLegend(0.6, 0.57, 0.75, 0.877);
       legtg->SetLineWidth(0);
       legtg->SetTextSize(0.04);
       legtg->SetTextFont(42);
-      legtg->AddEntry(h_data_3jet_sigp[i], "Data #sigma(p_{T, #psi})");
-      legtg->AddEntry(h_data_3jet_sigv[i],  "Data #sigma(p_{T, #eta})");
-      legtg->AddEntry(h_data_3jet_sigma[i], "Data #sigma(p_{T, #psi} - p_{T, #eta} ");
-      legtg->AddEntry(h_sim_3jet_sigp[i], "Sim #sigma(p_{T, #psi})");
-      legtg->AddEntry(h_sim_3jet_sigv[i],  "Sim #sigma(p_{T, #eta})");
-      legtg->AddEntry(h_sim_3jet_sigma[i], "Sim #sigma(p_{T, #psi} - p_{T, #eta} ");
+      legtg->AddEntry(h_data_3jet_sigp[i], "Data #sigma(#it{p}_{T, #psi})");
+      legtg->AddEntry(h_data_3jet_sigv[i],  "Data #sigma(#it{p}_{T, #eta})");
+      legtg->AddEntry(h_data_3jet_sigma[i], "Data #sigma(#it{p}_{T, #psi} - #it{p}_{T, #eta} ");
+      legtg->AddEntry(h_sim_3jet_sigp[i], "Sim #sigma(#it{p}_{T, #psi})");
+      legtg->AddEntry(h_sim_3jet_sigv[i],  "Sim #sigma(#it{p}_{T, #eta})");
+      legtg->AddEntry(h_sim_3jet_sigma[i], "Sim #sigma(#it{p}_{T, #psi} - #it{p}_{T, #eta} ");
       legtg->Draw("same");
 
       ctg2->Print(Form("%s/jer_plots/sigma3jet_r%02d_pta%d.pdf", rb.get_code_location().c_str(), cone_size, i));
@@ -1272,7 +1272,7 @@ void makeJER(const int cone_size = 4)
   h_jer_sim->Draw("same p");
   f_sim_calib->Draw("same");
   dlutility::DrawSPHENIXppInternalsize(0.55, 0.8, 0.05);
-  dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
+  dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
   dlutility::drawText("Jet 8 GeV", 0.55, 0.65, 0, kBlack, 0.05);
   dlutility::drawText("N_{Jet} = 2", 0.55, 0.6, 0, kBlack, 0.05);
   TLegend *leg1 = new TLegend(0.20, 0.204, 0.455, 0.354);
@@ -1331,7 +1331,7 @@ void makeJER(const int cone_size = 4)
   dlutility::SetLineAtt(fr_diff, kBlack, 2, 1);
 
   dlutility::SetFont(h_compare, 42, 0.07, 0.077, 0.07, 0.07);
-  h_compare->SetTitle("; <p_{T}> [ GeV ] ; (Data - MC)/MC");
+  h_compare->SetTitle("; <#it{p}_{T}> [ GeV ] ; (Data - MC)/MC");
   h_compare->GetYaxis()->SetTitleOffset(0.8);
   h_compare->SetMinimum(-0.3);
   h_compare->SetMaximum(0.6);
@@ -1386,9 +1386,9 @@ void makeJER(const int cone_size = 4)
       h_jer_sim_3jet[i3]->Draw("same p");
       f_sim_calib->Draw("same");
       dlutility::DrawSPHENIXppInternalsize(0.55, 0.8, 0.05);
-      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
       dlutility::drawText("Jet 8 GeV", 0.55, 0.65, 0, kBlack, 0.05);
-      dlutility::drawText(Form("p_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.55, 0.6, 0, kBlack, 0.05);
+      dlutility::drawText(Form("#it{p}_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.55, 0.6, 0, kBlack, 0.05);
       TLegend *leg2 = new TLegend(0.20, 0.204, 0.455, 0.354);
       leg2->SetLineWidth(0);
       leg2->SetTextSize(0.035);
@@ -1446,7 +1446,7 @@ void makeJER(const int cone_size = 4)
       dlutility::SetLineAtt(fr_diff3, kBlack, 2, 1);
 
       dlutility::SetFont(h_dcompare3, 42, 0.07, 0.077, 0.07, 0.07);
-      h_dcompare3->SetTitle("; <p_{T}> [ GeV ] ; Quadrature Difference");
+      h_dcompare3->SetTitle("; <#it{p}_{T}> [ GeV ] ; Quadrature Difference");
       h_dcompare3->GetYaxis()->SetTitleOffset(0.8);
       h_dcompare3->SetMinimum(0);
       h_dcompare3->SetMaximum(0.18);
@@ -1515,9 +1515,9 @@ void makeJER(const int cone_size = 4)
       //h_jer_sim_im_3jet[i3]->Draw("same p");
       
       dlutility::DrawSPHENIXppInternalsize(0.55, 0.8, 0.05);
-      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
       dlutility::drawText("Jet 8 GeV", 0.55, 0.65, 0, kBlack, 0.05);
-      dlutility::drawText(Form("p_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.55, 0.6, 0, kBlack, 0.05);
+      dlutility::drawText(Form("#it{p}_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.55, 0.6, 0, kBlack, 0.05);
       TLegend *leg2 = new TLegend(0.20, 0.55, 0.5, 0.8);
       leg2->SetLineWidth(0);
       leg2->SetTextSize(0.035);
@@ -1579,7 +1579,7 @@ void makeJER(const int cone_size = 4)
       dlutility::SetLineAtt(fr_diff3, kBlack, 2, 1);
 
       dlutility::SetFont(h_dcompare3, 42, 0.09);//, 0.09, 0.07, 0.07);
-      h_dcompare3->SetTitle("; <p_{T}> [ GeV ] ; Quadrature Difference");
+      h_dcompare3->SetTitle("; <#it{p}_{T}> [ GeV ] ; Quadrature Difference");
       h_dcompare3->GetYaxis()->SetTitleOffset(0.8);
       h_dcompare3->SetMinimum(0);
       h_dcompare3->SetMaximum(0.2);
@@ -1647,9 +1647,9 @@ void makeJER(const int cone_size = 4)
       //h_jer_sim_im_3jet[i3]->Draw("same p");
       
       dlutility::DrawSPHENIXppInternalsize(0.55, 0.8, 0.05);
-      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.%d}", cone_size), 0.55, 0.7, 0, kBlack, 0.05);
       dlutility::drawText("Jet 8 GeV", 0.55, 0.65, 0, kBlack, 0.05);
-      dlutility::drawText(Form("p_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.55, 0.6, 0, kBlack, 0.05);
+      dlutility::drawText(Form("#it{p}_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.55, 0.6, 0, kBlack, 0.05);
       TLegend *leg2 = new TLegend(0.20, 0.204, 0.455, 0.354);
       leg2->SetLineWidth(0);
       leg2->SetTextSize(0.035);
@@ -1737,7 +1737,7 @@ void makeJER(const int cone_size = 4)
       dlutility::SetMarkerAtt(h_im_dcompare3, kBlack, 1, 20);
 
       dlutility::SetFont(h_dcompare3, 42, 0.07, 0.077, 0.07, 0.07);
-      h_dcompare3->SetTitle("; <p_{T}> [ GeV ] ; Quadrature Difference");
+      h_dcompare3->SetTitle("; <#it{p}_{T}> [ GeV ] ; Quadrature Difference");
       h_dcompare3->GetYaxis()->SetTitleOffset(0.8);
       h_dcompare3->SetMinimum(0);
       h_dcompare3->SetMaximum(0.2);
@@ -1766,7 +1766,7 @@ void makeJER(const int cone_size = 4)
   TH1D *h_sigp_truthfsr = (TH1D*) fintf->Get("h_sigp");
   TH1D *h_sigv_truthfsr = (TH1D*) fintf->Get("h_sigv");
 
-  h_sigp_truth->SetTitle(";<p_{T}> [GeV]; #sigma(p_{T,#psi}) or #sigma(p_{T,#eta}) [GeV]");
+  h_sigp_truth->SetTitle(";<#it{p}_{T}> [GeV]; #sigma(#it{p}_{T,#psi}) or #sigma(#it{p}_{T,#eta}) [GeV]");
   
   TCanvas *c10 = new TCanvas("c10","c10", 500, 500);
 
@@ -1795,14 +1795,14 @@ void makeJER(const int cone_size = 4)
   h_sigv_truth->Draw("same p");
 
   dlutility::DrawSPHENIXppInternalSpace(0.22, 0.85,0.1, 0, 1, 0, 1);
-  dlutility::drawText("anti-#it{k_{t}} #kern[-0.2]{#it{R} = 0.4}", 0.22, 0.70);
-  dlutility::drawText("p_{T} > 10 GeV", 0.22, 0.65);
+  dlutility::drawText("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.4}", 0.22, 0.70);
+  dlutility::drawText("#it{p}_{T} > 10 GeV", 0.22, 0.65);
   TLegend *leg = new TLegend(0.67, 0.65, 0.83, 0.877);
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
   leg->SetTextSize(0.04);
-  leg->AddEntry(h_sigp_truth, "#sigma(p_{T, #psi}^{Truth})");
-  leg->AddEntry(h_sigv_truth, "#sigma(p_{T, #eta}^{Truth})");
+  leg->AddEntry(h_sigp_truth, "#sigma(#it{p}_{T, #psi}^{Truth})");
+  leg->AddEntry(h_sigv_truth, "#sigma(#it{p}_{T, #eta}^{Truth})");
 
   leg->Draw("same");
 
@@ -1818,14 +1818,14 @@ void makeJER(const int cone_size = 4)
   h_sigv_truthfsr->Draw("same p");
 
   dlutility::DrawSPHENIXppInternal(0.22, 0.85);
-  dlutility::drawText("p_{T} > 10 GeV", 0.22, 0.75);
+  dlutility::drawText("#it{p}_{T} > 10 GeV", 0.22, 0.75);
   TLegend *leg4 = new TLegend(0.67, 0.65, 0.83, 0.877);
   leg4->SetLineWidth(0);
   leg4->SetTextFont(42);
   leg4->SetTextSize(0.04);
-  leg4->AddEntry(h_sigp_truth, "#sigma(p_{T, #psi}^{Truth})");
-  leg4->AddEntry(h_sigp_truthfsr, "no FSR #sigma(p_{T, #psi}^{Truth})");
-  leg4->AddEntry(h_sigv_truth, "#sigma(p_{T, #eta}^{Truth})");
+  leg4->AddEntry(h_sigp_truth, "#sigma(#it{p}_{T, #psi}^{Truth})");
+  leg4->AddEntry(h_sigp_truthfsr, "no FSR #sigma(#it{p}_{T, #psi}^{Truth})");
+  leg4->AddEntry(h_sigv_truth, "#sigma(#it{p}_{T, #eta}^{Truth})");
 
   leg4->Draw("same");
 
@@ -1841,14 +1841,14 @@ void makeJER(const int cone_size = 4)
   h_sigv_truth->Draw("same p");
 
   dlutility::DrawSPHENIXppInternal(0.22, 0.85);
-  dlutility::drawText("p_{T} > 10 GeV", 0.22, 0.75);
+  dlutility::drawText("#it{p}_{T} > 10 GeV", 0.22, 0.75);
   leg = new TLegend(0.67, 0.65, 0.83, 0.877);
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
   leg->SetTextSize(0.04);
-  leg->AddEntry(h_sigp_sim, "#sigma(p_{T, #psi}^{Reco})");
-  leg->AddEntry(h_sigp_truth, "#sigma(p_{T, #psi}^{Truth})");
-  leg->AddEntry(h_sigv_sim, "#sigma(p_{T, #eta}^{Reco})");
+  leg->AddEntry(h_sigp_sim, "#sigma(#it{p}_{T, #psi}^{Reco})");
+  leg->AddEntry(h_sigp_truth, "#sigma(#it{p}_{T, #psi}^{Truth})");
+  leg->AddEntry(h_sigv_sim, "#sigma(#it{p}_{T, #eta}^{Reco})");
 
   leg->Draw("same");
 
@@ -1865,24 +1865,24 @@ void makeJER(const int cone_size = 4)
   h_sigv_truth->Draw("same p");
 
   dlutility::DrawSPHENIXppInternal(0.22, 0.85);
-  dlutility::drawText("anti-#it{k_{t}} #kern[-0.2]{#it{R} = 0.4}", 0.22, 0.75);
-  dlutility::drawText("p_{T} > 10 GeV", 0.22, 0.7);
+  dlutility::drawText("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.4}", 0.22, 0.75);
+  dlutility::drawText("#it{p}_{T} > 10 GeV", 0.22, 0.7);
   //  leg = new TLegend(0.61, 0.65, 0.77, 0.87);
   leg = new TLegend(0.6, 0.64, 0.754, 0.89);
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
   leg->SetTextSize(0.03);
-  leg->AddEntry(h_sigp_data, "#sigma(p_{T, #psi}^{Data})","p");
-  leg->AddEntry(h_sigp_sim, "#sigma(p_{T, #psi}^{Reco})","p");
-  leg->AddEntry(h_sigp_truth, "#sigma(p_{T, #psi}^{Truth})","p");
+  leg->AddEntry(h_sigp_data, "#sigma(#it{p}_{T, #psi}^{Data})","p");
+  leg->AddEntry(h_sigp_sim, "#sigma(#it{p}_{T, #psi}^{Reco})","p");
+  leg->AddEntry(h_sigp_truth, "#sigma(#it{p}_{T, #psi}^{Truth})","p");
   leg->Draw("same");
   leg = new TLegend(0.754, 0.64, 0.908, 0.89);
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
   leg->SetTextSize(0.03);
-  leg->AddEntry(h_sigv_data, "#sigma(p_{T, #eta}^{Data})","p");
-  leg->AddEntry(h_sigv_sim, "#sigma(p_{T, #eta}^{Reco})","p");
-  leg->AddEntry(h_sigv_truth, "#sigma(p_{T, #eta}^{Truth})","p");
+  leg->AddEntry(h_sigv_data, "#sigma(#it{p}_{T, #eta}^{Data})","p");
+  leg->AddEntry(h_sigv_sim, "#sigma(#it{p}_{T, #eta}^{Reco})","p");
+  leg->AddEntry(h_sigv_truth, "#sigma(#it{p}_{T, #eta}^{Truth})","p");
 
   leg->Draw("same");
 
@@ -1922,7 +1922,7 @@ void makeJER(const int cone_size = 4)
   h_em_jer_sim[0]->Draw("p same");
   h_em_jer_sim[1]->Draw("p same");
   dlutility::DrawSPHENIXppInternal(0.22, 0.85);
-  dlutility::drawText("p_{T} > 10 GeV", 0.22, 0.75);
+  dlutility::drawText("#it{p}_{T} > 10 GeV", 0.22, 0.75);
   leg = new TLegend(0.61, 0.65, 0.77, 0.87);
   leg->SetLineWidth(0);  leg->SetTextFont(42);
   leg->SetTextSize(0.03);
@@ -1965,7 +1965,7 @@ void makeJER(const int cone_size = 4)
 	  h_sigp_data->Scale(1./h_sigp_data->Integral(), "width");
 	  h_sigp_sim->Scale(1./h_sigp_sim->Integral(), "width");
 
-	  h_sigp_data->SetTitle(";#sigma(p_{T, #psi}) [GeV]; Arb.");
+	  h_sigp_data->SetTitle(";#sigma(#it{p}_{T, #psi}) [GeV]; Arb.");
 	  h_sigp_data->SetFillColorAlpha(kBlue - 3, .3);
 	  h_sigp_data->SetMaximum(10);
 	  h_sigp_data->Draw("hist");
@@ -1973,9 +1973,9 @@ void makeJER(const int cone_size = 4)
 	  h_sigp_sim->Draw("same");
 	  
 	  dlutility::DrawSPHENIXpp(0.22, 0.85);
-	  dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
+	  dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
 	  dlutility::drawText(Form("%d < #bar{p}_{T} #leq %d GeV", 20+i*5, 25 + i*5), 0.22, 0.7);
-	  dlutility::drawText(Form("p_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.22, 0.65);
+	  dlutility::drawText(Form("#it{p}_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.22, 0.65);
 	  TLegend *legj3 = new TLegend(0.6, 0.77, 0.75, 0.877);
 	  legj3->SetLineWidth(0);
 	  legj3->SetTextFont(42);
@@ -2000,7 +2000,7 @@ void makeJER(const int cone_size = 4)
 	  h_sige_data->Scale(1./h_sige_data->Integral(), "width");
 	  h_sige_sim->Scale(1./h_sige_sim->Integral(), "width");
 
-	  h_sige_data->SetTitle(";#sigma(p_{T, #eta}) [GeV]; Arb.");
+	  h_sige_data->SetTitle(";#sigma(#it{p}_{T, #eta}) [GeV]; Arb.");
 	  h_sige_data->SetFillColorAlpha(kBlue - 3, .3);
 	  h_sige_data->SetMaximum(10);
 	  h_sige_data->Draw("hist");
@@ -2008,9 +2008,9 @@ void makeJER(const int cone_size = 4)
 	  h_sige_sim->Draw("same");
 	  
 	  dlutility::DrawSPHENIXpp(0.22, 0.85);
-	  dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
+	  dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.2]{#it{R} = %0.1f}", cone_size*0.1), 0.22, 0.75);
 	  dlutility::drawText(Form("%d < #bar{p}_{T} #leq %d GeV", 20+i*5, 25 + i*5), 0.22, 0.7);
-	  dlutility::drawText(Form("p_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.22, 0.65);
+	  dlutility::drawText(Form("#it{p}_{T,3} < %2.0f GeV", third_jet_cuts[i3]), 0.22, 0.65);
 	  legj3 = new TLegend(0.6, 0.77, 0.75, 0.877);
 	  legj3->SetLineWidth(0);
 	  legj3->SetTextSize(0.04);

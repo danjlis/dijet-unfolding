@@ -11,20 +11,23 @@ fi
 
 #root -l -q -b "unfoldDataUncertainties_noempty.cxx(\"binning.config\"${conesize})"
 
+root -l -b -q "makeUnfoldingHists.C(\"binning_AA.config\", 3, ${cent})"
+
 if (( cent < 0 )); then
     echo "pp - skipping background"
 else
     root -l -q -b "getBackground.C(${conesize}, ${cent}, \"binning_AA.config\")"
 fi
+
 root -l -q -b "createResponse_noempty_AA.cxx(\"binning_AA.config\", 0, 10, ${conesize}, ${cent}, 1)"
 
 root -l -q -b "unfoldData_noempty_AA.cxx(\"binning_AA.config\", 10, ${conesize}, ${cent}, 1)"
 
 root -l -q -b "getCentralityReweighting.C(${conesize}, ${cent}, \"binning_AA.config\")"
 
-root -l -q -b "createResponse_noempty_AA.cxx(\"binning_AA.config\", 0, 10, ${conesize}, ${cent}, 2)"
+# root -l -q -b "createResponse_noempty_AA.cxx(\"binning_AA.config\", 0, 10, ${conesize}, ${cent}, 2)"
 
-root -l -q -b "unfoldData_noempty_AA.cxx(\"binning_AA.config\", 10, ${conesize}, ${cent}, 2)"
+# root -l -q -b "unfoldData_noempty_AA.cxx(\"binning_AA.config\", 10, ${conesize}, ${cent}, 2)"
 
 root -l -q -b "createResponse_noempty_AA.cxx(\"binning_AA.config\", 0, 10, ${conesize}, ${cent})"
 
@@ -39,3 +42,4 @@ bash run_all_sys_AA.sh 3 ${cent} binning_posJER_AA.config
 
 bash run_all_sys_AA.sh 3 ${cent} binning_ZYAM_AA.config
 bash run_all_sys_AA.sh 3 ${cent} binning_prior_AA.config
+bash run_all_sys_AA.sh 3 ${cent} binning_Inclusive_AA.config

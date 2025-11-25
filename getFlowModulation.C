@@ -125,8 +125,8 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   TH1D *h_dphi_reco_ETACUT = new TH1D("h_reco_ETACUT_dphi",";#Delta#phi;Counts", 32, 0, TMath::Pi());
   TH1D *h_dphi_reco_SIGNAL = new TH1D("h_reco_SIGNAL_dphi",";#Delta#phi;Counts", 32, 0, TMath::Pi());
   
-  TH2D *h_pt1pt2 = new TH2D("h_pt1pt2",";p_{T1, data};p_{T2, data}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_ZYAM = new TH2D("h_pt1pt2_ZYAM",";p_{T1, ZYAM};p_{T2, ZYAM}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2 = new TH2D("h_pt1pt2",";#it{p}_{T,1, data};#it{p}_{T,2, data}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_ZYAM = new TH2D("h_pt1pt2_ZYAM",";#it{p}_{T,1, ZYAM};#it{p}_{T,2, ZYAM}", nbins, ipt_bins, nbins, ipt_bins);
 
   int nbin_response = nbins*nbins;
   
@@ -279,13 +279,13 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_flat_data_pt1pt2->Draw("hist same");
   h_flat_unfold_pt1pt2[niter]->Draw("same p");
 
-  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
   TH2D *h_pt1pt2_unfold[niterations];
 
   for (int iter = 0; iter < niterations; iter++)
     {
-      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
       h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
     }
 
@@ -304,9 +304,9 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
       histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins);
     }
 
-  h_pt1pt2_data->SetTitle(";Data p_{T, 1} [GeV]; Data p_{T, 2} [GeV]; Counts * lumi scale ");
-  h_pt1pt2_truth->SetTitle(";Truth p_{T, 1} [GeV]; Truth p_{T, 2} [GeV]; Counts * lumi scale ");
-  h_pt1pt2_unfold[niter]->SetTitle(";Unfold p_{T, 1} [GeV]; Unfold p_{T, 2} [GeV]; Counts * lumi scale ");
+  h_pt1pt2_data->SetTitle(";Data #it{p}_{T, 1} [GeV]; Data #it{p}_{T, 2} [GeV]; Counts * lumi scale ");
+  h_pt1pt2_truth->SetTitle(";Truth #it{p}_{T, 1} [GeV]; Truth #it{p}_{T, 2} [GeV]; Counts * lumi scale ");
+  h_pt1pt2_unfold[niter]->SetTitle(";Unfold #it{p}_{T, 1} [GeV]; Unfold #it{p}_{T, 2} [GeV]; Counts * lumi scale ");
       
   TCanvas *cpt1pt2 = new TCanvas("cpt1pt2","cpt1pt2", 800, 300);
   cpt1pt2->Divide(3, 1);
@@ -413,8 +413,8 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   lis->Draw("same");
 
   dlutility::DrawSPHENIX(0.22, 0.85);
-  dlutility::drawText(Form("p_{T1} #geq %2.1f GeV", reco_leading_cut), 0.22, 0.75);
-  dlutility::drawText(Form("p_{T2} #geq %2.1f GeV", reco_subleading_cut), 0.22, 0.7);
+  dlutility::drawText(Form("#it{p}_{T,1} #geq %2.1f GeV", reco_leading_cut), 0.22, 0.75);
+  dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", reco_subleading_cut), 0.22, 0.7);
   dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.65);
   TLegend *lc = new TLegend(0.5, 0.63, 0.75, 0.78);
   lc->SetTextSize(0.03);
@@ -473,15 +473,15 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
       lis2->Draw("same");
 
       dlutility::DrawSPHENIX(0.22, 0.85);
-      dlutility::drawText(Form("p_{T1} #geq %2.1f GeV", reco_leading_cut), 0.22, 0.75);
+      dlutility::drawText(Form("#it{p}_{T,1} #geq %2.1f GeV", reco_leading_cut), 0.22, 0.75);
       if (j == 0)
-	dlutility::drawText(Form("%2.1f #leq p_{T2}^{lead} < %2.1f GeV", ipt_bins[1], ipt_bins[2]), 0.22, 0.7);
+	dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2}^{lead} < %2.1f GeV", ipt_bins[1], ipt_bins[2]), 0.22, 0.7);
       if (j == 1)
-	dlutility::drawText(Form("%2.1f #leq p_{T2}^{lead} < %2.1f GeV", ipt_bins[2], ipt_bins[3]), 0.22, 0.7);
+	dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2}^{lead} < %2.1f GeV", ipt_bins[2], ipt_bins[3]), 0.22, 0.7);
       if (j == 2)
-	dlutility::drawText(Form("%2.1f #leq p_{T2}^{lead} < %2.1f GeV", ipt_bins[3], ipt_bins[5]), 0.22, 0.7);
+	dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2}^{lead} < %2.1f GeV", ipt_bins[3], ipt_bins[5]), 0.22, 0.7);
       if (j == 3)
-	dlutility::drawText(Form("%2.1f #leq p_{T2}^{lead} < %2.1f GeV", ipt_bins[5], ipt_bins[7]), 0.22, 0.7);
+	dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2}^{lead} < %2.1f GeV", ipt_bins[5], ipt_bins[7]), 0.22, 0.7);
 
       dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.65);
       lc = new TLegend(0.65, 0.7, 0.75, 0.85);
@@ -529,8 +529,8 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_xj_unfold[niter]->Draw("same p");
   dlutility::DrawSPHENIX(0.22, 0.84);
   dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
-  dlutility::drawText(Form("%2.1f GeV #leq p_{T1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
-  dlutility::drawText(Form("p_{T2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+  dlutility::drawText(Form("%2.1f GeV #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
+  dlutility::drawText(Form("#it{p}_{T,2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
   dlutility::drawText("#Delta#phi #geq 3#pi/3", 0.22, 0.59);
   dlutility::drawText("\\mathscr{L} = 25.7 pb^{-1}", 0.22, 0.54);
 
@@ -610,8 +610,8 @@ int unfoldData_noempty_AA(const std::string configfile = "binning_AA.config", co
   h_reco_xj->Draw("same");
   dlutility::DrawSPHENIX(0.22, 0.84);
   dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
-  dlutility::drawText(Form("%2.1f GeV #leq p_{T1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
-  dlutility::drawText(Form("p_{T2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+  dlutility::drawText(Form("%2.1f GeV #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
+  dlutility::drawText(Form("#it{p}_{T,2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
   dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
   TLegend *legp = new TLegend(0.22, 0.45, 0.4, 0.55);
   legp->SetLineWidth(0);

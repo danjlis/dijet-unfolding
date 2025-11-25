@@ -152,11 +152,11 @@ void makeMatchedTreesInclusive(const int sim_version = 10, const int cone_size_i
     {
       h_dR[i] = new TH1D(Form("h_dR_%d", i), ";dR;", 100, 0.0, 1.0);
 
-      he_truth_match[i] = new TEfficiency(Form("he_truth_math_%d", i), "; p_{T, truth};", 100, 0, 100);
-      he_reco_fake[i] = new TEfficiency(Form("he_reco_fake_%d", i), "; p_{T, truth};", 100, 0, 100);
+      he_truth_match[i] = new TEfficiency(Form("he_truth_math_%d", i), "; #it{p}_{T, truth};", 100, 0, 100);
+      he_reco_fake[i] = new TEfficiency(Form("he_reco_fake_%d", i), "; #it{p}_{T, truth};", 100, 0, 100);
 
-      h_ptrptt_v_ptt[i] = new TH2D(Form("h_ptrptt_v_ptt_%d", i), ";p_{t, truth}; p_{T, reco}/p_{T, truth};", 100, 0.0, 100.0, 100, 0, 2.);
-      h_ptrptt[i] = new TH1D(Form("h_ptrptt_%d", i), ";p_{T, reco}/p_{T, truth};", 100, 0.0, 2.0);
+      h_ptrptt_v_ptt[i] = new TH2D(Form("h_ptrptt_v_ptt_%d", i), ";p_{t, truth}; #it{p}_{T, reco}/#it{p}_{T, truth};", 100, 0.0, 100.0, 100, 0, 2.);
+      h_ptrptt[i] = new TH1D(Form("h_ptrptt_%d", i), ";#it{p}_{T, reco}/#it{p}_{T, truth};", 100, 0.0, 2.0);
       h_dR_miss[i] = new TH1D(Form("h_dR_miss_%d", i), ";dR_miss;", 100, -1.0, 1.0);
       h_dR_fake[i] = new TH1D(Form("h_dR_fake_%d", i), ";dR_fake;", 100, -1.0, 1.0);
       h_deta_miss[i] = new TH1D(Form("h_deta_miss_%d", i), ";deta_miss;", 100, -1.0, 1.0);
@@ -177,9 +177,9 @@ void makeMatchedTreesInclusive(const int sim_version = 10, const int cone_size_i
       h_ptrptt_fake[i] = new TH1D(Form("h_ptrptt_fake_%d", i), ";ptrptt_fake;", 100, 0.0, 2.0);      
    }
 
-  TEfficiency *h_fake_rate_v_reco = new TEfficiency("h_fake_rate_v_reco", ";Reco p_{T} [GeV]; Fake Rate;", 100, 0, 100);
-  TEfficiency *h_miss_rate_v_truth = new TEfficiency("h_miss_rate_v_truth", ";Truth p_{T} [GeV]; Miss Rate;", 100, 0, 100);
-  TEfficiency *h_miss_rate_v_vertex = new TEfficiency("h_miss_rate_v_vertex", ";Vertex p_{T} [GeV]; Miss Rate;", 100, -100, 100);
+  TEfficiency *h_fake_rate_v_reco = new TEfficiency("h_fake_rate_v_reco", ";Reco #it{p}_{T} [GeV]; Fake Rate;", 100, 0, 100);
+  TEfficiency *h_miss_rate_v_truth = new TEfficiency("h_miss_rate_v_truth", ";Truth #it{p}_{T} [GeV]; Miss Rate;", 100, 0, 100);
+  TEfficiency *h_miss_rate_v_vertex = new TEfficiency("h_miss_rate_v_vertex", ";Vertex #it{p}_{T} [GeV]; Miss Rate;", 100, -100, 100);
 
   TEfficiency *h2_fake_rate_v_pos = new TEfficiency("h2_fake_rate_v_pos", ";#eta; #phi; Fake Rate", 24, -1.1, 1.1, 64, -1*TMath::Pi(), TMath::Pi());
   TEfficiency *h2_miss_rate_v_pos = new TEfficiency("h2_miss_rate_v_pos", ";#eta; #phi; Fake Rate;", 24, -1.1, 1.1, 64, -1*TMath::Pi(), TMath::Pi());

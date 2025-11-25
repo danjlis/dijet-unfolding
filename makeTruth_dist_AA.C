@@ -9,14 +9,14 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int makeTruth_dist(const std::string configfile = "binning.config", const int cone_size = 4)
+int makeTruth_dist_AA(const std::string configfile = "binning_AA.config", const int cone_size = 3)
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
   read_binning rb(configfile.c_str());  
-  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_10_new_ProdA_2024-00000021.root";
-  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_20_new_ProdA_2024-00000021.root";
-  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v6_30_new_ProdA_2024-00000021.root";
+  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v15_10_new_ProdA_2024-00000030.root";
+  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v15_20_new_ProdA_2024-00000030.root";
+  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" +std::to_string(cone_size) + "_v15_30_new_ProdA_2024-00000030.root";
 
 
   float maxpttruth[3];
@@ -107,13 +107,13 @@ int makeTruth_dist(const std::string configfile = "binning.config", const int co
   TH1D *h_truth_lead_sample[3];
   for (int i = 0; i < 3; i++)
     {
-      h_truth_lead_sample[i]= new TH1D(Form("h_truth_lead_%d", i), " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
+      h_truth_lead_sample[i]= new TH1D(Form("h_truth_lead_%d", i), " ; Leading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
     }
-  TH1D *h_truth_lead = new TH1D("h_truth_lead", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
-  TH1D *h_truth_sublead = new TH1D("h_truth_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_truth_lead = new TH1D("h_truth_lead", " ; Leading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_truth_sublead = new TH1D("h_truth_sublead", " ; Subleading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
 
-  TH1D *h_match_truth_lead = new TH1D("h_match_truth_lead", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
-  TH1D *h_match_truth_sublead = new TH1D("h_match_truth_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_match_truth_lead = new TH1D("h_match_truth_lead", " ; Leading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_match_truth_sublead = new TH1D("h_match_truth_sublead", " ; Subleading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
 
   TH1D *h_mbd_vertex = new TH1D("h_mbd_vertex", ";z_{vtx}; counts", 120, -60, 60);
   // pure fills
@@ -125,9 +125,9 @@ int makeTruth_dist(const std::string configfile = "binning.config", const int co
       h_linear_truth_xj[i] = new TH1D(Form("h_linear_truth_xj_%d", i),";x_{J};;", 10, 0, 1.0);
     }
   
-  TH1D *h_flat_truth_pt1pt2 = new TH1D("h_truth_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
-  TH1D *h_count_flat_truth_pt1pt2 = new TH1D("h_truth_count_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
-  TH1D *h_flat_truth_to_response_pt1pt2 = new TH1D("h_truth_flat_to_response_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_flat_truth_pt1pt2 = new TH1D("h_truth_flat_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_count_flat_truth_pt1pt2 = new TH1D("h_truth_count_flat_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_flat_truth_to_response_pt1pt2 = new TH1D("h_truth_flat_to_response_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
 
   int nbin_response = nbins*nbins;
   
@@ -204,7 +204,7 @@ int makeTruth_dist(const std::string configfile = "binning.config", const int co
     }
 
 
-  TString responsepath = rb.get_code_location() + "/truth_hists/truth_hist_r0" + std::to_string(cone_size)+".root";
+  TString responsepath = rb.get_code_location() + "/truth_hists/truth_hist_r0" + std::to_string(cone_size)+"_AA.root";
   
   TFile *fr = new TFile(responsepath.Data(),"recreate");
   for (int i = 0; i < 3; i++)

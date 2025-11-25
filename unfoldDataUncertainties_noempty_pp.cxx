@@ -9,7 +9,7 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int cone_size = 4, const int centrality_bin = 0, const int prior = 0)
+int unfoldDataUncertainties_noempty_pp(const int niterations = 20, const int cone_size = 4, const int prior = 0)
 {
 
   std::string sysname = "nominal";
@@ -24,24 +24,16 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-  bool ispp = (centrality_bin < 0);
-  std::string system_string = (ispp ? "pp" : "AA_cent_" + std::to_string(centrality_bin));
+  bool ispp = true;
+  std::string system_string = "pp";
 
-  read_binning rb("binning_AA.config");
-  std::string data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v10_1_492_2024p020_v007_gl10-all.root";
-  if (ispp)
-    data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_r0" + std::to_string(cone_size) + "_v6_6_ana468_2024p012_v001_gl10-all.root";
+  read_binning rb("binning.config");
+  std::string data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_CALIB_r0" + std::to_string(cone_size) + "_v8_1_ana509_2024p022_v001_gl10-all.root";
 
-  Int_t inclusive_sys = rb.get_inclusive_sys();
-  if (inclusive_sys)
-    {
-      sysname = "INCLUSIVE";
-    }
   float pt1_reco;
   float pt2_reco;
   float dphi_reco;
-  float centrality;
-  
+    
   TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sysname.c_str()),"r");
   
   TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
@@ -112,16 +104,11 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
   tn->SetBranchAddress("pt1_reco", &pt1_reco);
   tn->SetBranchAddress("pt2_reco", &pt2_reco);
   tn->SetBranchAddress("dphi_reco", &dphi_reco);
-  tn->SetBranchAddress("centrality", &centrality);
 
   Int_t read_nbins = rb.get_nbins();
   
   Double_t dphicut = rb.get_dphicut();
 
-  const int n_centrality_bins = rb.get_number_centrality_bins();  
-  float icentrality_bins[n_centrality_bins+1];
-
-  rb.get_centrality_bins(icentrality_bins);
 
   const int nbins = read_nbins;
   const int nbins2 = nbins*nbins;
@@ -366,7 +353,7 @@ int unfoldDataUncertainties_noempty_AA(const int niterations = 20, const int con
 
   
   TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sysname.c_str()),"recreate");
-  TEnv *penv = new TEnv("binning_AA.config");
+  TEnv *penv = new TEnv("binning.config");
   penv->Write();
   for (int iter = 0; iter < niterations; iter++)
     {

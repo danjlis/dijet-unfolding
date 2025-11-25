@@ -1,22 +1,15 @@
 #include "dlUtility.h"
 #include "read_binning.h"
-void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
+void drawResponse_pp(const int cone_size = 4, const int primer = 0)
 {
 
-  read_binning rb("binning_AA.config");
+  read_binning rb("binning.config");
 
   Int_t read_nbins = rb.get_nbins();
 
   Double_t dphicut = rb.get_dphicut();
   Double_t dphicuttruth = dphicut;//TMath::Pi()/2.;
 
-  const int cent_bins = rb.get_number_centrality_bins();
-  float icentrality_bins[cent_bins+1];
-  rb.get_centrality_bins(icentrality_bins);
-
-  TF1 *fgaus = new TF1("fgaus", "gaus");
-  fgaus->SetRange(-0.5, 0.5);
-  fgaus->SetParameters(1, 0, 0.1);
 
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
@@ -25,7 +18,6 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
   if (JER_sys > 0)
     {
       std::cout << "Calculating JER extra = " << JER_sys  << std::endl;
-      fgaus->SetParameters(1, 0, JER_sys);
     }
   if (JES_sys != 0)
     {
@@ -76,7 +68,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
 
-  TString responsepath = Form("response_matrices/response_matrix_AA_cent_%d_r%02d_nominal.root", centrality_bin, cone_size);
+  TString responsepath = Form("response_matrices/response_matrix_pp_r%02d_PRIMER1_nominal.root",  cone_size);
   TFile *fr = new TFile(responsepath.Data(),"r");
 
   TH2D *h_flat_response_skim = (TH2D*) fr->Get("h_flat_response_skim");
@@ -89,7 +81,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
       h_xj_unfold[iter] = (TH1D*) fr->Get(Form("h_xj_unfold_iter%d", iter));
     }
 
-  TString response_halfpath = Form("response_matrices/response_matrix_AA_cent_%d_r%02d_HALF.root", centrality_bin, cone_size);
+  TString response_halfpath = Form("response_matrices/response_matrix_pp_r%02d_HALF_nominal.root",  cone_size);
   TFile *frh = new TFile(response_halfpath.Data(),"r");
 
   TH1D *h_xj_half_reco = (TH1D*) frh->Get("h_xj_reco");
@@ -116,15 +108,14 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
 
   dlutility::drawText(sPHENIX_MARK.c_str(), 0.15 ,0.95, 0, kBlack, 0.035);
   dlutility::drawText(species.c_str(), 0.85 ,0.95, 1, kBlack, 0.035);
-  dlutility::drawText("HIJING+PYTHIA8", 0.19, 0.88);
-  dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.19, 0.83);
+  dlutility::drawText("PYTHIA8", 0.19, 0.88);
 
-  cresponseskim->Print(Form("%s/unfolding_plots/response_matrix_AA_cent_%d.pdf", rb.get_code_location().c_str(), centrality_bin));
-
+  cresponseskim->Print(Form("%s/unfolding_plots/response_matrix_pp_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
+  
   std::cout << "bins: " << h_flat_response_skim->GetXaxis()->GetNbins() << " by " << h_flat_response_skim->GetYaxis()->GetNbins() << std::endl;
   TCanvas *cresponseskimzoom = new TCanvas("fdsz","fdsz", 500, 500);
   cresponseskimzoom->SetLogz();
-
+  
   gPad->SetRightMargin(0.05);
   h_flat_response_skim->GetXaxis()->SetRangeUser(46, 60);
   h_flat_response_skim->GetYaxis()->SetRangeUser(121, 140);
@@ -132,7 +123,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
   dlutility::DrawSPHENIX_Prelim(0.93, 0.4);
   dlutility::drawText("Response matrix", 0.93, 0.3, 1);
 
-  cresponseskimzoom->Print("response_matrix_zoom.pdf");
+  cresponseskimzoom->Print(Form("%s/unfolding_plots/response_matrix_zoom_pp_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
 
   TCanvas *cxj = new TCanvas("cxj","cxj", 500, 700);
 
@@ -185,7 +176,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
       line->SetLineColor(kRed + 3);
       line->SetLineWidth(2);
       line->Draw("same");
-      cxj->Print(Form("full_closure_iter_%d.pdf", iter));
+      cxj->Print(Form("%s/full_closure_pp_r%02d_iter_%d.pdf", rb.get_code_location().c_str(), cone_size, iter));
     }
 
   TCanvas *cxjh = new TCanvas("cxjh","cxjh", 500, 700);
@@ -238,7 +229,7 @@ void drawResponse_AA(const int cone_size = 3, const int centrality_bin = 0)
       line->SetLineColor(kRed + 3);
       line->SetLineWidth(2);
       line->Draw("same");
-      cxjh->Print(Form("half_closure_iter_%d.pdf", iter));
+      cxjh->Print(Form("%s/half_closure_pp_r%02d_iter_%d.pdf", rb.get_code_location().c_str(), cone_size, iter));
     }
 
   return;

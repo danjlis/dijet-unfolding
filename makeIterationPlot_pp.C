@@ -2,7 +2,7 @@
 #include "read_binning.h"
 #include "histo_opps.h"
 
-void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0, const int prior = 0)
+void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0)
 {
   const int niterations = 10;
 
@@ -13,16 +13,11 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0,
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
-  read_binning rb("binning_AA.config");
+  read_binning rb("binning.config");
 
   Int_t read_nbins = rb.get_nbins();
   
   Double_t dphicut = rb.get_dphicut();
-
-  const int n_centrality_bins = rb.get_number_centrality_bins();  
-  float icentrality_bins[n_centrality_bins+1];
-
-  rb.get_centrality_bins(icentrality_bins);
 
   const int nbins = read_nbins;
   const int nbins2 = nbins*nbins;
@@ -96,7 +91,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0,
   
   std::cout << __LINE__ << std::endl;
 
-  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_AA_cent_%d_r%02d_%s.root", rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()),"r");
+  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sysname.c_str()),"r");
 
   if (!f_uncertainties)
     {
@@ -106,7 +101,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0,
   TProfile *hp_xj[niterations];
   TProfile *hp_pt1pt2[niterations];
     
-  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_%s.root", rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sysname.c_str()),"r");
   if (!fin)
     {
       std::cout << "no file" << std::endl;
@@ -252,14 +247,13 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0,
   dlutility::SetMarkerAtt(h_unfold_uncertainties, kGreen, 1, 8);
   dlutility::SetLineAtt(h_unfold_uncertainties, kGreen, 1, 1);
 
-  //h_total_uncertainties->SetMaximum(1.2);
+  h_total_uncertainties->SetMaximum(20);
   h_total_uncertainties->Draw("p hist");
   h_statistical_uncertainties->Draw("same p hist");
   h_unfold_uncertainties->Draw("same p hist");
   h_binbybin_uncertainties->Draw("same p hist");
   h_total_uncertainties->Draw("p hist same");
   dlutility::DrawSPHENIX(0.22, 0.87);
-  dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin+1]), 0.22, 0.77);
   TLegend *leg = new TLegend(0.218, 0.566, 0.397, 0.726);
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
@@ -270,7 +264,7 @@ void makeIterationPlot_AA(const int cone_size = 3, const int centrality_bin = 0,
   leg->AddEntry(h_total_uncertainties, "#sigma_{conv} = #sqrt{#sigma^{2}_{sim} + #sigma^{2}_{data} + #sigma^{2}_{bin-by-bin}}","p");
   leg->Draw("same");
 
-  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_AA_cent_%d_r%02d_%s.pdf",rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()));
-  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_AA_cent_%d_r%02d_%s.png", rb.get_code_location().c_str(), centrality_bin, cone_size, sysname.c_str()));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_pp_r%02d_%s.pdf",rb.get_code_location().c_str(), cone_size, sysname.c_str()));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_pp_r%02d_%s.png", rb.get_code_location().c_str(), cone_size, sysname.c_str()));
   return;
 }

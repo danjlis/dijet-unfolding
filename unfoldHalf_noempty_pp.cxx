@@ -15,12 +15,54 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
-  bool ispp = (centrality_bin < 0 ? true : false);
-  
   read_binning rb(configfile.c_str());  
-  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v15_10_new_ProdA_2024-00000030.root";
-  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v15_20_new_ProdA_2024-00000030.root";
-  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_r0" + std::to_string(cone_size) + "_v15_30_new_ProdA_2024-00000030.root";
+  bool ispp = true;
+  Int_t minentries = rb.get_minentries();
+  Int_t read_nbins = rb.get_nbins();
+  Int_t primer = rb.get_primer();
+
+  Double_t dphicut = rb.get_dphicut();
+  Double_t dphicuttruth = dphicut;//TMath::Pi()/2.;
+
+  std::string sys_name = "nominal";
+  Double_t JES_sys = rb.get_jes_sys();
+  Double_t JER_sys = rb.get_jer_sys();
+  std::cout << "JES = " << JES_sys << std::endl;
+  std::cout << "JER = " << JER_sys << std::endl;
+
+  std::string calib_string = "CALIB_SMEAR";
+  if (JER_sys != 0)
+    {
+      
+      if (JER_sys < 0)
+	{
+	  sys_name = "negJER";
+	  calib_string = "CALIB_SMEAR_DOWN";
+	}
+      if (JER_sys > 0)
+	{
+	  calib_string = "CALIB_SMEAR_UP";
+	  sys_name = "posJER";
+	}
+      std::cout << "Calculating JER extra = " << JER_sys  << std::endl;
+    }
+
+  if (JES_sys != 0)
+    {
+      if (JES_sys < 0)
+	{
+	  sys_name = "negJES";
+	}
+      if (JES_sys > 0)
+	{
+	  sys_name = "posJES";
+	}
+      std::cout << "Calculating JES extra = " << JES_sys  << std::endl;
+    }
+
+  std::string j10_file = rb.get_tntuple_location() + "/TREE_MATCH_" + calib_string + "_r0" + std::to_string(cone_size) + "_v8_10_ana509_MDC2-00000028.root";
+  std::string j20_file = rb.get_tntuple_location() + "/TREE_MATCH_" + calib_string + "_r0" + std::to_string(cone_size) + "_v8_20_ana509_MDC2-00000028.root";
+  std::string j30_file = rb.get_tntuple_location() + "/TREE_MATCH_" + calib_string + "_r0" + std::to_string(cone_size) + "_v8_30_ana509_MDC2-00000028.root";
 
   float maxpttruth[3];
   float pt1_truth[3];
@@ -32,7 +74,6 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
   float dphi_reco[3];
   float match[3];
   float mbd_vertex[3];
-  float centrality[3];
 
   float n_events[3];
   float b_n_events = 0;
@@ -63,7 +104,6 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
       tn[i]->SetBranchAddress("nrecojets", &nrecojets[i]);
       tn[i]->SetBranchAddress("matched", &match[i]);
       tn[i]->SetBranchAddress("mbd_vertex", &mbd_vertex[i]);
-      tn[i]->SetBranchAddress("centrality", &centrality[i]);
 
       TNtuple *tn_stats = (TNtuple*) fin[i]->Get("tn_stats");
       tn_stats->SetBranchAddress("nevents", &b_n_events);
@@ -79,64 +119,6 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
   scale_factor[0] = (n_events[2]/n_events[0]) * cs_10/cs_30;
   scale_factor[1] = (n_events[2]/n_events[1]) * cs_20/cs_30; 
   scale_factor[2] = 1;
-  Int_t minentries = rb.get_minentries();
-  Int_t read_nbins = rb.get_nbins();
-  Int_t primer = rb.get_primer();
-
-  Double_t dphicut = rb.get_dphicut();
-  Double_t dphicuttruth = dphicut;//TMath::Pi()/2.;
-
-  std::string sys_name = "nominal";
-  TF1 *fgaus = new TF1("fgaus", "gaus");
-  fgaus->SetRange(-0.5, 0.5);
-  Double_t JES_sys = rb.get_jes_sys();
-  Double_t JER_sys = rb.get_jer_sys();
-  std::cout << "JES = " << JES_sys << std::endl;
-  std::cout << "JER = " << JER_sys << std::endl;
-  float width = 0.1 + JER_sys;
-  fgaus->SetParameters(1, 0, width);
-  TF1 *f_smear = nullptr;
-  if (!ispp)
-    {
-      f_smear  = (TF1*) rb.get_smear_function(centrality_bin);
-      if (!f_smear)
-	{
-	  std::cout << " NO SMEAR " << std::endl;
-	  exit(-1);
-	}
-    }
-
-  if (JER_sys != 0)
-    {
-      
-      if (JER_sys < 0)
-	{
-	  sys_name = "negJER";
-	}
-      if (JER_sys > 0)
-	{
-	  sys_name = "posJER";
-	}
-      std::cout << "Calculating JER extra = " << JER_sys  << std::endl;
-    }
-
-  if (JES_sys != 0)
-    {
-      if (JES_sys < 0)
-	{
-	  sys_name = "negJES";
-	}
-      if (JES_sys > 0)
-	{
-	  sys_name = "posJES";
-	}
-      std::cout << "Calculating JES extra = " << JES_sys  << std::endl;
-    }
-
-  const int centrality_bins = rb.get_number_centrality_bins();
-
-  float icentrality_bins[centrality_bins + 1];
-  rb.get_centrality_bins(icentrality_bins);
 
   const int nbins = read_nbins;
 
@@ -197,7 +179,7 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
 
   int nbin_response = nbins*nbins;
 
-  TString responsepath = rb.get_code_location() + "/response_matrices/response_matrix_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size) + "_HALF_"+ sys_name + ".root";
+  TString responsepath = rb.get_code_location() + "/response_matrices/response_matrix_pp_r0" + std::to_string(cone_size) + "_HALF_"+ sys_name + ".root";
   
   TFile *fresponse = new TFile(responsepath.Data(),"r");
   
@@ -254,8 +236,6 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
 	{
 	  tn[isample]->GetEntry(i);
 	  
-	  if (centrality[isample] < icentrality_bins[centrality_bin] || centrality[isample] >= icentrality_bins[centrality_bin+1]) continue;
-
 	  int inrecojets = nrecojets[isample];
 	  double event_scale = scale_factor[isample];
 
@@ -289,34 +269,12 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
 	  float es1 = max_reco;
 	  float es2 = min_reco;
 
-	  if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
-
-	  double smear1 = 0;
-	  
-	  double smear2 = 0;
-
-	  if (ispp)
-	    {
-	      smear1 = fgaus->GetRandom();
-	      smear2 = fgaus->GetRandom();
-	    }
-	  else
-	    {
-	      fgaus->SetParameter(2, f_smear->Eval(e1));
-	      smear1 = fgaus->GetRandom();
-	      fgaus->SetParameter(2, f_smear->Eval(e2));
-	      smear2 = fgaus->GetRandom();
-	    }
+	  //if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
 
 	  if (JES_sys != 0)
 	    {
-	      es1 = es1 + (JES_sys + smear1)*e1;
-	      es2 = es2 + (JES_sys + smear2)*e2; 
-	    }
-	  else
-	    {
-	      es1 = es1 + smear1*e1;
-	      es2 = es2 + smear2*e2; 	  
+	      es1 = es1 + (JES_sys)*e1;
+	      es2 = es2 + (JES_sys)*e2; 
 	    }
 	  
 	  float maxi = std::max(es1, es2);
@@ -378,7 +336,7 @@ int unfoldHalf_noempty_pp(const std::string configfile = "binning.config", const
       histo_opps::fill_up_histo(h_flat_unfold_skim[iter], h_flat_unfold_pt1pt2[iter], h_flat_truth_mapping);
     }
 
-  TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_AA_cent_" + std::to_string(centrality_bin) + "_r0" + std::to_string(cone_size) + "_HALF.root";
+  TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_pp_r0" + std::to_string(cone_size) + "_HALF.root";
     
   TFile *fout = new TFile(unfoldpath.Data(),"recreate");
   h_flat_data_skim->Write();

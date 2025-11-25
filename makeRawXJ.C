@@ -136,8 +136,8 @@ void makeRawXJ()
   TH1D *h_data_proj_xj = new TH1D("h_data_proj_xj",";x_{J};1/N",nbins, ixj_bins);
   TH1D *h_reco_proj_xj = new TH1D("h_reco_proj_xj",";x_{J};1/N",nbins, ixj_bins);
 
-  TH1D *h_flat_data_pt1pt2 = new TH1D("h_data_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
-  TH1D *h_flat_reco_pt1pt2 = new TH1D("h_reco_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_flat_data_pt1pt2 = new TH1D("h_data_flat_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_flat_reco_pt1pt2 = new TH1D("h_reco_flat_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
   
   TH1D *h_data_xj = new TH1D("h_data_xj",";x_{J};1/N",20, 0, 1);
   TH1D *h_reco_xj = new TH1D("h_reco_xj",";x_{J};1/N",20, 0, 1);
@@ -293,8 +293,8 @@ void makeRawXJ()
   h_data_xj->Draw("same p");
 
   dlutility::DrawSPHENIXpp(0.22, 0.87);
-  dlutility::drawText(Form("p_{T,1} > %2.1f GeV", reco_leading_cut), 0.22, 0.77);
-  dlutility::drawText(Form("p_{T,2} > %2.1f GeV", reco_subleading_cut), 0.22, 0.72);
+  dlutility::drawText(Form("#it{p}_{T,1} > %2.1f GeV", reco_leading_cut), 0.22, 0.77);
+  dlutility::drawText(Form("#it{p}_{T,2} > %2.1f GeV", reco_subleading_cut), 0.22, 0.72);
   dlutility::drawText("Truth Matched", 0.22, 0.67);
   TLegend *leg = new TLegend(0.22, 0.4, 0.37, 0.62);
   leg->SetLineWidth(0);
@@ -312,8 +312,8 @@ void makeRawXJ()
   h_flat_reco_pt1pt2->Scale(.5);
   h_flat_data_pt1pt2->Scale(.5);
 
-  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
 
   TH1D *h_xj_reco = new TH1D("h_xj_reco", ";x_{J};", nbins, ixj_bins);
   TH1D *h_xj_data = new TH1D("h_xj_data", ";x_{J};",nbins, ixj_bins);

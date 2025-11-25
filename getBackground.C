@@ -20,7 +20,7 @@ struct jet
   float dR = 1;
 };
 
-const float etacut = 1.1;
+const float etacut = 0.8;
 const float eta_cut_dijet = 0.8;
 
 const float vertex_cut = 60;
@@ -122,6 +122,7 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 
 
   std::vector<struct jet> myrecojets;
+  std::vector<struct jet> myrecojets_all;
 
   int entries = t->GetEntries();
 
@@ -155,14 +156,20 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 	}
     }
 
-  TH2D *h_pt1_pt2_Signal = new TH2D("h_pt1_pt2_Signal",";p_{T1}; p_{T2};", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1_pt2_ZYAM = new TH2D("h_pt1_pt2_ZYAM",";p_{T1}; p_{T2};", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1_pt2_Signal = new TH2D("h_pt1_pt2_Signal",";#it{p}_{T,1}; #it{p}_{T,2};", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1_pt2_ZYAM = new TH2D("h_pt1_pt2_ZYAM",";#it{p}_{T,1}; #it{p}_{T,2};", nbins, ipt_bins, nbins, ipt_bins);
   
   float njet_lead[nbins];
   for (int i = 0; i < nbins; i++)
     {
       njet_lead[i] = 0;
     }
+  float njet_lead_all[nbins];
+  for (int i = 0; i < nbins; i++)
+    {
+      njet_lead_all[i] = 0;
+    }
+
   TF1 *fcut = new TF1("fcut","[0]+[1]*TMath::Exp(-[2]*x)",0.0,100.0);
   fcut->SetParameters(2.5,36.2,0.035);
 
@@ -183,9 +190,12 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
       int nrecojets = reco_jet_pt->size();
       // this is the reco index for the leading and subleading jet
       myrecojets.clear();
+      myrecojets_all.clear();
 
+      int bad_event = 0;
       bool found_reco_dijet = false;
       int njet_good = 0;
+      int njet_good_all = 0;
       float cut_value = fcut->Eval(centrality);
       for (int j = 0; j < nrecojets;j++)
 	{
@@ -195,7 +205,11 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 	  if (fabs(reco_jet_eta->at(j)) > etacut) continue;
 	  float pt_unsub = reco_jet_pt_unsub->at(j) - reco_jet_pt->at(j);
 
-	  if (pt_unsub > cut_value) continue;
+	  if (pt_unsub > cut_value)
+	    {
+	      bad_event = 1;
+	      continue;
+	    }
 
 	  njet_good++;
 
@@ -221,72 +235,162 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 	  myrecojets.push_back(tempjet1);
 
 	}
-
       
-      if (njet_good < 1) continue;
-
-      std::sort(myrecojets.begin(), myrecojets.end(), [] (auto a, auto b) {return a.pt > b.pt; });
-
-
-      double dphir = 0;
-      double detar = 0;
-      auto leading_iter = myrecojets.begin();
-
-	
-      // Check if the reco jet satisfies the cuts
-      // check dphi
-      auto subleading_iter = myrecojets.begin() + 1;
-
-      if (leading_iter->pt < reco_leading_cut) continue;
-
-      njet_lead[leading_iter->ptbin] += 1.0;
-      
-      if (subleading_iter != myrecojets.end())
+      for (int j = 0; j < nrecojets;j++)
 	{
-	  detar = fabs(leading_iter->eta - subleading_iter->eta);
-	  dphir = fabs(leading_iter->phi - subleading_iter->phi);
-	  if (dphir > TMath::Pi())
+	  if (reco_jet_pt->at(j) < reco_subleading_cut) continue;
+	  if (reco_jet_e->at(j) < 0) continue;
+	  if (reco_jet_e_unsub->at(j) < 0) continue;
+	  if (fabs(reco_jet_eta->at(j)) > etacut) continue;
+	  float pt_unsub = reco_jet_pt_unsub->at(j) - reco_jet_pt->at(j);
+
+	  if (pt_unsub > cut_value)
 	    {
-	      dphir = 2*TMath::Pi() - dphir;
+	      bad_event = 1;
+	      continue;
 	    }
 
-	  
-	  if (dphir >= dphicut)
-	    {
-	      h_pt1_pt2_Signal->Fill(leading_iter->pt, subleading_iter->pt);
-	    }
-	  if (dphir >= dphicut_z_low && dphir < dphicut_z_high)
-	    {
-	      h_pt1_pt2_ZYAM->Fill(leading_iter->pt, subleading_iter->pt);
-	    }
-	  h_dphi_exclusive_all->Fill(dphir);
-	  if (fabs(detar) > eta_cut_dijet)
-	    h_dphi_eta_exclusive_all->Fill(dphir);	  
+	  njet_good_all++;
 
-	  h_dphi_exclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);
-	  if (fabs(detar) > eta_cut_dijet)
-	    h_dphi_eta_exclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);	  
+	  float es1 = reco_jet_pt->at(j);
+	  int bin = nbins;
+	  if (es1 > ipt_bins[nbins] ) continue;
+	  for (int ib = 0; ib < nbins; ib++)
+	    {
+
+	      if ( es1 < ipt_bins[ib+1] && es1 >= ipt_bins[ib])
+		{
+		  bin = ib;
+		}
+	    }
+
+	  struct jet tempjet1;
+
+	  tempjet1.pt = es1;
+	  tempjet1.ptbin = bin;
+	  tempjet1.eta = reco_jet_eta->at(j);
+	  tempjet1.phi = reco_jet_phi->at(j);
+	  tempjet1.id = j;
+	  myrecojets_all.push_back(tempjet1);
 
 	}
 
-      while (subleading_iter != myrecojets.end())
+      if (bad_event) continue;
+      
+      if (njet_good >= 1)
 	{
-	  detar = fabs(leading_iter->eta - subleading_iter->eta);
-	  dphir = fabs(leading_iter->phi - subleading_iter->phi);
-	  if (dphir > TMath::Pi())
+
+	  std::sort(myrecojets.begin(), myrecojets.end(), [] (auto a, auto b) {return a.pt > b.pt; });
+
+
+	  double dphir = 0;
+	  double detar = 0;
+	  auto leading_iter = myrecojets.begin();
+
+	
+	  // Check if the reco jet satisfies the cuts
+	  // check dphi
+	  auto subleading_iter = myrecojets.begin() + 1;
+
+	  if (leading_iter->pt < reco_leading_cut) continue;
+
+	  njet_lead[leading_iter->ptbin] += 1.0;
+      
+	  if (subleading_iter != myrecojets.end())
 	    {
-	      dphir = 2*TMath::Pi() - dphir;
+	      //detar = fabs(leading_iter->eta - subleading_iter->eta);
+	      dphir = fabs(leading_iter->phi - subleading_iter->phi);
+
+	      if (dphir > TMath::Pi())
+		{
+		  dphir = 2*TMath::Pi() - dphir;
+		}
+	  
+	      if (dphir >= dphicut)
+		{
+		  h_pt1_pt2_Signal->Fill(leading_iter->pt, subleading_iter->pt);
+		}
+
+	      if (dphir >= dphicut_z_low && dphir < dphicut_z_high)
+		{
+		  h_pt1_pt2_ZYAM->Fill(leading_iter->pt, subleading_iter->pt);
+		}
+
+	      h_dphi_exclusive_all->Fill(dphir);
+	      
+	      h_dphi_exclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);
+	      
 	    }
 
+	  while (subleading_iter != myrecojets.end())
+	    {
+	      //detar = fabs(leading_iter->eta - subleading_iter->eta);
+	      dphir = fabs(leading_iter->phi - subleading_iter->phi);
+	      if (dphir > TMath::Pi())
+		{
+		  dphir = 2*TMath::Pi() - dphir;
+		}
 
-	  h_dphi_inclusive_all->Fill(dphir);
-	  if (fabs(detar) > eta_cut_dijet)
-	    h_dphi_eta_inclusive_all->Fill(dphir);	  
-	  h_dphi_inclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);
-	  if (fabs(detar) > eta_cut_dijet)
-	    h_dphi_eta_inclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);	  
 
-	  subleading_iter++;
+	      h_dphi_inclusive_all->Fill(dphir);
+	      h_dphi_inclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);
+
+	      subleading_iter++;
+	    }
+	}
+      if (njet_good_all >= 1)
+	{
+
+	  std::sort(myrecojets_all.begin(), myrecojets_all.end(), [] (auto a, auto b) {return a.pt > b.pt; });
+
+	  double dphir = 0;
+	  double detar = 0;
+	  
+	  auto leading_iter = myrecojets_all.begin();
+
+	
+	  // Check if the reco jet satisfies the cuts
+	  // check dphi
+	  auto subleading_iter = myrecojets_all.begin() + 1;
+
+	  if (leading_iter->pt < reco_leading_cut) continue;
+
+	  njet_lead_all[leading_iter->ptbin] += 1.0;
+      
+	  if (subleading_iter != myrecojets_all.end())
+	    {
+	      detar = fabs(leading_iter->eta - subleading_iter->eta);
+	      dphir = fabs(leading_iter->phi - subleading_iter->phi);
+	      if (dphir > TMath::Pi())
+		{
+		  dphir = 2*TMath::Pi() - dphir;
+		}
+
+	  
+	      if (fabs(detar) > eta_cut_dijet)
+		{
+		  h_dphi_eta_exclusive_all->Fill(dphir);	  
+		  h_dphi_eta_exclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);	  
+		}
+	    }
+
+	  while (subleading_iter != myrecojets_all.end())
+	    {
+	      detar = fabs(leading_iter->eta - subleading_iter->eta);
+	      dphir = fabs(leading_iter->phi - subleading_iter->phi);
+	      if (dphir > TMath::Pi())
+		{
+		  dphir = 2*TMath::Pi() - dphir;
+		}
+
+
+	      if (fabs(detar) > eta_cut_dijet)
+		{
+		  h_dphi_eta_inclusive_all->Fill(dphir);	  
+		  h_dphi_eta_inclusive[leading_iter->ptbin][subleading_iter->ptbin]->Fill(dphir);	  
+		}
+	      subleading_iter++;
+	    }
 	}
     }
 

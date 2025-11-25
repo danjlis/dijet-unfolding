@@ -12,7 +12,7 @@ void drawMatching()
 
   TEfficiency *h_fake_rate_v_reco = (TEfficiency*) f->Get("h_fake_rate_v_reco");
   h_fake_rate_v_reco->Add(*h_fake_rate_v_reco30);
-  TH1D *h  = new TH1D("h","; Reconstructed Jet p_{T} [GeV]; 1 - Fake Rate", 1, 0, 50);
+  TH1D *h  = new TH1D("h","; Reconstructed Jet #it{p}_{T} [GeV]; 1 - Fake Rate", 1, 0, 50);
   h->SetMaximum(1.15);
   h->SetMinimum(0.7);
   dlutility::SetyjPadStyle();

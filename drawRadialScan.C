@@ -3,9 +3,9 @@
 #include "histo_opps.h"
 const bool NUCLEAR = true;
 
-int cone_sizes[5] = {2, 3, 4, 5, 6};
-int color_unfold[5] = {kSpring + 2, kOrange - 2, kAzure - 5, kRed + 2, kViolet + 2};
-int color_fill_unfold[5] = {kSpring + 3, kOrange -  1, kAzure - 4, kRed + 3, kViolet + 3};
+int cone_sizes[7] = {2, 3, 4, 5, 6, 7, 8};
+int color_unfold[7] = {kSpring + 2, kOrange - 2, kBlack, kRed + 2, kViolet + 2, kPink + 3, kAzure - 5};
+int color_fill_unfold[7] = {kSpring + 3, kOrange -  1, kAzure - 4, kRed + 3, kViolet + 3};
 const float marker_unfold = 20;
 const float msize_unfold = 0.9;
 const float lsize_unfold = 1.1;
@@ -86,29 +86,29 @@ void drawRadialScan()
    
   const int niterations = 10;
   const int niter = 2;
-  TProfile *h_xj_rms[5][mbins][niterations];
-  TFile *finu[5];
-  TFile *fins[5];
-  TFile *fin[5];  
-  TH1D *h_total_sys_range[5][mbins][niterations];
-  TH1D *h_total_sys_neg_range[5][mbins][niterations];
+  TProfile *h_xj_rms[7][mbins][niterations];
+  TFile *finu[7];
+  TFile *fins[7];
+  TFile *fin[7];  
+  TH1D *h_total_sys_range[7][mbins][niterations];
+  TH1D *h_total_sys_neg_range[7][mbins][niterations];
 
-  TH1D *h_flat_unfold_pt1pt2[5][niterations];
-  TH2D *h_pt1pt2_unfold[5][niterations];
+  TH1D *h_flat_unfold_pt1pt2[7][niterations];
+  TH2D *h_pt1pt2_unfold[7][niterations];
 
-  TH1D *h_xj_unfold[5][niterations];
-  TH1D *h_xj_unfold_range[5][mbins][niterations];
+  TH1D *h_xj_unfold[7][niterations];
+  TH1D *h_xj_unfold_range[7][mbins][niterations];
 
-  TH1D *h_xjunc_unfold_range[5][mbins][niterations];
-  TH1D *h_xjunc_unfold[5][niterations];
+  TH1D *h_xjunc_unfold_range[7][mbins][niterations];
+  TH1D *h_xjunc_unfold[7][niterations];
 
-  TH1D *h_final_xj_unfold_range[5][mbins][niterations];
-  TH1D *h_final_xj_systematics[5][mbins][niterations];
-  TGraphAsymmErrors *g_final_xj_systematics[5][mbins][niterations];
+  TH1D *h_final_xj_unfold_range[7][mbins][niterations];
+  TH1D *h_final_xj_systematics[7][mbins][niterations];
+  TGraphAsymmErrors *g_final_xj_systematics[7][mbins][niterations];
 
-  for (int ic = 0; ic < 5; ic++)
+  for (int ic = 0; ic < 7; ic++)
     {
-      finu[ic] = new TFile(Form("uncertainties/uncertainties_r%02d.root", cone_sizes[ic]),"r");
+      finu[ic] = new TFile(Form("uncertainties/uncertainties_pp_r%02d_nominal.root", cone_sizes[ic]),"r");
       if (!finu[ic])
 	{
 	  std::cout << " no unc " << std::endl;
@@ -124,7 +124,7 @@ void drawRadialScan()
 	    }
 	}
 
-       fins[ic] = new TFile(Form("uncertainties/systematics_r%02d.root", cone_sizes[ic]),"r");
+       fins[ic] = new TFile(Form("uncertainties/systematics_pp_r%02d.root", cone_sizes[ic]),"r");
        if (!fins[ic])
 	 {
 	   std::cout << " no sys " << std::endl;
@@ -141,7 +141,7 @@ void drawRadialScan()
 	     }
 	 }
 
-       fin[ic] = new TFile(Form("unfolding_hists/unfolding_hists_r%02d.root", cone_sizes[ic]),"r");
+       fin[ic] = new TFile(Form("unfolding_hists/unfolding_hists_pp_r%02d_nominal.root", cone_sizes[ic]),"r");
        if (!fin[ic])
 	 {
 	   std::cout << " no file " << std::endl;
@@ -157,7 +157,7 @@ void drawRadialScan()
 
        for (int iter = 0; iter < niterations; iter++)
 	 {
-	   h_pt1pt2_unfold[ic][iter] = new TH2D(Form("h_pt1pt2_unfold_iter%d_r%02d", iter, cone_sizes[ic]), ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+	   h_pt1pt2_unfold[ic][iter] = new TH2D(Form("h_pt1pt2_unfold_iter%d_r%02d", iter, cone_sizes[ic]), ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
 	 }
 
        for (int iter = 0; iter < niterations; iter++)
@@ -237,7 +237,7 @@ void drawRadialScan()
 
   for (int irange = 0; irange < mbins; irange++)
     {
-      for (int ic = 0; ic < 5; ic++)
+      for (int ic = 0; ic < 7; ic++)
 	{
 	  dlutility::SetLineAtt(h_final_xj_unfold_range[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
 	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[ic][irange][niter], color_unfold[ic], msize_unfold, marker_unfold);
@@ -264,7 +264,7 @@ void drawRadialScan()
       //ht->Draw("E4 same");
       h_final_xj_unfold_range[4][irange][niter]->Draw("p E1");
       //g_final_xj_systematics[4][irange][niter]->Draw("same p E2");
-      for (int ic = 0; ic < 4; ic++)
+      for (int ic = 0; ic < 7; ic++)
 	{
 	  h_final_xj_unfold_range[ic][irange][niter]->Draw("same p E1");
 	  //g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
@@ -274,13 +274,13 @@ void drawRadialScan()
       float ss = 0.05;
       dlutility::DrawSPHENIXpp(0.22, top);
 
-      dlutility::drawText("anti-#it{k_{t}}", 0.22, top - 2*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, top - 3*ss);
-      dlutility::drawText(Form("p_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, top - 4*ss);
+      dlutility::drawText("anti-#it{k}_{t}", 0.22, top - 2*ss);
+      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, top - 3*ss);
+      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, top - 4*ss);
       dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, top - 5*ss);
 
       
-      TLegend *leg = new TLegend(0.22, top - 9.5*ss, 0.4, top - 5.8*ss);
+      TLegend *leg = new TLegend(0.65, top - 5.5*ss, 0.9, 0.92);
       leg->SetLineWidth(0);
       leg->SetTextSize(0.04);
       leg->SetTextFont(42);
@@ -289,6 +289,8 @@ void drawRadialScan()
       leg->AddEntry(h_final_xj_unfold_range[2][irange][niter], "R = 0.4");
       leg->AddEntry(h_final_xj_unfold_range[3][irange][niter], "R = 0.5");
       leg->AddEntry(h_final_xj_unfold_range[4][irange][niter], "R = 0.6");
+      leg->AddEntry(h_final_xj_unfold_range[5][irange][niter], "R = 0.7");
+      leg->AddEntry(h_final_xj_unfold_range[6][irange][niter], "R = 0.8");
       
       leg->Draw("same");
 

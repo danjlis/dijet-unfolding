@@ -142,17 +142,17 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
   TH1D *h_truth_match_dphi = new TH1D("h_truth_match_dphi",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
   TH1D *h_reco_match_dphi = new TH1D("h_reco_match_dphi",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
 
-  TProfile *h_sim_match_ddphi = new TProfile("h_sim_match_ddphi", ";<p_{T}> [GeV]; d#Delta#phi", 25, 10, 60, "s");
-  TProfile2D *h2_sim_match_ddphi = new TProfile2D("h2_sim_match_ddphi", ";p_{T1} [GeV] ;p_{T2} [GeV]; d#Delta#phi", 4, 20, 60, 10, 10, 60, "s");
+  TProfile *h_sim_match_ddphi = new TProfile("h_sim_match_ddphi", ";<#it{p}_{T}> [GeV]; d#Delta#phi", 25, 10, 60, "s");
+  TProfile2D *h2_sim_match_ddphi = new TProfile2D("h2_sim_match_ddphi", ";#it{p}_{T,1} [GeV] ;#it{p}_{T,2} [GeV]; d#Delta#phi", 4, 20, 60, 10, 10, 60, "s");
 
-  TH3D *h_truth_pt1pt2dphi = new TH3D("h_truth_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-  TH3D *h_reco_pt1pt2dphi = new TH3D("h_reco_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_truth_pt1pt2dphi = new TH3D("h_truth_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_pt1pt2dphi = new TH3D("h_reco_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
 
-  TH3D *h_truth_match_pt1pt2dphi = new TH3D("h_truth_match_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-  TH3D *h_reco_match_pt1pt2dphi = new TH3D("h_reco_match_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-  TH3D *h_reco_match_pt1pt2dphitruth = new TH3D("h_reco_match_pt1pt2dphitruth",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_truth_match_pt1pt2dphi = new TH3D("h_truth_match_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_match_pt1pt2dphi = new TH3D("h_reco_match_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_match_pt1pt2dphitruth = new TH3D("h_reco_match_pt1pt2dphitruth",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
 
-  TH3D *h_data_pt1pt2dphi = new TH3D("h_data_pt1pt2dphi",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_data_pt1pt2dphi = new TH3D("h_data_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   // Data
 
   TH1D *h_data_dphi_counts = new TH1D("h_data_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
@@ -162,17 +162,17 @@ void makeRawDeltaPhi(const std::string configfile = "binning.config")
   TH1D *h_truth_match_dphi_counts = new TH1D("h_truth_match_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
   TH1D *h_reco_match_dphi_counts = new TH1D("h_reco_match_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
 
-  TProfile *h_sim_match_ddphi_counts = new TProfile("h_sim_match_ddphi_counts", ";<p_{T}> [GeV]; d#Delta#phi", 25, 10, 60, "s");
-  TProfile2D *h2_sim_match_ddphi_counts = new TProfile2D("h2_sim_match_ddphi_counts", ";p_{T1} [GeV] ;p_{T2} [GeV]; d#Delta#phi", 4, 20, 60, 10, 10, 60, "s");
+  TProfile *h_sim_match_ddphi_counts = new TProfile("h_sim_match_ddphi_counts", ";<#it{p}_{T}> [GeV]; d#Delta#phi", 25, 10, 60, "s");
+  TProfile2D *h2_sim_match_ddphi_counts = new TProfile2D("h2_sim_match_ddphi_counts", ";#it{p}_{T,1} [GeV] ;#it{p}_{T,2} [GeV]; d#Delta#phi", 4, 20, 60, 10, 10, 60, "s");
 
-  TH3D *h_truth_pt1pt2dphi_counts = new TH3D("h_truth_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-  TH3D *h_reco_pt1pt2dphi_counts = new TH3D("h_reco_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_truth_pt1pt2dphi_counts = new TH3D("h_truth_pt1pt2dphi_counts",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_pt1pt2dphi_counts = new TH3D("h_reco_pt1pt2dphi_counts",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
 
-  TH3D *h_truth_match_pt1pt2dphi_counts = new TH3D("h_truth_match_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-  TH3D *h_reco_match_pt1pt2dphi_counts = new TH3D("h_reco_match_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-  TH3D *h_reco_match_pt1pt2dphi_countstruth = new TH3D("h_reco_match_pt1pt2dphi_countstruth",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_truth_match_pt1pt2dphi_counts = new TH3D("h_truth_match_pt1pt2dphi_counts",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_match_pt1pt2dphi_counts = new TH3D("h_reco_match_pt1pt2dphi_counts",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_reco_match_pt1pt2dphi_countstruth = new TH3D("h_reco_match_pt1pt2dphi_countstruth",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
 
-  TH3D *h_data_pt1pt2dphi_counts = new TH3D("h_data_pt1pt2dphi_counts",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+  TH3D *h_data_pt1pt2dphi_counts = new TH3D("h_data_pt1pt2dphi_counts",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   // Data
 
   TH1D *h_correlated_counts_leading_reco[3];

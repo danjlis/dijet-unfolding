@@ -84,7 +84,7 @@ void drawResponse(const int cone_size)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
 
-  TString responsepath = Form("response_matrices/response_matrix_r%02d.root", conesize);
+  TString responsepath = Form("response_matrices/response_matrix_r%02d.root", cone_size);
   TFile *fr = new TFile(responsepath.Data(),"r");
 
   TH2D *h_flat_response_skim = (TH2D*) fr->Get("h_flat_response_skim");
@@ -96,7 +96,7 @@ void drawResponse(const int cone_size)
     {
       h_xj_unfold[iter] = (TH1D*) fr->Get(Form("h_xj_unfold_iter%d", iter));
     }
-  TString response_halfpath = Form("response_matrices/response_matrix_r%02d_half.root", conesize);
+  TString response_halfpath = Form("response_matrices/response_matrix_r%02d_half.root", cone_size);
   TFile *frh = new TFile(response_halfpath.Data(),"r");
 
   TH1D *h_xj_half_reco = (TH1D*) frh->Get("h_xj_reco");
@@ -113,10 +113,16 @@ void drawResponse(const int cone_size)
   cresponseskim->SetLogz();
 
   gPad->SetRightMargin(0.05);
-  h_flat_response_skim->SetTitle(";p_{T1}^{reco, bin} #times nbins + p_{T2}^{reco, bin};p_{T1}^{truth, bin} #times nbins + p_{T2}^{truth, bin}");
+  h_flat_response_skim->SetTitle(";#it{p}_{T,1}^{reco, bin} #times nbins + #it{p}_{T,2}^{reco, bin};#it{p}_{T,1}^{truth, bin} #times nbins + #it{p}_{T,2}^{truth, bin}");
   h_flat_response_skim->Draw("col");
-  dlutility::DrawSPHENIXpp(0.93, 0.3, 1, 1, 0, 1, "PYTHIA-8");
-  dlutility::drawText("Response matrix", 0.93, 0.2, 1);
+  string sPHENIX_MARK = "#bf{#it{sPHENIX}} #it{Simulation}";
+  string species = "#it{pp} #sqrt{s} = 200 GeV";
+  //string extratext = "#it{Internal}";
+  
+
+  dlutility::drawText(sPHENIX_MARK.c_str(), 0.15 ,0.95, 0, kBlack, 0.035);
+  dlutility::drawText(species.c_str(), 0.85 ,0.95, 1, kBlack, 0.035);
+  dlutility::drawText("HIJING+PYTHIA8", 0.19, 0.88);
 
   cresponseskim->Print("response_matrix.pdf");
 
@@ -128,8 +134,10 @@ void drawResponse(const int cone_size)
   h_flat_response_skim->GetXaxis()->SetRangeUser(46, 60);
   h_flat_response_skim->GetYaxis()->SetRangeUser(121, 140);
   h_flat_response_skim->Draw("col");
-  dlutility::DrawSPHENIXpp(0.93, 0.4, 1, 1, 0, 1, "PYTHIA-8");
-  dlutility::drawText("Response matrix", 0.93, 0.3, 1);
+
+  dlutility::drawText(sPHENIX_MARK.c_str(), 0.15 ,0.95, 0, kBlack, 0.035);
+  dlutility::drawText(species.c_str(), 0.85 ,0.95, 1, kBlack, 0.035);
+  dlutility::drawText("HIJING+PYTHIA8", 0.19, 0.88);
 
   cresponseskimzoom->Print("response_matrix_zoom.pdf");
 
@@ -157,8 +165,8 @@ void drawResponse(const int cone_size)
 
       dlutility::DrawSPHENIXpp(0.22, 0.84);
       dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
-      dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+      dlutility::drawText(Form("%2.1f GeV #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
       dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
       dlutility::drawText(Form("Full Closure - N_{iter} = %d", iter + 1), 0.22, 0.54);
       TLegend *leg = new TLegend(0.22, 0.25, 0.4, 0.5);
@@ -211,8 +219,8 @@ void drawResponse(const int cone_size)
 
       dlutility::DrawSPHENIXpp(0.22, 0.84);
       dlutility::drawText("anti-k_{T} R = 0.4", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
-      dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+      dlutility::drawText(Form("%2.1f GeV #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
       dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
       dlutility::drawText(Form("Half Closure - N_{iter} = %d", iter + 1), 0.22, 0.54);
       TLegend *leg = new TLegend(0.22, 0.25, 0.4, 0.5);

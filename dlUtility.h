@@ -49,6 +49,11 @@ namespace dlutility{
     h->SetLineWidth(width);
     h->SetLineStyle(style);
   }
+  void SetLineAtt(TGraphErrors *h, Color_t color, float width, int style){
+    h->SetLineColor(color);
+    h->SetLineWidth(width);
+    h->SetLineStyle(style);
+  }
 
 
   void SetMarkerAtt(TProfile *h, Color_t color, float size, int style){
@@ -63,6 +68,11 @@ namespace dlutility{
     h->SetMarkerStyle(style);
   }
   void SetMarkerAtt(TGraph *h, Color_t color, float size, int style){
+    h->SetMarkerColor(color);
+    h->SetMarkerSize(size);
+    h->SetMarkerStyle(style);
+  }
+  void SetMarkerAtt(TGraphErrors *h, Color_t color, float size, int style){
     h->SetMarkerColor(color);
     h->SetMarkerSize(size);
     h->SetMarkerStyle(style);
@@ -651,6 +661,88 @@ namespace dlutility{
 	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, kBlack, size);//, 0, kBlack, 22); 
 	//	drawText(extratext.c_str(), xpos+xpos_diff,ypos);
 	if (issim && isBeam) drawText(Form("#bf{%s} Au+Au #sqrt{s_{NN}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05, ral, kBlack, size);
+	else if (isBeam) drawText("Au+Au #sqrt{s_{NN}} = 200 GeV",xpos,ypos - size - 0.01, ral, kBlack, size);
+	else if (issim) drawText(Form("%s", simmc.c_str()),xpos,ypos - size - 0.01, ral, kBlack, size);
+	else drawText("Cosmics Running",xpos,ypos - 0.05, ral, kBlack, size);
+      
+      }
+    else
+      {
+	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, kBlack, size);//, ral, kBlack, 22); 
+	//	drawText(extratext.c_str(), xpos+xpos_diff,ypos, ral, kBlack, size);
+	if (isBeam) drawText("Au+Au  #kern[-0.2]{#sqrt{s_{NN}}} = 200 GeV", 0.95,ypos, 1, kBlack, size);
+	else drawText("Cosmics Running",xpos + 2*xpos_diff ,ypos, ral, kBlack, size);
+      }
+  }
+
+  void DrawSPHENIX_Prelim(double xpos, double ypos, float size = 0.04, int ral = 0, int isBeam = 1, int horiz  = 0, int issim = 0, std::string simmc = "HIJING")
+  {
+    string sPHENIX_MARK = "#bf{#it{sPHENIX}} #it{Preliminary}";
+    //string extratext = "#it{Internal}";
+
+    double xpos_diff = 0.12;
+    if (!horiz)
+      {
+	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, kBlack, size);//, 0, kBlack, 22); 
+	//	drawText(extratext.c_str(), xpos+xpos_diff,ypos);
+	if (issim && isBeam) drawText(Form("#bf{%s} Au+Au #sqrt{s_{NN}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05, ral, kBlack, size);
+	else if (isBeam) drawText("Au+Au #sqrt{s_{NN}} = 200 GeV",xpos,ypos - size - 0.01, ral, kBlack, size);
+	else if (issim) drawText(Form("%s", simmc.c_str()),xpos,ypos - size - 0.01, ral, kBlack, size);
+	else drawText("Cosmics Running",xpos,ypos - 0.05, ral, kBlack, size);
+      
+      }
+    else
+      {
+	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, kBlack, size);//, ral, kBlack, 22); 
+	//	drawText(extratext.c_str(), xpos+xpos_diff,ypos, ral, kBlack, size);
+	if (isBeam) drawText("Au+Au  #kern[-0.2]{#sqrt{s_{NN}}} = 200 GeV", 0.95,ypos, 1, kBlack, size);
+	else drawText("Cosmics Running",xpos + 2*xpos_diff ,ypos, ral, kBlack, size);
+      }
+  }
+
+  void DrawSPHENIXboth(double xpos, double ypos, int prelim = 0, float size = 0.04, int ral = 0, int isBeam = 1, int horiz  = 0, int issim = 0, std::string simmc = "HIJING")
+  {
+    string sPHENIX_MARK = "#bf{#it{sPHENIX}} #it{Internal}";
+    if (prelim)
+      {
+	sPHENIX_MARK = "#bf{#it{sPHENIX}} #it{Preliminary}";
+      }
+    //string extratext = "#it{Internal}";
+
+    double xpos_diff = 0.12;
+    if (!horiz)
+      {
+	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, kBlack, size);//, 0, kBlack, 22); 
+	//	drawText(extratext.c_str(), xpos+xpos_diff,ypos);
+	if (issim && isBeam) drawText(Form("#bf{%s} #sqrt{s_{NN}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05, ral, kBlack, size);
+	else if (isBeam) drawText("#sqrt{s_{NN}} = 200 GeV",xpos,ypos - size - 0.01, ral, kBlack, size);
+	else if (issim) drawText(Form("%s", simmc.c_str()),xpos,ypos - size - 0.01, ral, kBlack, size);
+	else drawText("Cosmics Running",xpos,ypos - 0.05, ral, kBlack, size);
+      
+      }
+    else
+      {
+	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, kBlack, size);//, ral, kBlack, 22); 
+	//	drawText(extratext.c_str(), xpos+xpos_diff,ypos, ral, kBlack, size);
+	if (isBeam) drawText("#sqrt{s_{NN}} = 200 GeV", 0.95,ypos, 1, kBlack, size);
+	else drawText("Cosmics Running",xpos + 2*xpos_diff ,ypos, ral, kBlack, size);
+      }
+  }
+  void DrawSPHENIXcut(double xpos, double ypos, int prelim = 0, float size = 0.04, int ral = 0, int isBeam = 1, int horiz  = 0, int issim = 0, std::string simmc = "HIJING")
+  {
+    string sPHENIX_MARK = "#bf{#it{sPHENIX}} #it{Internal}";
+    if (prelim)
+      {
+	sPHENIX_MARK = "#bf{#it{sPHENIX}} #it{Preliminary}";
+      }
+    //string extratext = "#it{Internal}";
+
+    double xpos_diff = 0.12;
+    if (!horiz)
+      {
+	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, kBlack, size);//, 0, kBlack, 22); 
+	//	drawText(extratext.c_str(), xpos+xpos_diff,ypos);
+	if (issim && isBeam) drawText(Form("#bf{%s} Au+Au #sqrt{s_{NN}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05, ral, kBlack, size);
 	else if (isBeam) drawText("Au+Au #sqrt{s_{NN}} = 200 GeV",xpos,ypos - 0.05, ral, kBlack, size);
 	else if (issim) drawText(Form("%s", simmc.c_str()),xpos,ypos - 0.05, ral, kBlack, size);
 	else drawText("Cosmics Running",xpos,ypos - 0.05, ral, kBlack, size);
@@ -696,15 +788,15 @@ namespace dlutility{
   void DrawSPHENIXpp(double xpos, double ypos, float size = 0.04, int ral = 0, int isBeam = 1, int horiz  = 0, int issim = 0, std::string simmc = "Pythia 8")
   {
     string sPHENIX_MARK = "#bf{#it{sPHENIX}}";
-    string extratext = "#kern[-0.3]{#it{Internal}}";
+    string extratext = "#it{Internal}";
     if (issim) extratext = " #kern[-0.3]{#it{Simulation}}";
     string txt = sPHENIX_MARK + " " + extratext;
     double xpos_diff = 0.17;
     if (!horiz)
       {
-	drawText(txt.c_str(), xpos,ypos, ral, 0 , kBlack, size);//, 0, kBlack, 22); 
+	drawText(txt.c_str(), xpos,ypos, ral, kBlack, size);//, 0, kBlack, 22); 
 	//if (issim && isBeam) drawText(Form("#bf{%s} p+p #kern[-0.2]{#sqrt{s_{NN}}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05);
-	if (isBeam && !issim) drawText("p+p #kern[-0.2]{#sqrt{s}} = 200 GeV",xpos,ypos - 0.05, ral, 0 , kBlack, size);
+	if (isBeam && !issim) drawText("p+p #sqrt{s} = 200 GeV",xpos,ypos - 0.05, ral , kBlack, size);
 	else if (issim && isBeam) drawText(Form("%s p+p #kern[-0.2]{#sqrt{s}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05, ral, 0 , kBlack, size);
 	else drawText("Cosmics Running",xpos,ypos - 0.05, ral, 0 , kBlack, size);
       
@@ -987,7 +1079,29 @@ namespace dlutility{
     h->GetYaxis()->SetTitleFont(font);
     h->GetYaxis()->SetTitleSize(size);
   }
+  void SetFont(TGraphErrors* h, int font, float size)
+  {
+    h->GetXaxis()->SetLabelFont(font);
+    h->GetXaxis()->SetLabelSize(size);
+    h->GetXaxis()->SetTitleFont(font);
+    h->GetXaxis()->SetTitleSize(size);
+    h->GetYaxis()->SetLabelFont(font);
+    h->GetYaxis()->SetLabelSize(size);
+    h->GetYaxis()->SetTitleFont(font);
+    h->GetYaxis()->SetTitleSize(size);
+  }
   void SetFont(TH1* h, int font, float sizex, float sizey, float slabelx, float slabely)
+  {
+    h->GetXaxis()->SetLabelFont(font);
+    h->GetXaxis()->SetLabelSize(slabelx);
+    h->GetXaxis()->SetTitleFont(font);
+    h->GetXaxis()->SetTitleSize(sizex);
+    h->GetYaxis()->SetLabelFont(font);
+    h->GetYaxis()->SetLabelSize(slabely);
+    h->GetYaxis()->SetTitleFont(font);
+    h->GetYaxis()->SetTitleSize(sizey);
+  }
+  void SetFont(TGraphErrors* h, int font, float sizex, float sizey, float slabelx, float slabely)
   {
     h->GetXaxis()->SetLabelFont(font);
     h->GetXaxis()->SetLabelSize(slabelx);

@@ -7,16 +7,10 @@ const bool NUCLEAR = true;
 const int color_pp_unfold_fill = kBlack;
 const int color_pp_unfold = kBlack;
 const float marker_pp_unfold = 33;
-const float msize_pp_unfold = 1.1;
+const float msize_pp_unfold = 1.3;
 const float lsize_pp_unfold = 1.1;
 
-const int color_unfold_fill = kAzure - 4;
-const int color_unfold = kAzure - 5;
-const float marker_unfold = 20;
-const float msize_unfold = 0.7;
-const float lsize_unfold = 1.1;
-
-const int color_pythia = kRed;
+const int color_pythia = kBlack;
 const float msize_pythia = 0.9;
 const float marker_pythia = 20;
 const float lsize_pythia = 1.1;
@@ -44,6 +38,18 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
   gStyle->SetCanvasPreferGL(0);
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
+
+
+  int arr_color_unfold_fill[5] = {kRed + 1, kAzure + 2, kGreen + 3, kViolet - 1, kBlack};
+  int arr_color_unfold[5] = {kRed + 1, kAzure + 2, kGreen+3, kViolet -1, kBlack};
+  int arr_marker_unfold[5] = {20, 21, 33, 34, 24};
+  float arr_msize_unfold[5] = {1.1, 1, 1.5, 1.2, 1.1};
+
+  const int color_unfold_fill = arr_color_unfold_fill[centrality_bin];
+  const int color_unfold= arr_color_unfold[centrality_bin];
+  const float marker_unfold= arr_marker_unfold[centrality_bin];
+  const float msize_unfold= arr_msize_unfold[centrality_bin];
+  const float lsize_unfold = 1.1;
 
   read_binning rb(configfile.c_str());
 
@@ -117,6 +123,53 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
   
+  TFile *finhybrid = new TFile(Form("%s/truth_hists/XJ_YIELDS.root",  rb.get_code_location().c_str()),"r");
+  if (!finhybrid)
+    {
+      std::cout << "no truth hists" << std::endl;
+      return;
+    }
+  TH1D *h_hybrid_xj_vac = (TH1D*) finhybrid->Get("vacuum_pp");
+
+  TH1D *h_hybrid_xj_med_no_elastic_no_wake = (TH1D*) finhybrid->Get("no_elastic_no_wake");
+  TH1D *h_hybrid_xj_med_with_elastic_no_wake = (TH1D*) finhybrid->Get("with_elastic_no_wake");
+  TH1D *h_hybrid_xj_med_no_elastic_with_wake = (TH1D*) finhybrid->Get("no_elastic_with_wake");
+  TH1D *h_hybrid_xj_med_with_elastic_with_wake = (TH1D*) finhybrid->Get("with_elastic_with_wake");
+
+  int cnn = kCyan - 9;
+  int cny = kMagenta - 9;
+  int cyn = kViolet - 8;
+  int cyy = kGreen - 9;
+  
+  dlutility::SetLineAtt(h_hybrid_xj_vac, kOrange - 2, 3, 1);
+  dlutility::SetLineAtt(h_hybrid_xj_med_no_elastic_no_wake, cnn, 3, 1);
+  dlutility::SetLineAtt(h_hybrid_xj_med_with_elastic_no_wake, cyn, 3, 1);
+  dlutility::SetLineAtt(h_hybrid_xj_med_no_elastic_with_wake, cny, 3, 1);
+  dlutility::SetLineAtt(h_hybrid_xj_med_with_elastic_with_wake, cyy, 3, 1);
+
+
+  h_hybrid_xj_vac->SetFillStyle(0);
+  h_hybrid_xj_med_no_elastic_no_wake->SetFillColor(cnn);
+  h_hybrid_xj_med_no_elastic_with_wake->SetFillColor(cny);
+  h_hybrid_xj_med_with_elastic_no_wake->SetFillColor(cyn);
+  h_hybrid_xj_med_with_elastic_with_wake->SetFillColor(cyy);
+
+  TH1D *hvl = (TH1D*) h_hybrid_xj_vac->Clone();//SetFillStyle(0);
+  TH1D *hnn = (TH1D*) h_hybrid_xj_med_no_elastic_no_wake->Clone();//SetFillColor(kRed - 9);
+  TH1D *hyn = (TH1D*) h_hybrid_xj_med_with_elastic_no_wake->Clone();//SetFillColor(kBlue - 9);
+  TH1D *hny = (TH1D*) h_hybrid_xj_med_no_elastic_with_wake->Clone();//SetFillColor(kCyan - 10);
+  TH1D *hyy = (TH1D*) h_hybrid_xj_med_with_elastic_with_wake->Clone();//SetFillColor(kGreen - 10);
+  hvl->SetName("hvl");
+  hnn->SetName("hnn");
+  hyn->SetName("hyn");
+  hny->SetName("hny");
+  hyy->SetName("hyy");
+  
+  hvl->SetLineWidth(5);
+  hnn->SetLineWidth(5);
+  hny->SetLineWidth(5);
+  hyn->SetLineWidth(5);
+  hyy->SetLineWidth(5);
 
   TFile *finjw = new TFile(Form("%s/truth_hists/JEWEL_for_Dan_Update.root",  rb.get_code_location().c_str()),"r");
   if (!finjw)
@@ -128,8 +181,8 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
   TH1D *h_jewel_xj_vac = (TH1D*) finjw->Get("h1_vacuum");
   TH1D *h_jewel_xj_med = (TH1D*) finjw->Get(Form("h1_medium_%d_%d", (int) icentrality_bins[centrality_bin], (int) icentrality_bins[centrality_bin + 1]));
 
-  dlutility::SetLineAtt(h_jewel_xj_med, kGreen + 1, 3, 1);
-  dlutility::SetLineAtt(h_jewel_xj_vac, kRed + 2, 3, 1);
+  dlutility::SetLineAtt(h_jewel_xj_med, kCyan - 6, 4, 1);
+  dlutility::SetLineAtt(h_jewel_xj_vac, kGray + 2, 4, 1);
   
   TFile *fintr = new TFile(Form("%s/truth_hists/truth_hist_r%02d.root",  rb.get_code_location().c_str(),  cone_size),"r");
   if (!fintr)
@@ -284,19 +337,19 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
     }
 
   if (NUCLEAR) std::cout << __LINE__ << std::endl;
-  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_pp_data = new TH2D("h_pt1pt2_pp_data", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  //TH2D *h_pt1pt2_herwig = new TH2D("h_pt1pt2_herwig", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_pp_data = new TH2D("h_pt1pt2_pp_data", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  //TH2D *h_pt1pt2_herwig = new TH2D("h_pt1pt2_herwig", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
   TH2D *h_pt1pt2_unfold[niterations];
   TH2D *h_pt1pt2_pp_unfold[niterations];
 
   for (int iter = 0; iter < niterations; iter++)
     {
-      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
       h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
-      h_pt1pt2_pp_unfold[iter] = new TH2D("h_pt1pt2_pp_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_pp_unfold[iter] = new TH2D("h_pt1pt2_pp_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
       h_pt1pt2_pp_unfold[iter]->SetName(Form("h_pt1pt2_pp_unfold_iter%d", iter));
 
     }
@@ -558,7 +611,7 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
       dlutility::SetMarkerAtt(h_final_xj_reco_range[irange], color_reco, msize_reco, marker_reco);
 
       dlutility::SetFont(h_final_xj_truth_range[irange], 42, 0.05);
-      h_final_xj_truth_range[irange]->SetMaximum(5);
+      h_final_xj_truth_range[irange]->SetMaximum(4.5);
       h_final_xj_truth_range[irange]->SetMinimum(0);
       h_final_xj_truth_range[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -569,6 +622,7 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
 
       ht->Draw("p E1");
       g_final_xj_systematics[irange][niter]->Draw("same p E2");
+      gStyle->SetErrorX(0.0001);
       hu->Draw("same p E1");
 
       /* h_final_xj_truth_range[irange]->Draw("p E1"); */
@@ -580,10 +634,10 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
       h_final_xj_reco_range[irange]->Draw("same p");
 
       
-      dlutility::DrawSPHENIX(0.22, 0.84);
-      dlutility::drawText(Form("anti-#it{k_{t}} #it{R} = %0.1f", cone_size*0.1), 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f #leq p_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
-      dlutility::drawText(Form("p_{T,2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+      dlutility::DrawSPHENIXboth(0.22, 0.84, 1);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = %0.1f", cone_size*0.1), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
       dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, 0.59);
       dlutility::drawText(Form("%d - %d %%", (int)icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, 0.54);
       TLegend *leg = new TLegend(0.6, 0.7, 0.85, 0.9);
@@ -694,7 +748,7 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
       gPad->SetBottomMargin(0.17);
       hu->GetYaxis()->SetTitleOffset(1.8);
       dlutility::SetFont(hu, 42, 0.06, 0.04, 0.05, 0.05);
-      hu->SetMaximum(5);
+      hu->SetMaximum(4.5);
       hu->SetMinimum(0);
       hu->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -704,41 +758,227 @@ void drawFinalUnfold_AA(const int cone_size = 3, const int centrality_bin = 0, c
       g_final_xj_pp_systematics[irange][niter]->Draw("same p E2");
       //hs->Draw("same p E2");
       h_linear_truth_xj[irange]->Draw("same hist C");
-      h_jewel_xj_med->Draw("same hist");
-      h_jewel_xj_vac->Draw("same hist");
+      h_jewel_xj_med->Draw("same hist C");
+      h_jewel_xj_vac->Draw("same hist C");
       //      h_linear_herwig_xj[irange]->Draw("same hist C");
-      hu->Draw("same p E1");
-      hpp->Draw("same p E1");
 
+      hpp->Draw("same p E1");
+      if (centrality_bin == 0)
+	{
+	  h_hybrid_xj_med_no_elastic_no_wake->Draw("same E3");
+	  h_hybrid_xj_med_with_elastic_no_wake->Draw("same E3");
+	  h_hybrid_xj_med_no_elastic_with_wake->Draw("same E3");
+	  h_hybrid_xj_med_with_elastic_with_wake->Draw("same E3");
+	}
+      hu->Draw("same p E1");
       std::cout << hu->GetBinContent(hu->GetNbinsX())  << " -- " << hpp->GetBinContent(hpp->GetNbinsX())  << std::endl;
 
       //h_final_xj_data_range[irange]->Draw("same p");
       //h_final_xj_reco_range[irange]->Draw("same p");
-      float top = 0.88;
+      float top = 0.89;
       float ss = 0.05;
-      dlutility::DrawSPHENIX(0.22, top);
-
-      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.1]{#it{R = %0.1f}}", cone_size*0.1), 0.22, top - 2*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, top - 3*ss);
-      dlutility::drawText(Form("p_{T,2}^{lead} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, top - 4*ss);
-      dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, top - 5*ss);
-      dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, top - 6*ss);
+      float toptext = top;// - 0.01;
       
-      TLegend *leg = new TLegend(0.65, top - 3*ss, 0.8, top);
+      dlutility::DrawSPHENIXboth(0.22, top, 1, 0.04);
+
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.1]{#it{R} = %0.1f}", cone_size*0.1), 0.22, toptext - 2*ss, 0, kBlack, 0.04);
+      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, toptext - 3*ss, 0, kBlack, 0.04);
+      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, toptext - 4*ss, 0, kBlack, 0.04);
+      dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, toptext - 5*ss, 0, kBlack, 0.04);
+      dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, toptext - 6*ss, 0, kBlack, 0.04);
+      
+      TLegend *leg = new TLegend(0.22, top - 5*ss, 0.42, top + 0.5*ss);
       leg->SetLineWidth(0);
-      leg->SetTextSize(0.03);
+      leg->SetTextSize(0.04);
       leg->SetTextFont(42);
-      leg->AddEntry(hu, "AuAu Data");
-      leg->AddEntry(hpp, "pp Data");
-      leg->AddEntry(h_jewel_xj_med, "JEWEL w/ 4mom. sub.","l");
-      leg->AddEntry(h_jewel_xj_vac, "JEWEL vacuum","l");
+      leg->AddEntry(hu, "Au+Au data");
+      leg->AddEntry(hpp, "#it{p}+#it{p} data");
+      leg->AddEntry(h_jewel_xj_vac, "JEWEL + PYTHIA6","l");
+      leg->AddEntry(h_jewel_xj_med, "JEWEL w/ 4MomSub","l");
       leg->AddEntry(ht, "PYTHIA-8","l");
+      if (centrality_bin == 0)
+	{
+	  leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - no Elastic no wake");
+	  leg->AddEntry(h_hybrid_xj_med_no_elastic_with_wake,"Hybrid - no Elastic w/ wake");
+	  leg->AddEntry(h_hybrid_xj_med_with_elastic_no_wake,"Hybrid - w/ Elastic no wake");
+	  leg->AddEntry(h_hybrid_xj_med_with_elastic_with_wake,"Hybrid - w/ Elastic w/ wake");
+	}
       //leg->AddEntry(h_linear_herwig_xj[irange], "HERWIG 7.3","l");
       leg->Draw("same");
 
       cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_AA_cent_%d_r%02d_range_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
       cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_AA_cent_%d_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
+
+      hu->Draw("p E1");
+      g_final_xj_systematics[irange][niter]->Draw("same p E2");
+      g_final_xj_pp_systematics[irange][niter]->Draw("same p E2");
+      //hs->Draw("same p E2");
+      h_linear_truth_xj[irange]->Draw("same hist C");
+      //h_jewel_xj_med->Draw("same hist");
+      //h_jewel_xj_vac->Draw("same hist");
+      //      h_linear_herwig_xj[irange]->Draw("same hist C");
+
+      hpp->Draw("same p E1");
+      //h_hybrid_xj_med_no_elastic_no_wake->Draw("same E3");
+      //h_hybrid_xj_med_with_elastic_no_wake->Draw("same E3");
+      //h_hybrid_xj_med_no_elastic_with_wake->Draw("same E3");
+      //h_hybrid_xj_med_with_elastic_with_wake->Draw("same E3");
+      hu->Draw("same p E1");
+
+      //h_final_xj_data_range[irange]->Draw("same p");
+      //h_final_xj_reco_range[irange]->Draw("same p");
+
+      dlutility::DrawSPHENIXboth(0.22, top, 1, 0.04);
+
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.1]{#it{R} = %0.1f}", cone_size*0.1), 0.22, toptext - 2*ss, 0, kBlack, 0.04);
+      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, toptext - 3*ss, 0, kBlack, 0.04);
+      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, toptext - 4*ss, 0, kBlack, 0.04);
+      dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, toptext - 5*ss, 0, kBlack, 0.04);
+      //dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, toptext - 6*ss, 0, kBlack, 0.035);
+
+      
+      leg = new TLegend(0.65, top - 5*ss, 0.8, top);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.04);
+      leg->SetTextFont(42);
+      leg->SetHeader(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]));
+      leg->AddEntry(hu, "Au+Au data");
+      leg->AddEntry(hpp, "#it{p}+#it{p} data");
+      //leg->AddEntry(h_jewel_xj_med, "JEWEL w/ 4mom. sub.","l");
+      //leg->AddEntry(h_jewel_xj_vac, "JEWEL vacuum","l");
+      leg->AddEntry(ht, "PYTHIA-8","l");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - no Elastic no wake");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - no Elastic w/ wake");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - w/ Elastic no wake");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - w/ Elastic w/ wake");
+      //leg->AddEntry(h_linear_herwig_xj[irange], "HERWIG 7.3","l");
+      leg->Draw("same");
+
+      cxj_money->Print(Form("%s/final_plots/h_final_data_xj_unfolded_AA_cent_%d_r%02d_range_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
+      cxj_money->Print(Form("%s/final_plots/h_final_data_xj_unfolded_AA_cent_%d_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
+      toptext = top - 0.01;
+      ss = 0.04;
+
+      hu->Draw("p E1");
+      g_final_xj_systematics[irange][niter]->Draw("same p E2");
+      g_final_xj_pp_systematics[irange][niter]->Draw("same p E2");
+      //hs->Draw("same p E2");
+      //h_linear_truth_xj[irange]->Draw("same hist C");
+      h_jewel_xj_med->Draw("same hist C");
+      h_jewel_xj_vac->Draw("same hist C");
+      //      h_linear_herwig_xj[irange]->Draw("same hist C");
+
+      hpp->Draw("same p E1");
+      //h_hybrid_xj_med_no_elastic_no_wake->Draw("same E3");
+      //h_hybrid_xj_med_with_elastic_no_wake->Draw("same E3");
+      //h_hybrid_xj_med_no_elastic_with_wake->Draw("same E3");
+      //h_hybrid_xj_med_with_elastic_with_wake->Draw("same E3");
+      hu->Draw("same p E1");
+
+      //h_final_xj_data_range[irange]->Draw("same p");
+      //h_final_xj_reco_range[irange]->Draw("same p");
+      dlutility::DrawSPHENIXboth(0.22, top, 1, 0.035);
+
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.1]{#it{R} = %0.1f}", cone_size*0.1), 0.22, toptext - 2*ss, 0, kBlack, 0.035);
+      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, toptext - 3*ss, 0, kBlack, 0.035);
+      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, toptext - 4*ss, 0, kBlack, 0.035);
+      dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, toptext - 5*ss, 0, kBlack, 0.035);
+      //dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, toptext - 6*ss, 0, kBlack, 0.035);
+      
+      leg = new TLegend(0.55, top - 4*ss, 0.8, top);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.035);
+      leg->SetTextFont(42);
+      leg->SetHeader(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]));
+      leg->AddEntry(hu, "Au+Au data");
+      leg->AddEntry(hpp, "#it{p}+#it{p} data");
+      leg->AddEntry(h_jewel_xj_vac, "JEWEL + PYTHIA-6","l");
+      leg->AddEntry(h_jewel_xj_med, "JEWEL w/ 4MomSub","l");
+      //leg->AddEntry(ht, "PYTHIA-8","l");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - no Elastic no wake");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - no Elastic w/ wake");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - w/ Elastic no wake");
+      //leg->AddEntry(h_hybrid_xj_med_no_elastic_no_wake,"Hybrid - w/ Elastic w/ wake");
+      //leg->AddEntry(h_linear_herwig_xj[irange], "HERWIG 7.3","l");
+      leg->Draw("same");
+
+      cxj_money->Print(Form("%s/final_plots/h_final_jewel_xj_unfolded_AA_cent_%d_r%02d_range_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
+      cxj_money->Print(Form("%s/final_plots/h_final_jewel_xj_unfolded_AA_cent_%d_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
+      if (!(centrality_bin == 0))
+	{
+	  continue;
+	}
+
+      hu->Draw("p E1");
+      g_final_xj_systematics[irange][niter]->Draw("same p E2");
+      g_final_xj_pp_systematics[irange][niter]->Draw("same p E2");
+      //hs->Draw("same p E2");
+      //h_linear_truth_xj[irange]->Draw("same hist C");
+      //h_jewel_xj_med->Draw("same hist");
+      //h_jewel_xj_vac->Draw("same hist");
+      //      h_linear_herwig_xj[irange]->Draw("same hist C");
+
+      hpp->Draw("same p E1");
+      h_hybrid_xj_vac->Draw("same hist C");
+      h_hybrid_xj_med_no_elastic_no_wake->Draw("same E3");
+      h_hybrid_xj_med_with_elastic_no_wake->Draw("same E3");
+      h_hybrid_xj_med_no_elastic_with_wake->Draw("same E3");
+      h_hybrid_xj_med_with_elastic_with_wake->Draw("same E3");
+      hu->Draw("same p E1");
+
+      //h_final_xj_data_range[irange]->Draw("same p");
+      //h_final_xj_reco_range[irange]->Draw("same p");
+      dlutility::DrawSPHENIXboth(0.22, top, 1, 0.035);
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.1]{#it{R} = %0.1f}", cone_size*0.1), 0.22, toptext - 2*ss, 0, kBlack, 0.035);
+      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, toptext - 3*ss, 0, kBlack, 0.035);
+      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, toptext - 4*ss, 0, kBlack, 0.035);
+      dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, toptext - 5*ss, 0, kBlack, 0.035);
+      //      dlutility::drawText(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, toptext - 6*ss, 0, kBlack, 0.035);
+      
+      leg = new TLegend(0.56, top - 6*ss, 0.66, top + 0.6*ss);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.03);
+      leg->SetTextFont(42);
+      leg->SetHeader(Form("%d - %d %%", (int) icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]));
+      leg->AddEntry(hu, "Au+Au data");
+      leg->AddEntry(hpp, "#it{p}+#it{p} data");
+      //leg->AddEntry(h_jewel_xj_med, "JEWEL w/ 4mom. sub.","l");
+      //leg->AddEntry(h_jewel_xj_vac, "JEWEL vacuum","l");
+      //leg->AddEntry(ht, "PYTHIA-8","l");
+      leg->AddEntry(hvl,"Hybrid - vacuum","l");
+      leg->AddEntry(hnn,"Hybrid - no Elastic no wake","l");
+      leg->AddEntry(hny,"Hybrid - no Elastic w/ wake","l");
+      leg->AddEntry(hyn,"Hybrid - w/ Elastic no wake","l");
+      leg->AddEntry(hyy,"Hybrid - w/ Elastic w/ wake","l");
+      //leg->AddEntry(h_linear_herwig_xj[irange], "HERWIG 7.3","l");
+      leg->Draw("same");
+
+      cxj_money->Print(Form("%s/final_plots/h_final_hybrid_xj_unfolded_AA_cent_%d_r%02d_range_%d.png",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
+      cxj_money->Print(Form("%s/final_plots/h_final_hybrid_xj_unfolded_AA_cent_%d_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), centrality_bin, cone_size, irange));
+
     }
 
+
+  TFile *fout = new TFile(Form("%s/final_hists/final_hists_AA_cent_%d_r%02d.root", rb.get_code_location().c_str(), centrality_bin, cone_size),"recreate");
+  for (int irange = 0; irange < mbins; irange++)
+    {
+
+      for (int iter = 0;iter < niterations;iter++)
+	{
+
+	  h_final_xj_pp_unfold_range[irange][niter]->SetName(Form("h_final_xj_pp_unfold_range_%d_iter_%d", irange, iter));
+	  g_final_xj_pp_systematics[irange][niter]->SetName(Form("g_final_xj_pp_systematics_range_%d_iter_%d", irange, iter));
+
+	  h_final_xj_unfold_range[irange][niter]->SetName(Form("h_final_xj_unfold_range_%d_iter_%d", irange, iter ));
+	  g_final_xj_systematics[irange][niter]->SetName(Form("g_final_xj_systematics_range_%d_iter_%d", irange, iter));
+	  h_final_xj_pp_unfold_range[irange][niter]->Write();
+	  g_final_xj_pp_systematics[irange][niter]->Write();
+	  
+	  h_final_xj_unfold_range[irange][niter]->Write();
+	  g_final_xj_systematics[irange][niter]->Write();
+
+	}
+    }
+  fout->Close();
   return;
 }
