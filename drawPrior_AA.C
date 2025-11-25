@@ -10,7 +10,7 @@ void drawPrior_AA(const int cone_size = 3, const int centrality_bin = 0)
   read_binning rb("binning_AA.config");
 
   Int_t read_nbins = rb.get_nbins();
-
+  std::string dphi_string = rb.get_dphi_string();
   Double_t dphicut = rb.get_dphicut();
   Double_t dphicuttruth = dphicut;//TMath::Pi()/2.;
 
@@ -108,20 +108,20 @@ void drawPrior_AA(const int cone_size = 3, const int centrality_bin = 0)
 
   // make TH2s and TH1s for projection prep:
 
-  TH2D *h_nom_pt1pt2_reco = new TH2D("h_nom_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_nom_pt1pt2_truth = new TH2D("h_nom_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_nom_pt1pt2_reco = new TH2D("h_nom_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_nom_pt1pt2_truth = new TH2D("h_nom_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
 
   TH1D *h_nom_xj_reco = new TH1D("h_nom_xj_reco", ";x_{J};", nbins, ixj_bins);
   TH1D *h_nom_xj_truth = new TH1D("h_nom_xj_truth", ";x_{J};",nbins, ixj_bins);
 
-  TH2D *h_p1_pt1pt2_reco = new TH2D("h_p1_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_p1_pt1pt2_truth = new TH2D("h_p1_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_p1_pt1pt2_reco = new TH2D("h_p1_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_p1_pt1pt2_truth = new TH2D("h_p1_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
 
   TH1D *h_p1_xj_reco = new TH1D("h_p1_xj_reco", ";x_{J};", nbins, ixj_bins);
   TH1D *h_p1_xj_truth = new TH1D("h_p1_xj_truth", ";x_{J};",nbins, ixj_bins);
 
-  TH2D *h_p2_pt1pt2_reco = new TH2D("h_p2_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_p2_pt1pt2_truth = new TH2D("h_p2_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_p2_pt1pt2_reco = new TH2D("h_p2_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_p2_pt1pt2_truth = new TH2D("h_p2_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
 
   TH1D *h_p2_xj_reco = new TH1D("h_p2_xj_reco", ";x_{J};", nbins, ixj_bins);
   TH1D *h_p2_xj_truth = new TH1D("h_p2_xj_truth", ";x_{J};",nbins, ixj_bins);
@@ -162,7 +162,7 @@ void drawPrior_AA(const int cone_size = 3, const int centrality_bin = 0)
 
   dlutility::SetMarkerAtt(h_p1_xj_reco, color_p1, 1.2, 20);
   dlutility::SetLineAtt(h_p1_xj_reco, color_p1, 1, 1);
-  dlutility::SetMarkerAtt(h_p1_xj_truth, color_p1, 1.2, 21);
+  dlutility::SetMarkerAtt(h_p1_xj_truth, color_p1, 1.2, 20);
   dlutility::SetLineAtt(h_p1_xj_truth, color_p1, 1, 1);
 
   dlutility::SetMarkerAtt(h_p2_xj_reco, color_p2, 1.2, 20);
@@ -181,12 +181,23 @@ void drawPrior_AA(const int cone_size = 3, const int centrality_bin = 0)
   h_nom_xj_truth->Draw("p");
   //h_p2_xj_reco->Draw("p same");
   h_p1_xj_truth->Draw("p same");
-  TLegend *leg = new TLegend(0.2, 0.5, 0.5, 0.7);
+
+  int irange = 1;
+  dlutility::DrawSPHENIX(0.22, 0.84);
+  dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = %0.1f", cone_size*0.1), 0.22, 0.74);
+  dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
+  dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+  dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), 0.22, 0.59);
+  dlutility::drawText(Form("%d - %d %%", (int)icentrality_bins[centrality_bin], (int)icentrality_bins[centrality_bin+1]), 0.22, 0.54);
+
+  TLegend *leg = new TLegend(0.65, 0.78, 0.85, 0.86);
   leg->SetLineWidth(0);
+  leg->SetTextSize(0.03);
   //leg->AddEntry(h_nom_xj_reco,"Nominal Reco");
-  leg->AddEntry(h_nom_xj_truth," Truth w/ Reweighting");
-  //leg->AddEntry(h_p2_xj_reco,"Prior Reco");
   leg->AddEntry(h_p1_xj_truth,"Truth");
+  leg->AddEntry(h_nom_xj_truth," Truth w/ Reweight");
+  //leg->AddEntry(h_p2_xj_reco,"Prior Reco");
+
   leg->Draw("same");
   c->Print(Form("%s/unfolding_plots/prior_compare_AA_cent_%d_r%02d.pdf", rb.get_code_location().c_str(), centrality_bin, cone_size));
   return;

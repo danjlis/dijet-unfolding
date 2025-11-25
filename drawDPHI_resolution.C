@@ -87,7 +87,7 @@ void drawDPHI_resolution(const std::string configfile = "binning.config")
 
   for (int i = 0; i < 4; i++)
     {
-      h_pt1_resolution[i] = new TH1D(Form("h_pt1_resolution_%d", i), ";p_{T2} [GeV]; d#Delta#phi;",10, 10, 60);
+      h_pt1_resolution[i] = new TH1D(Form("h_pt1_resolution_%d", i), ";#it{p}_{T,2} [GeV]; d#Delta#phi;",10, 10, 60);
       for (int j = 0; j < 10; j++)
 	{
 	  int xbin = i+1;
@@ -114,17 +114,17 @@ void drawDPHI_resolution(const std::string configfile = "binning.config")
 
   TLegend *l = new TLegend(0.56, 0.6, 0.87, 0.78);
   l->SetLineWidth(0);
-  l->AddEntry(h_pt1_resolution[0], "20 #geq p_{T1} < 30 GeV","p");
-  l->AddEntry(h_pt1_resolution[1], "30 #geq p_{T1} < 40 GeV","p");
-  l->AddEntry(h_pt1_resolution[2], "40 #geq p_{T1} < 50 GeV","p");
-  l->AddEntry(h_pt1_resolution[3], "50 #geq p_{T1} < 60 GeV","p");
+  l->AddEntry(h_pt1_resolution[0], "20 #geq #it{p}_{T,1} < 30 GeV","p");
+  l->AddEntry(h_pt1_resolution[1], "30 #geq #it{p}_{T,1} < 40 GeV","p");
+  l->AddEntry(h_pt1_resolution[2], "40 #geq #it{p}_{T,1} < 50 GeV","p");
+  l->AddEntry(h_pt1_resolution[3], "50 #geq #it{p}_{T,1} < 60 GeV","p");
   l->Draw("same");
 
   
   dlutility::DrawSPHENIXpp(0.6, 0.87);
   TProfile *h_sim_match_ddphi = (TProfile*) fin->Get("h_sim_match_ddphi");
 
-  TH1D *h_res = new TH1D("h_res",";<p_{T}>; d#Delta#phi;",25, 10, 60);
+  TH1D *h_res = new TH1D("h_res",";<#it{p}_{T}>; d#Delta#phi;",25, 10, 60);
   for (int i = 0; i < 25; i++)
     {
       h_res->SetBinContent(i+1, h_sim_match_ddphi->GetBinError(i+1));
@@ -133,7 +133,7 @@ void drawDPHI_resolution(const std::string configfile = "binning.config")
   dlutility::SetLineAtt(h_res, kBlack, 1, 1);
   dlutility::SetMarkerAtt(h_res, kBlack, 1, 8);
   TCanvas *c1 = new TCanvas("c1","c1", 500, 500);
-  h_res->SetTitle(";< p_{T} > [GeV]; #sigma(d#Delta#phi)");
+  h_res->SetTitle(";< #it{p}_{T} > [GeV]; #sigma(d#Delta#phi)");
   h_res->SetMaximum(0.17);
   h_res->SetMinimum(0.0);
   h_res->Draw("p");

@@ -24,10 +24,22 @@ namespace histo_opps
       {
 	gg->Set(i+1);
 	gg->SetPoint(i, h1->GetBinCenter(i+1), h1->GetBinContent(i+1));
-	gg->SetPointError(i, h1->GetBinWidth(i+1)/2., h1->GetBinWidth(i+1)/2.,hsn->GetBinContent(i+1)*h1->GetBinContent(i+1),hsp->GetBinContent(i+1)*h1->GetBinContent(i+1));
+	gg->SetPointError(i, hsn->GetBinWidth(i+1)/2.,hsn->GetBinWidth(i+1)/2., hsn->GetBinContent(i+1)*h1->GetBinContent(i+1),hsp->GetBinContent(i+1)*h1->GetBinContent(i+1));
       }
     return gg;
   }
+  TGraphAsymmErrors *get_xj_statistics(TH1D *h1, const int nbins)
+  {
+    TGraphAsymmErrors *gg = new TGraphAsymmErrors();
+    for (int i = 0; i < nbins; i++)
+      {
+	gg->Set(i+1);
+	gg->SetPoint(i, h1->GetBinCenter(i+1), h1->GetBinContent(i+1));
+	gg->SetPointError(i, 0, 0,  h1->GetBinError(i+1), h1->GetBinError(i+1));
+      }
+    return gg;
+  }
+
   void set_xj_errors(TH1D *h1, TProfile *hp, const int nbins)
   {
     for (int i = 0; i < nbins; i++)
@@ -48,7 +60,6 @@ namespace histo_opps
 	h1->SetBinError(i+1, new_error);
       }
   }
-
 
   void finalize_xj(TH1D *h1, TH1D *h2, const int nbins, float first_xj)
   {
@@ -93,7 +104,7 @@ namespace histo_opps
 
         integral += v;
 
-        bin_contents[i] = v/w;
+        bin_contents[i] = vw;
         bin_errors[i] = ew;
 
       }
@@ -115,32 +126,37 @@ namespace histo_opps
       }
   }
 
-  void project_xj(TH2D* hpt1pt2, TH1D* h_xj, const int nbins, const int start_leading_bin, const int end_leading_bin, const int start_subleading_bin, const int end_subleading_bin)
+  void project_xj(TH2D* h_pt1pt2, TH1D* h_xj, const int nbins, const int start_leading_bin, const int end_leading_bin, const int start_subleading_bin, const int end_subleading_bin)
   {
 
     TH1D *h_unc = (TH1D*) h_xj->Clone();
     h_unc->Reset();
 
-    TH2D *h_asym_pt1pt2 = (TH2D*) hpt1pt2->Clone();
-  
+    TH2D *h_asym_pt1pt2 = (TH2D*) h_pt1pt2->Clone();
+    h_asym_pt1pt2->Reset();
     for (int ix = 0; ix < nbins; ix++)
       {
 	for (int iy = 0; iy < nbins; iy++)
 	  {
 	    int bin = h_asym_pt1pt2->GetBin(ix+1, iy+1);
 
-	    if (ix > iy)
+	    if (ix == iy)
 	      {
-		h_asym_pt1pt2->SetBinContent(bin, h_asym_pt1pt2->GetBinContent(bin)*2.);
-		h_asym_pt1pt2->SetBinError(bin, h_asym_pt1pt2->GetBinError(bin)*2);
+		h_asym_pt1pt2->SetBinContent(bin, h_pt1pt2->GetBinContent(bin));
+		h_asym_pt1pt2->SetBinError(bin, h_pt1pt2->GetBinError(bin));
 	      }
+	    else if (ix > iy)
+	      {
+		h_asym_pt1pt2->SetBinContent(bin, h_pt1pt2->GetBinContent(bin)*2.);
+		h_asym_pt1pt2->SetBinError(bin, h_pt1pt2->GetBinError(bin)*2);
+	      }
+
 	    else if (ix < iy)
 	      {
 		h_asym_pt1pt2->SetBinContent(bin, 0);
 		h_asym_pt1pt2->SetBinError(bin, 0);
 	      }
-	
-	      
+		      
 	  }
       }
 
@@ -153,7 +169,8 @@ namespace histo_opps
 
 	    int xjbin_low = nbins + low + 1;
 	    int xjbin_high = nbins + low + 2;
-	    //std::cout << ix << " / " << iy << " -- > " << xjbin_low << "--"<<xjbin_high<<std::endl;
+
+	    
 	    int bin = h_asym_pt1pt2->GetBin(ix+1, iy+1);
 
 	    if (ix < start_leading_bin) continue;
@@ -163,7 +180,6 @@ namespace histo_opps
 
 	    if (ix == iy)
 	      {
-
 		h_xj->Fill(h_xj->GetBinCenter(xjbin_low), h_asym_pt1pt2->GetBinContent(bin));
 		h_unc->Fill(h_xj->GetBinCenter(xjbin_low),TMath::Power( h_asym_pt1pt2->GetBinError(bin), 2));
 	      }
@@ -201,7 +217,36 @@ namespace histo_opps
       }
     return;
   }
+  void make_asym_pt1pt2(TH2D *h_apt1pt2, TH2D* h_pt1pt2, const int nbins)
+  {
 
+    for (int ix = 0; ix < nbins; ix++)
+      {
+	for (int iy = 0; iy < nbins; iy++)
+	  {
+	    int bin = h_apt1pt2->GetBin(ix+1, iy+1);
+
+	    if (ix == iy)
+	      {
+		h_apt1pt2->SetBinContent(bin, h_pt1pt2->GetBinContent(bin));
+		h_apt1pt2->SetBinError(bin, h_pt1pt2->GetBinError(bin));
+	      }
+	    else if (ix > iy)
+	      {
+		h_apt1pt2->SetBinContent(bin, h_pt1pt2->GetBinContent(bin)*2.);
+		h_apt1pt2->SetBinError(bin, h_pt1pt2->GetBinError(bin)*2);
+	      }
+
+	    else if (ix < iy)
+	      {
+		h_apt1pt2->SetBinContent(bin, 0);
+		h_apt1pt2->SetBinError(bin, 0);
+	      }
+		      
+	  }
+      }
+    return;
+  }
   void skim_down_histo(TH1D *h_skim, TH1D *h_full, TH1D *h_mapping)
   {
 

@@ -1,3 +1,4 @@
+
 #include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
@@ -26,13 +27,13 @@ const int color_data = kAzure - 6;
 const float marker_data = 24;
 const float msize_data = 0.9;
 const float lsize_data = 1.1;
-void drawHalfClosure_pp(const int cone_size = 3)
+void drawHalfClosure_pp(const int cone_size = 4)
 {
   gStyle->SetCanvasPreferGL(0);
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
-  const int niterations = 30;
+  const int niterations = 10;
   read_binning rb("binning.config");
 
   Double_t first_xj = rb.get_first_xj();

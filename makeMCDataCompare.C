@@ -137,7 +137,7 @@ int makeMCDataCompare(const std::string configfile = "binning_AA.config")
   TH1D *h_truth_lead_sample[3];
   for (int i = 0; i < 3; i++)
     {
-      h_truth_lead_sample[i] = new TH1D(Form("h_truth_lead_%d", i), " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
+      h_truth_lead_sample[i] = new TH1D(Form("h_truth_lead_%d", i), " ; Leading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
     }
   
   TH1D *h_centrality = new TH1D("h_centrality", ";Centrality; counts", 20, 0, 100);
@@ -359,16 +359,17 @@ int makeMCDataCompare(const std::string configfile = "binning_AA.config")
   c5->Print(Form("%s/unfolding_plots/datasim_mbd_compare_r%02d.png", rb.get_code_location().c_str(), cone_size));
   c5->Print(Form("%s/unfolding_plots/datasim_mbd_compare_r%02d.pdf", rb.get_code_location().c_str(), cone_size));
 
-  h_centrality->Scale(1./h_centrality->Integral(), "width");
-  h_d_centrality->Scale(1./h_d_centrality->Integral(), "width");
+  h_centrality->Scale(h_d_centrality->Integral()/h_centrality->Integral(), "width");
+  //h_d_centrality->Scale(1./h_d_centrality->Integral(), "width");
   c5->cd(1);
+  gPad->SetLogy(1);
   gPad->SetBottomMargin(0.1);
   dlutility::SetLineAtt(h_centrality, color_sim, 1, 1);
   dlutility::SetLineAtt(h_d_centrality, color_data, 1, 1);
   dlutility::SetMarkerAtt(h_centrality, color_sim, 0.5, 8);
   dlutility::SetMarkerAtt(h_d_centrality, color_data, 0.5, 8);
   dlutility::SetFont(h_d_centrality, 42, 0.05);
-  h_d_centrality->SetMinimum(0);
+  //h_d_centrality->SetMinimum(0);
 
   h_d_centrality->SetTitle("; Centrality; #frac{1}{N_{pair}}#frac{dN_{pair}}{dCentrality} ");
   h_d_centrality->Draw("p");

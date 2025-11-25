@@ -94,13 +94,13 @@ int makeHerwig_hist(const std::string configfile = "binning.config")
   TH1D *h_truth_lead_sample[3];
   for (int i = 0; i < 3; i++)
     {
-      h_truth_lead_sample[i]= new TH1D(Form("h_truth_lead_%d", i), " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
+      h_truth_lead_sample[i]= new TH1D(Form("h_truth_lead_%d", i), " ; Leading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
     }
-  TH1D *h_truth_lead = new TH1D("h_truth_lead", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
-  TH1D *h_truth_sublead = new TH1D("h_truth_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_truth_lead = new TH1D("h_truth_lead", " ; Leading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_truth_sublead = new TH1D("h_truth_sublead", " ; Subleading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
 
-  TH1D *h_match_truth_lead = new TH1D("h_match_truth_lead", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
-  TH1D *h_match_truth_sublead = new TH1D("h_match_truth_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_match_truth_lead = new TH1D("h_match_truth_lead", " ; Leading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
+  TH1D *h_match_truth_sublead = new TH1D("h_match_truth_sublead", " ; Subleading Jet #it{p}_{T} [GeV]; counts", 100, 0, 100);
 
   TH1D *h_mbd_vertex = new TH1D("h_mbd_vertex", ";z_{vtx}; counts", 120, -60, 60);
   // pure fills
@@ -121,9 +121,9 @@ int makeHerwig_hist(const std::string configfile = "binning.config")
       h_truth_subleading_dphi[i] = new TH1D(Form("h_truth_subleading_dphi_%d", i),";x_{J};;", 32, TMath::Pi()*3./4., TMath::Pi());
     }
 
-  TH1D *h_flat_truth_pt1pt2 = new TH1D("h_truth_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
-  TH1D *h_count_flat_truth_pt1pt2 = new TH1D("h_truth_count_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
-  TH1D *h_flat_truth_to_response_pt1pt2 = new TH1D("h_truth_flat_to_response_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_flat_truth_pt1pt2 = new TH1D("h_truth_flat_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_count_flat_truth_pt1pt2 = new TH1D("h_truth_count_flat_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
+  TH1D *h_flat_truth_to_response_pt1pt2 = new TH1D("h_truth_flat_to_response_pt1pt2",";#it{p}_{T,1, smear} + #it{p}_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
 
   int nbin_response = nbins*nbins;
   

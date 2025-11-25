@@ -98,6 +98,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   TF1 *fgaus = new TF1("fgaus", "gaus");
   fgaus->SetRange(-0.5, 0.5);
   Int_t zyam_sys = rb.get_zyam_sys();
+  Int_t inclusive_sys = rb.get_inclusive_sys();
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
   Int_t prior_sys = rb.get_prior_sys();
@@ -129,6 +130,11 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
     {
       using_sys = 1;
       sys_name = "ZYAM";
+    }
+  if (inclusive_sys)
+    {
+      using_sys = 1;
+      sys_name = "INCLUSIVE";
     }
   if (JER_sys != 0)
     {
@@ -277,9 +283,9 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   if (!full_or_half && !prior_sys && !primer)
     {
       std::cout << "doing prior" << std::endl;
-      TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_%s_r%02d_PRIMER2_%s.root", system_string.c_str(), cone_size, sys_name.c_str()), "r");
+      TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_%s_r%02d_PRIMER1_%s.root", system_string.c_str(), cone_size, sys_name.c_str()), "r");
       TH1D *h_unfold_flat = (TH1D*) fun->Get(Form("h_flat_unfold_pt1pt2_%d", prior_iteration));
-      TFile *ftr = new TFile(Form("response_matrices/response_matrix_%s_r%02d_PRIMER2_%s.root", system_string.c_str(), cone_size, sys_name.c_str()), "r");
+      TFile *ftr = new TFile(Form("response_matrices/response_matrix_%s_r%02d_PRIMER1_%s.root", system_string.c_str(), cone_size, sys_name.c_str()), "r");
       std::cout << "doing prior" << std::endl;
       TH1D *h_truth_flat = (TH1D*) ftr->Get("h_truth_flat_pt1pt2");
       TH2D *h2_flatreweight_pt1pt2 = new TH2D("h2_flatreweight_pt1pt2",";p_{T,1}^{truth} [GeV]; p_{T,2}^{truth} [GeV] ; Reweight Factor", nbins, ipt_bins, nbins, ipt_bins);
@@ -325,22 +331,35 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
   
   RooUnfoldResponse rooResponse(nbin_response, 0, nbin_response);
 
+  TRandom *rng = new TRandom(0);
+  
   for (int isample = 0; isample < 3; isample++)
     {
       std::cout << "Sample " << isample << std::endl;
       int entries0 = 0;
       int entries1 = tn[isample]->GetEntries()/2;    
       int entries2 = tn[isample]->GetEntries();
-      if (full_or_half == 1) entries2 = entries1;
+      //if (full_or_half == 1) entries2 = entries1;
 
       for (int i = entries0; i < entries2; i++)
 	{
 	  tn[isample]->GetEntry(i);
 	  int inrecojets = nrecojets[isample];
 	  double event_scale = scale_factor[isample];
-	  
+
+	  if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;	  
+
 	  if (!(ispp) &&  centrality[isample] < icentrality_bins[centrality_bin] || centrality[isample] >= icentrality_bins[centrality_bin+1]) continue;
 	  // Vertex Rewieghting
+	  bool fill_response = 0;
+	  if (full_or_half)
+	    {
+	      if (rng->Uniform() >= 0.5)	     
+		{
+		  fill_response = 1;
+		}
+	    }
+	  
 	  if (primer != 1 && !full_or_half)
 	    {
 	      for (int ib = 0; ib < vertex_scales.size(); ib++)
@@ -352,6 +371,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 		      break;
 		    }
 		}
+
 	      if (!ispp && !full_or_half)
 		{
 		  for (int ib = 0; ib < centrality_scales.size(); ib++)
@@ -397,19 +417,16 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 
 	  h_truth_lead_sample[isample]->Fill(e1, event_scale);
 
-	  if (maxpttruth[isample] < sample_boundary[isample] || maxpttruth[isample] >= sample_boundary[isample+1]) continue;
-
-
-
 	  double smear1 = 0;
 	  
 	  double smear2 = 0;
-	  if (ispp)
+
+	  if (ispp && !full_or_half)
 	    {
 	      smear1 = fgaus->GetRandom();
 	      smear2 = fgaus->GetRandom();
 	    }
-	  else
+	  else if (!full_or_half)
 	    {
 	      fgaus->SetParameter(2, f_smear->Eval(e1));
 	      smear1 = fgaus->GetRandom();
@@ -431,9 +448,13 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  float maxi = std::max(es1, es2);
 	  float mini = std::min(es1, es2);
 
+	  float maxit = std::max(e1, e2);
+	  float minit = std::min(e1, e2);
+
 	  if (maxi >= ipt_bins[max_reco_bin]) continue;
-	  if (e1 > truth_leading_cut) h_truth_lead->Fill(e1, event_scale);
-	  if (e2 >  truth_subleading_cut) h_truth_sublead->Fill(e2, event_scale);
+
+	  if (maxit > truth_leading_cut) h_truth_lead->Fill(e1, event_scale);
+	  if (minit >  truth_subleading_cut) h_truth_sublead->Fill(e2, event_scale);
 
 	  if (maxi >  reco_leading_cut) h_reco_lead->Fill(maxi, event_scale);
 	  if (mini >  reco_subleading_cut) h_reco_sublead->Fill(mini, event_scale);
@@ -459,45 +480,53 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 		}
 	    }
 	  
-	  bool truth_good = (e1 >= truth_leading_cut && e2 >= truth_subleading_cut && dphi_truth[isample] > dphicuttruth);
+	  bool truth_good = (maxit >= sample_boundary[1]/* truth_leading_cut*/ && minit >= truth_subleading_cut && dphi_truth[isample] >= dphicuttruth);
 
-	  bool reco_good = (maxi >= reco_leading_cut && mini >= reco_subleading_cut && dphi_reco[isample] > dphicut);
+	  bool reco_good = (maxi >= reco_leading_cut && mini >= reco_subleading_cut && dphi_reco[isample] >= dphicut);
 
 	  if (!truth_good && !reco_good) continue;
 
-
 	  if (!prior_sys && !primer && !full_or_half)
 	    {
-	      int recorrectbin = pt1_truth_bin*nbins + pt2_truth_bin;
-	      
+	      int recorrectbin = pt1_truth_bin*nbins + pt2_truth_bin;	      
 	      event_scale *= h_flatreweight_pt1pt2->GetBinContent(recorrectbin);
 	    }
 	  //RooUnfoldResponse rooResponse_histo(*h_flat_reco_to_response_pt1pt2, *h_flat_truth_to_response, *flat_response_pt1pt2);
+
 	  if (truth_good && !reco_good)
 	    {
-	      h_flat_truth_to_response_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
-	      h_flat_truth_to_response_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
-
-	      if (e1 >= measure_leading_cut && e2 >= measure_subleading_cut)
+	      if (!(full_or_half && !fill_response))
 		{
-		  h_truth_xj->Fill(e2/e1, event_scale);
-		  h_linear_truth_xj->Fill(e2/e1, event_scale);
+		  h_flat_truth_to_response_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
+		  h_flat_truth_to_response_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+		  h_count_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin);
+		  h_count_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin);
+
+		  rooResponse.Miss(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
+		  rooResponse.Miss(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+
 		}
 
-	      h_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
-	      h_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
-	      h_count_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin);
-	      h_count_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin);
+	      if (!(full_or_half && fill_response))
+		{
+		  if (minit >= measure_subleading_cut && maxit >= measure_leading_cut && maxit < ipt_bins[measure_leading_bin + 2])
+		    {
+		      h_truth_xj->Fill(minit/maxit, event_scale);
+		      h_linear_truth_xj->Fill(minit/maxit, event_scale);
+		    }
+		  h_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
+		  h_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+		  h_e1e2->Fill(e1, e2, event_scale);
+		  h_e1e2->Fill(e2, e1, event_scale);
 
-	      rooResponse.Miss(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
-	      rooResponse.Miss(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+		}
 	      continue;
 	    }
 	  // if (!truth_good && reco_good)
 	  //   {
 	  //     h_pt1pt2->Fill(es1, es2, event_scale);
 	  //     h_pt1pt2->Fill(es2, es1, event_scale);
-
+	  
 	  //     h_flat_reco_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
 	  //     h_flat_reco_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
 	  //     if (maxi >= measure_leading_cut && mini>= measure_subleading_cut)
@@ -514,31 +543,50 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  
 	  if (match[isample] && reco_good && truth_good)
 	    {
-	      if (e1 > truth_leading_cut) h_match_truth_lead->Fill(e1, event_scale);
-	      if (e2 >  truth_subleading_cut) h_match_truth_sublead->Fill(e2, event_scale);
+	      
+	      if (maxit > truth_leading_cut) h_match_truth_lead->Fill(maxit, event_scale);
+	      if (minit >  truth_subleading_cut) h_match_truth_sublead->Fill(minit, event_scale);
 	      if (maxi >  reco_leading_cut) h_match_reco_lead->Fill(maxi, event_scale);
 	      if (mini >  reco_subleading_cut) h_match_reco_sublead->Fill(mini, event_scale);
-
-
-	      h_pt1pt2->Fill(es1, es2, event_scale);
-	      h_pt1pt2->Fill(es2, es1, event_scale);
-	      if (e1 >= measure_leading_cut && e2 >= measure_subleading_cut)
+	      
+	      
+	      if (!(full_or_half && !fill_response))
 		{
-		  h_truth_xj->Fill(e2/e1, event_scale);
-		  h_linear_truth_xj->Fill(e2/e1, event_scale);
+		  
+		  h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
+		  h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
+		  h_flat_truth_to_response_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
+		  h_flat_truth_to_response_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+		  h_flat_response_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
+		  h_flat_response_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+		  rooResponse.Fill(pt1_reco_bin + nbins*pt2_reco_bin,pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
+		  rooResponse.Fill(pt2_reco_bin + nbins*pt1_reco_bin,pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+		  h_count_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin);
+		  h_count_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin);
+		  h_count_flat_reco_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin);
+		  h_count_flat_reco_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin);	      
+		  
 		}
-	      h_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
-	      h_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+	      else if (!(full_or_half && fill_response))
+		{
+		  if (minit >= measure_subleading_cut && maxit >= measure_leading_cut && maxit < ipt_bins[measure_leading_bin + 2])
+		    {
+		      h_truth_xj->Fill(minit/maxit, event_scale);
+		      h_linear_truth_xj->Fill(minit/maxit, event_scale);
+		    }
+		  h_pt1pt2->Fill(es1, es2, event_scale);
+		  h_pt1pt2->Fill(es2, es1, event_scale);
+		  h_e1e2->Fill(e1, e2, event_scale);
+		  h_e1e2->Fill(e2, e1, event_scale);
 
-	      h_flat_reco_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
-	      h_flat_reco_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
-
-	      h_count_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin);
-	      h_count_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin);
-
-	      h_count_flat_reco_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin);
-	      h_count_flat_reco_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin);
-
+		  h_flat_truth_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
+		  h_flat_truth_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+		  h_flat_reco_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
+		  h_flat_reco_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
+		}
+		
+		
+		
 	      if (maxi >= measure_leading_cut && mini>= measure_subleading_cut)
 		{
 		  h_reco_xj->Fill(mini/maxi, event_scale);
@@ -546,16 +594,9 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 		}
 	      h_mbd_vertex->Fill(mbd_vertex[isample], event_scale);
 	      if (!ispp) h_centrality->Fill(centrality[isample], event_scale);
-	      h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, event_scale);
-	      h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, event_scale);
-	      h_flat_truth_to_response_pt1pt2->Fill(pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
-	      h_flat_truth_to_response_pt1pt2->Fill(pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
-	      h_flat_response_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin, pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
-	      h_flat_response_pt1pt2->Fill(pt2_reco_bin + nbins*pt1_reco_bin, pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
-	      rooResponse.Fill(pt1_reco_bin + nbins*pt2_reco_bin,pt1_truth_bin + nbins*pt2_truth_bin, event_scale);
-	      rooResponse.Fill(pt2_reco_bin + nbins*pt1_reco_bin,pt2_truth_bin + nbins*pt1_truth_bin, event_scale);
+	      
 	      continue;
-	    }
+	    } 
 	  // else
 	  //   {
 	  //     h_truth_xj->Fill(e2/e1, event_scale);
@@ -586,6 +627,12 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	}
     }
 
+  h_flat_reco_pt1pt2->Scale(.5);
+  h_flat_truth_pt1pt2->Scale(.5);
+
+  h_flat_reco_to_response_pt1pt2->Scale(.5);
+  h_flat_truth_to_response_pt1pt2->Scale(.5);
+  h_flat_response_pt1pt2->Scale(.5);
 
   int number_of_mins = 1;
   if (minentries == 0) number_of_mins = 20;
@@ -595,8 +642,8 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
       int nbinsx = h_flat_response_pt1pt2->GetXaxis()->GetNbins();
       int nbinsy = h_flat_response_pt1pt2->GetYaxis()->GetNbins();
 
-      TH1D *h_flat_truth_mapping = (TH1D*) h_flat_truth_pt1pt2->Clone();
-      TH1D *h_flat_reco_mapping = (TH1D*) h_flat_reco_pt1pt2->Clone();
+      TH1D *h_flat_truth_mapping = (TH1D*) h_flat_truth_to_response_pt1pt2->Clone();
+      TH1D *h_flat_reco_mapping = (TH1D*) h_flat_reco_to_response_pt1pt2->Clone();
       if (minentries)
 	{
 	  h_flat_truth_mapping->SetName("h_flat_truth_mapping");
@@ -607,6 +654,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  h_flat_truth_mapping->SetName(Form("h_flat_truth_mapping_min%d", imin));
 	  h_flat_reco_mapping->SetName(Form("h_flat_reco_mapping_min%d", imin));
 	}
+      
       h_flat_reco_mapping->Reset();
       h_flat_truth_mapping->Reset();
   
@@ -645,27 +693,40 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	}
       TH1D *h_flat_truth_skim = new TH1D(Form("h_flat_truth_skim_min%d", imin),"", ntruthbins, 0, ntruthbins);
       TH1D *h_flat_reco_skim = new TH1D(Form("h_flat_reco_skim_min%d", imin),"", nrecobins, 0, nrecobins);
+      TH1D *h_flat_truth_to_unfold_skim = new TH1D(Form("h_flat_truth_to_unfold_skim_min%d", imin),"", ntruthbins, 0, ntruthbins);
+      TH1D *h_flat_reco_to_unfold_skim = new TH1D(Form("h_flat_reco_to_unfold_skim_min%d", imin),"", nrecobins, 0, nrecobins);
+
       TH2D *h_flat_response_skim = new TH2D(Form("h_flat_response_skim_min%d", imin),"", nrecobins, 0, nrecobins, ntruthbins, 0, ntruthbins);
+
       if (minentries)
 	{
-	  h_flat_reco_skim->SetName("h_flat_reco_skim");
 	  h_flat_response_skim->SetName("h_flat_response_skim");
 	  h_flat_truth_skim->SetName("h_flat_truth_skim");
+	  h_flat_reco_skim->SetName("h_flat_reco_skim");
+	  h_flat_truth_to_unfold_skim->SetName("h_flat_truth_to_unfold_skim");
+	  h_flat_reco_to_unfold_skim->SetName("h_flat_reco_to_unfold_skim");
 	}
+
       for (int ib = 0; ib < nbins*nbins; ib++)
 	{
 	  int bintruth = binnumbers_truth.at(ib);      
 	  int binreco = binnumbers_reco.at(ib);
 	  if (binreco)
 	    {
-	      h_flat_reco_skim->SetBinContent(binreco, h_flat_reco_pt1pt2->GetBinContent(ib+1));
-	      h_flat_reco_skim->SetBinError(binreco, h_flat_reco_pt1pt2->GetBinError(ib+1));
+	      h_flat_reco_skim->SetBinContent(binreco, h_flat_reco_to_response_pt1pt2->GetBinContent(ib+1));
+	      h_flat_reco_skim->SetBinError(binreco, h_flat_reco_to_response_pt1pt2->GetBinError(ib+1));
+	      h_flat_reco_to_unfold_skim->SetBinContent(binreco, h_flat_reco_pt1pt2->GetBinContent(ib+1));
+	      h_flat_reco_to_unfold_skim->SetBinError(binreco, h_flat_reco_pt1pt2->GetBinError(ib+1));
+
 	    }
+
 	  if (bintruth)
 	    {
 	 
-	      h_flat_truth_skim->SetBinContent(bintruth, h_flat_truth_pt1pt2->GetBinContent(ib+1));
-	      h_flat_truth_skim->SetBinError(bintruth, h_flat_truth_pt1pt2->GetBinError(ib+1));
+	      h_flat_truth_skim->SetBinContent(bintruth, h_flat_truth_to_response_pt1pt2->GetBinContent(ib+1));
+	      h_flat_truth_skim->SetBinError(bintruth, h_flat_truth_to_response_pt1pt2->GetBinError(ib+1));
+	      h_flat_truth_to_unfold_skim->SetBinContent(bintruth, h_flat_truth_pt1pt2->GetBinContent(ib+1));
+	      h_flat_truth_to_unfold_skim->SetBinError(bintruth, h_flat_truth_pt1pt2->GetBinError(ib+1));
 
 	      for (int ibr = 0; ibr < nbins*nbins; ibr++)
 		{
@@ -696,15 +757,33 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 
       if (minentries)
 	{
-	  h_flat_reco_skim->Scale(.5);
 	  TH1D* h_flat_unfold_skim[niterations];
 	  TH1D* h_flat_unfold_pt1pt2[niterations];
+	  TH1D* h_flat_refold_skim[niterations];
+	  TH1D* h_flat_refold_pt1pt2[niterations];
+	  TH1D* h_flat_truth_fold_skim;
+	  TH1D* h_flat_truth_fold_pt1pt2;
 	  int niter = 3;
+	  
+	  h_flat_truth_fold_skim = (TH1D*) rooResponsehist.ApplyToTruth(h_flat_truth_skim, "hTruth_Folded");
+
+	  h_flat_truth_fold_pt1pt2 = (TH1D*) h_flat_truth_pt1pt2->Clone();
+	  h_flat_truth_fold_pt1pt2->Reset();
+	  h_flat_truth_fold_pt1pt2->SetName("h_flat_truth_fold_pt1pt2");
+	  for (int ib = 0; ib < nbins*nbins; ib++)
+	    {
+	      int bin = binnumbers_truth.at(ib);
+	      if (bin)
+		{
+		  h_flat_truth_fold_pt1pt2->SetBinContent(ib+1, h_flat_truth_fold_skim->GetBinContent(bin));
+		  h_flat_truth_fold_pt1pt2->SetBinError(ib+1, h_flat_truth_fold_skim->GetBinError(bin));
+		}
+	    }
 
 	  for (int iter = 0; iter < niterations; iter++ )
 	    {
       
-	      RooUnfoldBayes   unfold (&rooResponsehist, h_flat_reco_skim, iter + 1);    // OR
+	      RooUnfoldBayes   unfold (&rooResponsehist, h_flat_reco_to_unfold_skim, iter + 1);    // OR
 
 	      h_flat_unfold_skim[iter] = (TH1D*) unfold.Hunfold();
 	      std::cout <<" Nbins skim reco = "<<h_flat_unfold_skim[iter]->GetNbinsX()<<std::endl;
@@ -720,11 +799,24 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 		      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin));
 		    }
 		}
+
+	      h_flat_refold_skim[iter] = (TH1D*) rooResponsehist.ApplyToTruth(h_flat_unfold_skim[iter], "hRefolded");
+
+	      std::cout <<" Nbins skim reco = "<<h_flat_refold_skim[iter]->GetNbinsX()<<std::endl;
+	      h_flat_refold_pt1pt2[iter] = (TH1D*) h_flat_truth_pt1pt2->Clone();
+	      h_flat_refold_pt1pt2[iter]->Reset();
+	      h_flat_refold_pt1pt2[iter]->SetName(Form("h_flat_refold_pt1pt2_%d",iter));
+	      for (int ib = 0; ib < nbins*nbins; ib++)
+		{
+		  int bin = binnumbers_truth.at(ib);
+		  if (bin)
+		    {
+		      h_flat_refold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_refold_skim[iter]->GetBinContent(bin));
+		      h_flat_refold_pt1pt2[iter]->SetBinError(ib+1, h_flat_refold_skim[iter]->GetBinError(bin));
+		    }
+		}
+
 	    }
-
-	  h_flat_reco_pt1pt2->Scale(.5);
-	  h_flat_truth_pt1pt2->Scale(.5);
-
 
 
 	  TCanvas *c = new TCanvas("c","c", 500, 500);
@@ -743,19 +835,27 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  h_flat_unfold_pt1pt2[niter]->Draw("same p");
 
 	  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+	  TH2D *h_pt1pt2_truth_fold = new TH2D("h_pt1pt2_truth_fold", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
 	  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
 	  TH2D *h_pt1pt2_unfold[niterations];
+	  TH2D *h_pt1pt2_refold[niterations];
 	  for (int iter = 0; iter < niterations; iter++)
 	    {
 	      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
 	      h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
+	      h_pt1pt2_refold[iter] = new TH2D("h_pt1pt2_refold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+	      h_pt1pt2_refold[iter]->SetName(Form("h_pt1pt2_refold_iter%d", iter));
 	    }
 	  TH1D *h_xj_reco = new TH1D("h_xj_reco", ";x_{J};", nbins, ixj_bins);
 	  TH1D *h_xj_truth = new TH1D("h_xj_truth", ";x_{J};",nbins, ixj_bins);
+	  TH1D *h_xj_truth_fold = new TH1D("h_xj_truth_fold", ";x_{J};",nbins, ixj_bins);
+	  TH1D *h_xj_truth_direct = new TH1D("h_xj_truth_direct", ";x_{J};",nbins, ixj_bins);
 	  TH1D *h_xj_unfold[niterations];
+	  TH1D *h_xj_refold[niterations];
 	  for (int iter = 0; iter < niterations; iter++)
 	    {
 	      h_xj_unfold[iter] = new TH1D(Form("h_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+	      h_xj_refold[iter] = new TH1D(Form("h_xj_refold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
 	    }
 
 	  h_pt1pt2_reco->SetTitle(";Reco p_{T, 1} [GeV]; Reco p_{T, 2} [GeV]; Counts * lumi scale ");
@@ -763,10 +863,12 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  h_pt1pt2_unfold[niter]->SetTitle(";Unfold p_{T, 1} [GeV]; Unfold p_{T, 2} [GeV]; Counts * lumi scale ");
 
 	  histo_opps::make_sym_pt1pt2(h_flat_truth_pt1pt2, h_pt1pt2_truth, nbins);
+	  histo_opps::make_sym_pt1pt2(h_flat_truth_fold_pt1pt2, h_pt1pt2_truth_fold, nbins);
 	  histo_opps::make_sym_pt1pt2(h_flat_reco_pt1pt2, h_pt1pt2_reco, nbins);
 	  for (int iter = 0; iter < niterations; iter++)
 	    {
 	      histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins);
+	      histo_opps::make_sym_pt1pt2(h_flat_refold_pt1pt2[iter], h_pt1pt2_refold[iter], nbins);
 	    }
 
 	  TCanvas *cpt1pt2 = new TCanvas("cpt1pt2","cpt1pt2", 800, 300);
@@ -789,11 +891,14 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 
 	  cpt1pt2->Print(Form("%s/unfolding_plots/pt1pt2_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
 
-	  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
-	  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins, measure_leading_bin, measure_leading_bin + 2, measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, measure_leading_bin + 2, measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_truth_fold, h_xj_truth_fold, nbins, measure_leading_bin, measure_leading_bin + 2, measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_e1e2, h_xj_truth_direct, nbins, measure_leading_bin, measure_leading_bin + 2, measure_subleading_bin, nbins - 2);
 	  for (int iter = 0; iter < niterations; iter++)
 	    {
-	      histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	      histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins, measure_leading_bin, measure_leading_bin + 2, measure_subleading_bin, nbins - 2);
+	      histo_opps::project_xj(h_pt1pt2_refold[iter], h_xj_refold[iter], nbins, measure_leading_bin, measure_leading_bin + 2, measure_subleading_bin, nbins - 2);
 	    }
   
 	  TCanvas *cxj = new TCanvas("cxj","cxj", 500, 700);
@@ -825,8 +930,11 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  histo_opps::normalize_histo(h_xj_reco, nbins);
 	  histo_opps::normalize_histo(h_truth_xj, nbins);
 	  histo_opps::normalize_histo(h_reco_xj, nbins);
-	  h_linear_truth_xj->Scale(1./h_linear_truth_xj->Integral(), "width");
-	  h_linear_reco_xj->Scale(1./h_linear_reco_xj->Integral(), "width");
+
+	  //histo_opps::normalize_histo(h_linear_truth_xj->Scale(1./h_linear_truth_xj->Integral(), "width");
+	  h_truth_xj->Scale(1./h_linear_truth_xj->Integral(), "width");
+	  //h_linear_reco_xj->Scale(1./h_linear_reco_xj->Integral(), "width");
+
 	  for (int iter = 0; iter < niterations; iter++)
 	    {
 	      histo_opps::normalize_histo(h_xj_unfold[iter], nbins);
@@ -834,7 +942,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 
 	  dlutility::SetFont(h_xj_unfold[niter], 42, 0.04);
 	  h_xj_truth->SetTitle(";x_{J};#frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");
-	  h_xj_truth->SetMaximum(5);
+	  //h_xj_truth->SetMaximum(5);
 	  h_xj_truth->Draw("p");
 	  h_xj_unfold[niter]->Draw("same p");
 	  h_xj_reco->Draw("hist same");
@@ -1055,6 +1163,7 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  rooResponsehist.Write();
 	  h_flat_reco_pt1pt2->Write();
 	  h_flat_truth_pt1pt2->Write();
+	  h_flat_truth_fold_pt1pt2->Write();
 	  h_flat_response_pt1pt2->Write();
 	  h_flat_truth_mapping->Write();
 	  h_flat_reco_mapping->Write();
@@ -1063,13 +1172,20 @@ int createResponse_noempty_AA(const std::string configfile = "binning.config", c
 	  h_flat_response_skim->Write();
 	  h_mbd_vertex->Write();
 	  h_centrality->Write();
-  
+	  h_pt1pt2->Write();
+	  h_e1e2->Write();
 	  // Full closure drawing
+	  h_linear_truth_xj->Write();
 	  h_xj_truth->Write();
+	  h_xj_truth_fold->Write();
+	  h_xj_truth_direct->Write();
+	  h_truth_xj->Write();
 	  for (int iter = 0 ; iter < niterations; iter++)
 	    {
 	      h_flat_unfold_pt1pt2[iter]->Write();
 	      h_xj_unfold[iter]->Write();
+	      h_flat_refold_pt1pt2[iter]->Write();
+	      h_xj_refold[iter]->Write();
 	    }
 	  h_xj_reco->Write();
 	      

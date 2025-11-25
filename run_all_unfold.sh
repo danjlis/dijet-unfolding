@@ -14,9 +14,9 @@ root -l -q -b "createResponse_noempty.cxx(\"binning_primer2.config\", 0, 10, ${c
 
 root -l -q -b "unfoldData_noempty.cxx(\"binning_primer2.config\", 10, ${conesize})"
 
-root -l -q -b "createResponse_noempty.cxx(\"binning.config\", 1, 10, ${conesize})"
+# root -l -q -b "createResponse_noempty.cxx(\"binning.config\", 1, 10, ${conesize})"
 
-root -l -q -b "unfoldHalf_noempty.cxx(\"binning.config\", 10, ${conesize})"
+# root -l -q -b "unfoldHalf_noempty.cxx(\"binning.config\", 10, ${conesize})"
 
 root -l -q -b "createResponse_noempty.cxx(\"binning.config\", 0, 10, ${conesize})"
 

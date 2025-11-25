@@ -1,5 +1,3 @@
-
-
 #include <iostream>
 #include "dlUtility.h"
 #include "read_binning.h"
@@ -95,7 +93,7 @@ void getProbability(const int cone_size = 3,  const std::string configfile = "bi
   TH1D *h_centrality_data[centrality_bins];
   for (int i = 0;  i < centrality_bins; i++)
     {      
-      fun[i] = new TFile(Form("%s/unfolding_hists/unfolding_hists_AA_cent_%d_r%02d_PRIMER1_nominal.root", rb.get_code_location().c_str(), i , cone_size), "r");
+      fun[i] = new TFile(Form("%s/unfolding_hists/unfolding_hists_preload_AA_cent_%d_r%02d_nominal.root", rb.get_code_location().c_str(), i , cone_size), "r");
       if (!fun[i]) return;
       h_centrality_data[i] = (TH1D*) fun[i]->Get("h_centrality");
       if (!h_centrality_data[i]) return;
@@ -121,7 +119,7 @@ void getProbability(const int cone_size = 3,  const std::string configfile = "bi
   for ( int i = 0; i < 100; i++)
     {
 
-      h_pt2_correction[i] = new TH1D(Form("h_pt2_correction_%d", i),";p_{T};Efficiency", 45, 5, 50);
+      h_pt2_correction[i] = new TH1D(Form("h_pt2_correction_%d", i),";#it{p}_{T};Subleading Efficiency", 45, 5, 50);
 
       h_jet_spectra[i] = (TH1D*) f->Get(Form("h_jet_spectra_etacut_%d", i));
       if (h_jet_spectra[i]->Integral() == 0) continue;
@@ -157,8 +155,8 @@ void getProbability(const int cone_size = 3,  const std::string configfile = "bi
   for (int i = 0; i < centrality_bins; i++)
     {
       h_jet_spectra_meas[i]->Scale(1./h_scaled_events->GetBinContent(i+1),"width");
-      h_pt2_bin_correction[i] = new TH1D(Form("h_pt2_bin_correction_%d", i),";p_{T};Efficiency", 45, 5, 50);
-      h_pt2_bin_log_correction[i] = new TH1D(Form("h_pt2_bin_log_correction_%d", i),";p_{T};Efficiency", nbins, ipt_bins);
+      h_pt2_bin_correction[i] = new TH1D(Form("h_pt2_bin_correction_%d", i),";#it{p}_{T} [GeV];Subleading Efficiency", 45, 5, 50);
+      h_pt2_bin_log_correction[i] = new TH1D(Form("h_pt2_bin_log_correction_%d", i),";#it{p}_{T} [GeV] ;Subleading Efficiency", nbins, ipt_bins);
       for (int j = 0 ; j < h_pt2_bin_correction[i]->GetNbinsX(); j++)
 	{
 	  double bin_low_edge = h_pt2_bin_correction[i]->GetBinLowEdge(j+1);
@@ -188,8 +186,9 @@ void getProbability(const int cone_size = 3,  const std::string configfile = "bi
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
-  TCanvas *c = new TCanvas("c","c", 500, 1000);
-  c->Divide(1, 2);
+  TCanvas *c = new TCanvas("c","c", 1000, 450);
+  c->Divide(2, 1);
+
   c->cd(1);
   gPad->SetLogy();
   
@@ -198,18 +197,20 @@ void getProbability(const int cone_size = 3,  const std::string configfile = "bi
   dlutility::SetLineAtt(h_jet_spectra_meas[2], kGreen, 2, 1);
   dlutility::SetLineAtt(h_jet_spectra_meas[3], kOrange, 2, 1);
   dlutility::SetFont(h_jet_spectra_meas[0], 42, 0.05);
-
+  gPad->SetLeftMargin(0.22);
   //  h_pt2_bin_correction[0]->SetMaximum(1.3);
   h_jet_spectra_meas[0]->GetXaxis()->SetRangeUser(5, 30);
+  h_jet_spectra_meas[0]->SetTitle("; #it{p}_{T} [GeV] ; #frac{1}{N_{evt}}#frac{dN_{jet}}{d#it{p}_{T}}");
+  h_jet_spectra_meas[0]->GetYaxis()->SetTitleOffset(1.6);
 
   h_jet_spectra_meas[0]->Draw("hist");
   h_jet_spectra_meas[1]->Draw("hist same");
   h_jet_spectra_meas[2]->Draw("hist same");
   h_jet_spectra_meas[3]->Draw("hist same");
 
-  dlutility::DrawSPHENIX(0.6, 0.85);
+  dlutility::DrawSPHENIX(0.5, 0.85);
 
-  TLegend *leg = new TLegend(0.6, 0.6, 0.8, 0.75);
+  TLegend *leg = new TLegend(0.65, 0.6, 0.85, 0.75);
   leg->SetLineWidth(0);
   leg->SetTextSize(0.04);
   leg->AddEntry(h_jet_spectra_meas[0], "0-10%","l");
@@ -219,34 +220,35 @@ void getProbability(const int cone_size = 3,  const std::string configfile = "bi
   leg->Draw("same");
   
   c->cd(2);
-  dlutility::SetLineAtt(h_pt2_bin_log_correction[0], kRed, 2, 1);
-  dlutility::SetLineAtt(h_pt2_bin_log_correction[1], kBlue, 2, 1);
-  dlutility::SetLineAtt(h_pt2_bin_log_correction[2], kGreen, 2, 1);
-  dlutility::SetLineAtt(h_pt2_bin_log_correction[3], kOrange, 2, 1);
-  dlutility::SetFont(h_pt2_bin_log_correction[0], 42, 0.05);
+  gPad->SetLeftMargin(0.22);
+  dlutility::SetLineAtt(h_pt2_bin_correction[0], kRed, 2, 1);
+  dlutility::SetLineAtt(h_pt2_bin_correction[1], kBlue, 2, 1);
+  dlutility::SetLineAtt(h_pt2_bin_correction[2], kGreen, 2, 1);
+  dlutility::SetLineAtt(h_pt2_bin_correction[3], kOrange, 2, 1);
+  dlutility::SetFont(h_pt2_bin_correction[0], 42, 0.05);
 
-  h_pt2_bin_log_correction[0]->SetMaximum(1.3);
-  h_pt2_bin_log_correction[0]->GetXaxis()->SetRangeUser(5, 30);
+  h_pt2_bin_correction[0]->SetMaximum(1.5);
+  h_pt2_bin_correction[0]->GetXaxis()->SetRangeUser(5, 30);
 
-  h_pt2_bin_log_correction[0]->Draw("hist");
-  h_pt2_bin_log_correction[1]->Draw("hist same");
-  h_pt2_bin_log_correction[2]->Draw("hist same");
-  h_pt2_bin_log_correction[3]->Draw("hist same");
+  h_pt2_bin_correction[0]->Draw("hist");
+  h_pt2_bin_correction[1]->Draw("hist same");
+  h_pt2_bin_correction[2]->Draw("hist same");
+  h_pt2_bin_correction[3]->Draw("hist same");
 
   TLine *l1 = new TLine(5, 1, 30, 1);
   l1->SetLineWidth(2);
   l1->SetLineStyle(4);
   l1->SetLineColor(kBlack);
-  l1->Draw();
-  dlutility::DrawSPHENIX(0.22, 0.85);
+  l1->Draw("same");
+  dlutility::DrawSPHENIX(0.27, 0.85);
 
-  leg = new TLegend(0.6, 0.7, 0.8, 0.87);
+  leg = new TLegend(0.65, 0.73, 0.85, 0.9);
   leg->SetLineWidth(0);
   leg->SetTextSize(0.04);
-  leg->AddEntry(h_pt2_bin_log_correction[0], "0-10%","l");
-  leg->AddEntry(h_pt2_bin_log_correction[1], "10-30%","l");
-  leg->AddEntry(h_pt2_bin_log_correction[2], "30-50%","l");
-  leg->AddEntry(h_pt2_bin_log_correction[3], "50-90%","l");
+  leg->AddEntry(h_pt2_bin_correction[0], "0-10%","l");
+  leg->AddEntry(h_pt2_bin_correction[1], "10-30%","l");
+  leg->AddEntry(h_pt2_bin_correction[2], "30-50%","l");
+  leg->AddEntry(h_pt2_bin_correction[3], "50-90%","l");
   leg->Draw("same");
   
   c->Print(Form("%s/unfolding_plots/probabilities_AA_r%02d.pdf", rb.get_code_location().c_str(), cone_size));

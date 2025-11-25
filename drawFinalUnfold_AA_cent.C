@@ -6,7 +6,7 @@ const bool NUCLEAR = true;
 
 const int color_pp_unfold_fill = kBlack;
 const int color_pp_unfold = kBlack;
-const float marker_pp_unfold = 20;
+const float marker_pp_unfold = 24;
 const float msize_pp_unfold = 0.9;
 const float lsize_pp_unfold = 1.1;
 
@@ -42,9 +42,9 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
 
   int color_unfold_fill[5] = {kRed + 1, kAzure + 2, kGreen + 3, kViolet - 1, kBlack};
   int color_unfold[5] = {kRed + 1, kAzure + 2, kGreen+3, kViolet -1, kBlack};
-  int marker_unfold[5] = {20, 21, 33, 34, 43};
-  float msize_unfold[5] = {0.9, 0.8, 1.4, 1, 1.3};
-  float lsize_unfold = 2.2;
+  int marker_unfold[5] = {20, 21, 33, 34, 24};
+  float msize_unfold[5] = {1.1, 1, 1.5, 1.2, 1.1};
+  float lsize_unfold = 1.8;
 
   
   read_binning rb(configfile.c_str());
@@ -131,6 +131,7 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
   TH1D *h_jewel_xj_vac = (TH1D*) finjw->Get("h1_vacuum");
   dlutility::SetLineAtt(h_jewel_xj_med, kGreen + 2, 2, 1);
   dlutility::SetLineAtt(h_jewel_xj_vac, kBlack, 2, 1);
+
   
   TFile *fintr = new TFile(Form("%s/truth_hists/truth_hist_r%02d.root",  rb.get_code_location().c_str(),  cone_size),"r");
   if (!fintr)
@@ -173,7 +174,7 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
   if (NUCLEAR) std::cout << __LINE__ << std::endl;
   
   const int niterations = 10;
-  const int niter = 2;
+  const int niter = 1;
   //pp results
   TProfile *hp_xj_rms_pp[mbins][niterations];
   TFile *finupp = new TFile(Form("%s/uncertainties/uncertainties_pp_r%02d_nominal.root",  rb.get_code_location().c_str(), cone_size),"r");
@@ -296,24 +297,24 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
   if (NUCLEAR) std::cout << __LINE__ << std::endl;
 
   TH2D *h_pt1pt2_data[cent_bins];
-  TH2D *h_pt1pt2_pp_data = new TH2D("h_pt1pt2_pp_data", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
-  //TH2D *h_pt1pt2_herwig = new TH2D("h_pt1pt2_herwig", ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_pp_data = new TH2D("h_pt1pt2_pp_data", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  //TH2D *h_pt1pt2_herwig = new TH2D("h_pt1pt2_herwig", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
   TH2D *h_pt1pt2_unfold[cent_bins][niterations];
   TH2D *h_pt1pt2_pp_unfold[niterations];
   for (int i = 0; i < cent_bins; i++)
     {
-      h_pt1pt2_data[i] = new TH2D(Form("h_pt1pt2_data_%d", i), ";p_{T1};p_{T2}", nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_data[i] = new TH2D(Form("h_pt1pt2_data_%d", i), ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
     }
   for (int iter = 0; iter < niterations; iter++)
     {
       for (int i = 0; i < cent_bins; i++)
 	{
-	  h_pt1pt2_unfold[i][iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+	  h_pt1pt2_unfold[i][iter] = new TH2D("h_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
 	  h_pt1pt2_unfold[i][iter]->SetName(Form("h_pt1pt2_unfold_%d_iter%d", i, iter));
 	}
-      h_pt1pt2_pp_unfold[iter] = new TH2D("h_pt1pt2_pp_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_pp_unfold[iter] = new TH2D("h_pt1pt2_pp_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
       h_pt1pt2_pp_unfold[iter]->SetName(Form("h_pt1pt2_pp_unfold_iter%d", iter));
 
     }
@@ -563,6 +564,7 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
   TCanvas *cxj_money = new TCanvas("cxj_money","cxj_money", 700, 500);
   
   TGraphAsymmErrors *g_final_xj_unfold_range[5][3];
+  TGraph *g_final_xj_pp_unfold_range[3];
 
   for (int i = 0; i < 3; i++)
     {
@@ -574,9 +576,12 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
 	    {
 	      h = (TH1D*) h_final_xj_unfold_range[j][i][niter]->Clone();
 	    }
-
+	  else
+	    {
+	      g_final_xj_pp_unfold_range[i] = new TGraph(h);
+	    }
 	  g_final_xj_unfold_range[j][i] = new TGraphAsymmErrors(h);
-
+	  
 	  int fix_shift_done = 0;
 	  float fix_shift = 0;
 	  for (int b=1; b<=h->GetNbinsX(); b++) {
@@ -590,20 +595,21 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
 	    double sx=x + (j-2)*fix_shift;
 	    double exlow = sx - h->GetBinLowEdge(b);
 	    double exhigh = (x - sx) + binwidth/2.;
-	    if (x < 0.27)
+	    if (x < 0.23)
 	      {
 		g_final_xj_unfold_range[j][i]->SetPoint(b-1, -9999, -9999); // offset each histogram
-		g_final_xj_unfold_range[j][i]->SetPointError(b-1, exlow, exhigh, ey, ey);
+		g_final_xj_unfold_range[j][i]->SetPointError(b-1, 0,0, ey, ey);
 		if (j < 4)
 		  {
-		    g_final_xj_systematics[j][i][niter]->SetPointEXhigh(b-1, ex);
-		    g_final_xj_systematics[j][i][niter]->SetPointEXlow(b-1, ex); 
+		    g_final_xj_systematics[j][i][niter]->SetPointEXhigh(b-1, exhigh);
+		    g_final_xj_systematics[j][i][niter]->SetPointEXlow(b-1, exlow); 
 		    g_final_xj_systematics[j][i][niter]->SetPointX(b-1, -9999);
 		  }
 		else
 		  {
-		    g_final_xj_pp_systematics[i][niter]->SetPointEXhigh(b-1, ex);
-		    g_final_xj_pp_systematics[i][niter]->SetPointEXlow(b-1, ex);
+		    g_final_xj_pp_unfold_range[i]->SetPoint(b-1, -9999, -9999);
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXhigh(b-1, exhigh);
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXlow(b-1, exlow);
 		    g_final_xj_pp_systematics[i][niter]->SetPointX(b-1, -9999); 
 		  }
 
@@ -612,17 +618,18 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
 	      {
 		fix_shift_done = 1;
 		g_final_xj_unfold_range[j][i]->SetPoint(b-1, sx, y); // offset each histogram
-		g_final_xj_unfold_range[j][i]->SetPointError(b-1, exlow, exhigh, ey, ey);
+		g_final_xj_unfold_range[j][i]->SetPointError(b-1, 0,0, ey, ey);
 		if (j < 4)
 		  {
-		    g_final_xj_systematics[j][i][niter]->SetPointEXhigh(b-1, ex);
-		    g_final_xj_systematics[j][i][niter]->SetPointEXlow(b-1, ex); 
+		    g_final_xj_systematics[j][i][niter]->SetPointEXhigh(b-1, exhigh);
+		    g_final_xj_systematics[j][i][niter]->SetPointEXlow(b-1, exlow); 
 		    g_final_xj_systematics[j][i][niter]->SetPointX(b-1, sx);
 		  }
 		else
 		  {
-		    g_final_xj_pp_systematics[i][niter]->SetPointEXhigh(b-1, ex);
-		    g_final_xj_pp_systematics[i][niter]->SetPointEXlow(b-1, ex);
+		    g_final_xj_pp_unfold_range[i]->SetPoint(b-1, sx, y);
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXhigh(b-1, exhigh);
+		    g_final_xj_pp_systematics[i][niter]->SetPointEXlow(b-1, exlow);
 		    g_final_xj_pp_systematics[i][niter]->SetPointX(b-1, sx); 
 		  }
 	      }
@@ -642,14 +649,18 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
 	      dlutility::SetLineAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
 	      dlutility::SetMarkerAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], msize_unfold[ic], marker_unfold[ic]);
 	      
-	      g_final_xj_systematics[ic][irange][niter]->SetFillColorAlpha(color_unfold_fill[ic], 0.3); 
+	      g_final_xj_systematics[ic][irange][niter]->SetFillColorAlpha(color_unfold_fill[ic], 0.2); 
 	    }
 	  else
 	    {
+
+	      dlutility::SetLineAtt(g_final_xj_pp_unfold_range[irange], color_unfold[ic], lsize_unfold, 1);
+	      dlutility::SetMarkerAtt(g_final_xj_pp_unfold_range[irange], color_unfold[ic], msize_unfold[ic], marker_unfold[ic]);
+	     
 	      dlutility::SetLineAtt(g_final_xj_pp_systematics[irange][niter], color_unfold[ic], lsize_unfold, 1);
 	      dlutility::SetMarkerAtt(g_final_xj_pp_systematics[irange][niter], color_unfold[ic], msize_unfold[ic], marker_unfold[ic]);
 	      
-	      g_final_xj_pp_systematics[irange][niter]->SetFillColorAlpha(color_unfold_fill[ic], 0.3); 
+	      g_final_xj_pp_systematics[irange][niter]->SetFillColorAlpha(color_unfold_fill[ic], 0.2); 
 	      
 	    }
 	}
@@ -665,13 +676,13 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
 
       dlutility::SetFont(hh, 42, 0.06, 0.04, 0.05, 0.05);
 
-      hh->SetMaximum(4);
+      hh->SetMaximum(3);
       hh->SetMinimum(0);
       hh->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
       //ht->Draw("E4 same");
       hh->Draw("hist");
-      g_final_xj_unfold_range[0][irange]->Draw("same p E1");
+      g_final_xj_unfold_range[0][irange]->Draw("same p E");
       for (int ic = 0; ic < cent_bins; ic ++)
 	{
 	  g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
@@ -680,19 +691,20 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
       //hs->Draw("same p E2");
       //h_linear_truth_xj[irange]->Draw("same hist C");
       //      h_linear_herwig_xj[irange]->Draw("same hist C");
-      for (int i = 0; i < cent_bins + 1; i++)
+      for (int i = 0; i < cent_bins; i++)
 	{
-	  g_final_xj_unfold_range[i][irange]->Draw("same p E1");
+	  g_final_xj_unfold_range[i][irange]->Draw("same p E");
 	}
+      g_final_xj_pp_unfold_range[irange]->Draw("same p");
 
       float xm = 0.2;
       float top = 0.88;      
       float ss = 0.05;
-      dlutility::DrawSPHENIX(xm, top);
+      dlutility::DrawSPHENIXboth(xm, top, 1);
 
-      dlutility::drawText(Form("anti-#it{k_{t}} #kern[-0.1]{#it{R = %0.1f}}", cone_size*0.1), xm, top - 2*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq p_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), xm, top - 3*ss);
-      dlutility::drawText(Form("p_{T,2}^{lead} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), xm, top - 4*ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.1]{#it{R} = %0.1f}", cone_size*0.1), xm, top - 2*ss);
+      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), xm, top - 3*ss);
+      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), xm, top - 4*ss);
       dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), xm, top - 5*ss);
       
       
@@ -701,15 +713,55 @@ void drawFinalUnfold_AA_cent(const int cone_size = 3, const int centrality_bin =
       leg->SetTextSize(0.04);
       
       leg->SetTextFont(42);
-      leg->AddEntry(g_final_xj_unfold_range[0][irange], "0-10%");
-      leg->AddEntry(g_final_xj_unfold_range[1][irange], "10-30%");
-      leg->AddEntry(g_final_xj_unfold_range[2][irange], "30-50%");
-      leg->AddEntry(g_final_xj_unfold_range[3][irange], "50-90%");
-      leg->AddEntry(g_final_xj_unfold_range[4][irange], "pp");
+      leg->AddEntry(g_final_xj_unfold_range[0][irange], "0 - 10%");
+      leg->AddEntry(g_final_xj_unfold_range[1][irange], "10 - 30%");
+      leg->AddEntry(g_final_xj_unfold_range[2][irange], "30 - 50%");
+      leg->AddEntry(g_final_xj_unfold_range[3][irange], "50 - 90%");
+      leg->AddEntry(g_final_xj_unfold_range[4][irange], "#it{p}+#it{p}");
       leg->Draw("same");
 
       cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_AA_cent_all_r%02d_range_%d.png",  rb.get_code_location().c_str(), cone_size, irange));
       cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_AA_cent_all_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange));
+
+      // cent 0
+      for (int cent = 0; cent < 4; cent++)
+	{
+	  //ht->Draw("E4 same");
+	  hh->Draw("hist");
+	  g_final_xj_unfold_range[0][irange]->Draw("same p E0");
+	  g_final_xj_systematics[0][irange][niter]->Draw("same p E2");
+
+	  if (cent != 0)	  g_final_xj_systematics[cent][irange][niter]->Draw("same p E2");
+
+	  g_final_xj_pp_systematics[irange][niter]->Draw("same p E2");
+	  //hs->Draw("same p E2");
+	  //h_linear_truth_xj[irange]->Draw("same hist C");
+	  //      h_linear_herwig_xj[irange]->Draw("same hist C");
+	  //g_final_xj_unfold_range[cent_bins][irange]->Draw("same p");
+	  g_final_xj_pp_unfold_range[irange]->Draw("same p");
+	  g_final_xj_unfold_range[0][irange]->Draw("same p E0");
+	  g_final_xj_unfold_range[cent][irange]->Draw("same p E0");
+	  dlutility::DrawSPHENIXboth(xm, top, 1);
+
+	  dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.1]{#it{R} = %0.1f}", cone_size*0.1), xm, top - 2*ss);
+	  dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), xm, top - 3*ss);
+	  dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), xm, top - 4*ss);
+	  dlutility::drawText(Form("#Delta#phi #geq %s", dphi_string.c_str()), xm, top - 5*ss);
+      
+      
+	  TLegend *leg = new TLegend(xm, top - 5.5*ss, 0.3, top - 7.5*ss);
+	  leg->SetLineWidth(0);
+	  leg->SetTextSize(0.04);
+	  
+	  leg->SetTextFont(42);
+	  leg->AddEntry(g_final_xj_unfold_range[0][irange], "0 - 10%");
+	  if (cent != 0) leg->AddEntry(g_final_xj_unfold_range[cent][irange], Form("%d - %d%%", (int)icentrality_bins[cent], (int)icentrality_bins[cent+1]));
+	  leg->AddEntry(g_final_xj_unfold_range[4][irange], "#it{p}+#it{p}");
+	  leg->Draw("same");
+	  
+	  cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_AA_cent_all_%d_r%02d_range_%d.png",  rb.get_code_location().c_str(), cent, cone_size, irange));
+	  cxj_money->Print(Form("%s/final_plots/h_final_xj_unfolded_AA_cent_all_%d_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), cent, cone_size, irange));
+	}
     }
 
   return;

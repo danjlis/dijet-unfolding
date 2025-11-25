@@ -14,6 +14,7 @@ void getCentralityReweighting(const int cone_size = 4, const int centrality_bin 
 
   
   Int_t zyam_sys = rb.get_zyam_sys();
+  Int_t inclusive_sys = rb.get_inclusive_sys();
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
   Int_t prior_sys = rb.get_prior_sys();
@@ -25,6 +26,9 @@ void getCentralityReweighting(const int cone_size = 4, const int centrality_bin 
   
   if (zyam_sys)
     sys_name = "ZYAM";
+
+  if (inclusive_sys)
+    sys_name = "INCLUSIVE";
     
   if (JER_sys < 0)
     sys_name = "negJER";
@@ -47,7 +51,7 @@ void getCentralityReweighting(const int cone_size = 4, const int centrality_bin 
   TH1D *h_centrality_sim = (TH1D*) f_sim->Get("h_centrality");
   h_centrality_sim->SetName("h_centrality_sim");
 
-  TFile *f_data = new TFile(Form("%s/unfolding_hists/unfolding_hists_%s_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()),"r");
+  TFile *f_data = new TFile(Form("%s/unfolding_hists/unfolding_hists_preload_%s_r%02d_nominal.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size),"r");
 
   TH1D *h_mbd_data = (TH1D*) f_data->Get("h_mbd_vertex");
   h_mbd_data->SetName("h_mbd_data");

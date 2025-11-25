@@ -156,8 +156,8 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 	}
     }
 
-  TH2D *h_pt1_pt2_Signal = new TH2D("h_pt1_pt2_Signal",";p_{T1}; p_{T2};", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1_pt2_ZYAM = new TH2D("h_pt1_pt2_ZYAM",";p_{T1}; p_{T2};", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1_pt2_Signal = new TH2D("h_pt1_pt2_Signal",";#it{p}_{T,1}; #it{p}_{T,2};", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1_pt2_ZYAM = new TH2D("h_pt1_pt2_ZYAM",";#it{p}_{T,1}; #it{p}_{T,2};", nbins, ipt_bins, nbins, ipt_bins);
   
   float njet_lead[nbins];
   for (int i = 0; i < nbins; i++)
@@ -241,7 +241,7 @@ void getBackground(const int cone_size = 3, const int centrality_bin = 0,  const
 	  if (reco_jet_pt->at(j) < reco_subleading_cut) continue;
 	  if (reco_jet_e->at(j) < 0) continue;
 	  if (reco_jet_e_unsub->at(j) < 0) continue;
-	  if (fabs(reco_jet_eta->at(j)) > etacu) continue;
+	  if (fabs(reco_jet_eta->at(j)) > etacut) continue;
 	  float pt_unsub = reco_jet_pt_unsub->at(j) - reco_jet_pt->at(j);
 
 	  if (pt_unsub > cut_value)

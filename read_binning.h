@@ -32,7 +32,7 @@ public:
   Int_t get_minentries(){ return penv->GetValue("minentries", 1); }
   Int_t get_measure_bins(){ return penv->GetValue("measure_bins", 1); }
   Double_t get_minimum(){ return penv->GetValue("minimum", 1.0); }
-  Double_t get_maximum_reco(){ return penv->GetValue("maximum", 50.0); }
+  Double_t get_maximum_reco(){ return penv->GetValue("maximum", 55.0); }
   Int_t get_maximum_reco_bin() {return max_reco_bin; }
   
   Double_t get_fixed(){ return penv->GetValue("fixed", 1.0); }
@@ -41,6 +41,7 @@ public:
   Int_t get_zyam_sys(){ return penv->GetValue("ZYAM", 0); }
   Int_t get_prior_sys(){ return penv->GetValue("PRIOR", 0); }
   Int_t get_vtx_sys(){ return penv->GetValue("VTX", 0); }
+  Int_t get_inclusive_sys(){ return penv->GetValue("INCLUSIVE", 0); }
   Double_t get_jes_sys(){ return penv->GetValue("JES", 0.0); }
   Double_t get_jer_sys(){ return penv->GetValue("JER", 0.0); }
   Double_t get_first_xj(){ return penv->GetValue("first_xj", 0.0); }
@@ -56,8 +57,10 @@ public:
 
   Double_t get_sample_boundary(int ib){ return sample_boundary[ib]; }
 
+  Double_t get_vtx_cut() { return 60; }
+  Double_t get_njet_cut() { return 7; }  
   std::string get_dphi_string(){ return Form("%d#pi/%d", (int)penv->GetValue("dphi_top", 1.0), (int) penv->GetValue("dphi_bottom", 2.0)); }
-  
+
   Double_t get_dphicut() { return penv->GetValue("dphi_top", 1.0) * TMath::Pi() / penv->GetValue("dphi_bottom", 2.0); }
   Double_t get_truth_leading_goal(){ return penv->GetValue("truth_leading_goal", 14.0); }
   Double_t get_truth_subleading_goal(){ return penv->GetValue("truth_subleading_goal", 14.0); }

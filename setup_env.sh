@@ -1,11 +1,11 @@
 export DIJET_UNFOLDING_PATH=/sphenix/user/dlis/Projects/jet/ppg08-analysis/dijet-unfolding/
-export DIJET_TNTUPLE_PATH=/sphenix/user/dlis/Projects/jet/tntuples/
+export DIJET_TNTUPLE_PATH=/sphenix/user/dlis/Projects/jet/makentuples/tntuples/
 
 export AUAU_DATA_PATH=/sphenix/tg/tg01/jets/dlis/data/v102/
-export AUAU_SIM_PATH=/sphenix/tg/tg01/jets/dlis/sim/hijing/v15/
+export AUAU_SIM_PATH=/sphenix/tg/tg01/jets/dlis/sim/hijing/v14/
 
 export PP_SIM_PATH=/sphenix/tg/tg01/jets/dlis/sim/pythia/
-export PP_DATA_PATH=/sphenix/tg/tg01/jets/dlis/data/all/
+export PP_DATA_PATH=/sphenix/tg/tg01/jets/dlis/v81/all/
 
 if [[ ! -d final_plots ]];
 then 
