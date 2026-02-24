@@ -1,7 +1,7 @@
 #ifndef READ_BINNING_H
 #define READ_BINNING_H
 #include "TEnv.h"
-
+#include "TFile.h"
 class read_binning
 {
 public:
@@ -12,7 +12,8 @@ public:
       penv = new TEnv(configfile.c_str());
       tntuple_location = std::getenv("DIJET_TNTUPLE_PATH");
       code_location = std::getenv("DIJET_UNFOLDING_PATH");
-      sim_location = std::getenv("AUAU_SIM_PATH");	
+      sim_location = std::getenv("AUAU_SIM_PATH");
+      jesr_location = std::getenv("JESR_PATH");	
     }
   std::string get_tntuple_location() 
   {
@@ -26,13 +27,18 @@ public:
   {
     return sim_location;      
   }
+  std::string get_jesr_location() 
+  {
+    return jesr_location;      
+  }
+
 
   Int_t get_nbins(){ return penv->GetValue("nbins", 1); }
   Int_t get_bbins(){ return penv->GetValue("bbins", 1); }
   Int_t get_minentries(){ return penv->GetValue("minentries", 1); }
   Int_t get_measure_bins(){ return penv->GetValue("measure_bins", 1); }
   Double_t get_minimum(){ return penv->GetValue("minimum", 1.0); }
-  Double_t get_maximum_reco(){ return penv->GetValue("maximum", 55.0); }
+  Double_t get_maximum_reco(){ return penv->GetValue("maximum", 68.0); }
   Int_t get_maximum_reco_bin() {return max_reco_bin; }
   
   Double_t get_fixed(){ return penv->GetValue("fixed", 1.0); }
@@ -41,6 +47,8 @@ public:
   Int_t get_zyam_sys(){ return penv->GetValue("ZYAM", 0); }
   Int_t get_prior_sys(){ return penv->GetValue("PRIOR", 0); }
   Int_t get_vtx_sys(){ return penv->GetValue("VTX", 0); }
+  Int_t get_herwig(){ return penv->GetValue("HERWIG", 0); }
+  
   Int_t get_inclusive_sys(){ return penv->GetValue("INCLUSIVE", 0); }
   Double_t get_jes_sys(){ return penv->GetValue("JES", 0.0); }
   Double_t get_jer_sys(){ return penv->GetValue("JER", 0.0); }
@@ -58,7 +66,7 @@ public:
   Double_t get_sample_boundary(int ib){ return sample_boundary[ib]; }
 
   Double_t get_vtx_cut() { return 60; }
-  Double_t get_njet_cut() { return 7; }  
+  Double_t get_njet_cut() { return penv->GetValue("njet_cut", 3); }
   std::string get_dphi_string(){ return Form("%d#pi/%d", (int)penv->GetValue("dphi_top", 1.0), (int) penv->GetValue("dphi_bottom", 2.0)); }
 
   Double_t get_dphicut() { return penv->GetValue("dphi_top", 1.0) * TMath::Pi() / penv->GetValue("dphi_bottom", 2.0); }
@@ -132,7 +140,7 @@ public:
     float alpha = TMath::Power(fixed/minimum, 1/(float)beforebin);
 
     Float_t truth_leading_goal = get_truth_leading_goal();
-    Float_t truth_subleading_goal = get_truth_subleading_goal();
+
     Int_t nbins = get_nbins();
     int ireg = 0;
     int ireg2 = 0;
@@ -153,7 +161,7 @@ public:
 	if (truth_leading_bin == 0 && ipt >= truth_leading_goal) truth_leading_bin = i;
 	if (ipt >= reco_max_goal && max_reco_bin == 0) max_reco_bin = i;
       }
-
+    if (max_reco_bin == 0) max_reco_bin = nbins - 1;
     low_trigger[0] = ipt_bins[low_trigger_bin];
     low_trigger[1] = ipt_bins[low_trigger_bin+1];
     low_trigger[2] = ipt_bins[low_trigger_bin+2];
@@ -185,7 +193,7 @@ public:
 
     float alpha = TMath::Power(fixed/minimum, 1/(float)beforebin);
     float maximum = minimum*TMath::Power(alpha, nbins );
-    float bin_xj10 = 1.0;
+    //float bin_xj10 = 1.0;
     float bin_xj1 = 1.0*(minimum/maximum);
 
     for (int i = 0; i < nbins+1; i++)
@@ -206,6 +214,7 @@ public:
   std::string jerfile = "jer/jer_smear_functions.root";
   std::string tntuple_location = ".";
   std::string sim_location = ".";
+  std::string jesr_location = ".";
   std::string code_location = ".";
   
   float sample_boundary_goal[4] = {13.99, 19.99, 29.99, 100};

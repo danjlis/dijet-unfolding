@@ -3,9 +3,12 @@
 #include "TLegend.h"
 #include "TGraphAsymmErrors.h"
 #include "TLine.h"
+#include "TGraphErrors.h"
 #include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TH1.h"
+#include "TF1.h"
+#include "TProfile.h"
 #include "TH2.h"
 #include "TPad.h"
 #include "TGraph.h"
@@ -13,6 +16,7 @@
 #include <TROOT.h>
 #include <TStyle.h>
 #include "TColor.h"
+
 //TREE,HIST,GRAPH,VECTOR ...
     // std::clock()
 //etc.
@@ -361,7 +365,106 @@ namespace dlutility{
     pad2->cd();
     pad2->SetNumber(2);
   }
+  void systematic_split_canvas(TCanvas*& canv,
+			const int nrange = 3,
+			const Float_t divRatio=0.4,
+			//const Float_t leftOffset=0.,
+			//const Float_t bottomOffset=0.,
+			const Float_t leftMargin=0.17,
+			const Float_t bottomMargin=0.3,
+			const Float_t edge=0.05) {
+    if (canv==0) {
+      return;
+    }
 
+    canv->Clear();
+
+    float dx = 1./4.5;
+    float x1 = 0.0;
+    float x2 = 1.5*dx;
+    float x3 = x2 + dx;
+    float x4 = x3 + dx;
+    float x5 = 1.0;
+    int num = 0;
+    num = (divRatio > 0 ? 1 : 1);
+    TPad* pad1 = new TPad("pad1","",x1,divRatio,x2,1.0);
+    canv->cd();
+    pad1->SetLeftMargin(0.33);
+    pad1->SetRightMargin(0.0133);
+    pad1->SetTopMargin(edge);
+    pad1->SetBottomMargin((divRatio > 0 ? 0 : 0.2));
+    pad1->Draw();
+    pad1->cd();
+    pad1->SetNumber(1);
+    if (divRatio > 0)
+      {
+	TPad* pad2 = new TPad("pad2","",x1,0.0,x2,divRatio);
+	canv->cd();
+	pad2->SetLeftMargin(0.33);
+	pad2->SetRightMargin(0.0133);
+	pad2->SetTopMargin(0);
+	pad2->SetBottomMargin(bottomMargin);
+	pad2->Draw();
+	pad2->cd();
+	pad2->SetNumber(2);
+      }
+
+    TPad* pad3 = new TPad("pad3","",x2,divRatio,x3,1.0);
+    canv->cd();
+    pad3->SetLeftMargin(0);
+    pad3->SetRightMargin(0.02);
+    pad3->SetTopMargin(edge);
+    pad3->SetBottomMargin((divRatio > 0 ? 0 : 0.2));
+    pad3->Draw();
+    pad3->cd();
+    num = (divRatio > 0 ? 3 : 2);
+    pad3->SetNumber(num);
+    if (divRatio > 0)
+      {
+
+	TPad* pad4 = new TPad("pad4","",x2,0.0,x3,divRatio);
+	canv->cd();
+	pad4->SetLeftMargin(0);
+	pad4->SetRightMargin(0.02);
+	pad4->SetTopMargin(0);
+	pad4->SetBottomMargin(bottomMargin);
+	pad4->Draw();
+	pad4->cd();
+	pad4->SetNumber(4);
+      }
+    
+    TPad* pad5 = new TPad("pad5","",x3,divRatio,x4,1.0);
+    canv->cd();
+    pad5->SetLeftMargin(0);
+    pad5->SetRightMargin(0.02);
+    pad5->SetTopMargin(edge);
+    pad5->SetBottomMargin((divRatio > 0 ? 0 : 0.2));
+    pad5->Draw();
+    pad5->cd();
+    num = (divRatio > 0 ? 5 : 3);
+    pad5->SetNumber(num);
+    if (divRatio > 0)
+      {
+	TPad* pad6 = new TPad("pad6","",x3,0.0,x4,divRatio);
+	canv->cd();
+	pad6->SetLeftMargin(0);
+	pad6->SetRightMargin(0.02);
+	pad6->SetTopMargin(0);
+	pad6->SetBottomMargin(bottomMargin);
+	pad6->Draw();
+	pad6->cd();
+	pad6->SetNumber(6);
+      }
+    num = (divRatio > 0 ? 7 : 4);
+    TPad* padc = new TPad("padc","",x4,0,x5,1.0);
+    canv->cd();
+    padc->Draw();
+    padc->cd();
+    padc->SetNumber(num);
+
+  }
+
+  
   void makeMultiPanelCanvas(TCanvas*& canv, const Int_t columns,
 			    const Int_t rows,
 			    const Float_t leftOffset=0.,
@@ -789,24 +892,24 @@ namespace dlutility{
   {
     string sPHENIX_MARK = "#bf{#it{sPHENIX}}";
     string extratext = "#it{Internal}";
-    if (issim) extratext = " #kern[-0.3]{#it{Simulation}}";
+    if (issim) extratext = "#it{Simulation}";
     string txt = sPHENIX_MARK + " " + extratext;
     double xpos_diff = 0.17;
     if (!horiz)
       {
+	
 	drawText(txt.c_str(), xpos,ypos, ral, kBlack, size);//, 0, kBlack, 22); 
 	//if (issim && isBeam) drawText(Form("#bf{%s} p+p #kern[-0.2]{#sqrt{s_{NN}}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05);
 	if (isBeam && !issim) drawText("p+p #sqrt{s} = 200 GeV",xpos,ypos - 0.05, ral , kBlack, size);
-	else if (issim && isBeam) drawText(Form("%s p+p #kern[-0.2]{#sqrt{s}} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05, ral, 0 , kBlack, size);
+	else if (issim && isBeam) drawText(Form("%s p+p #sqrt{s} = 200 GeV", simmc.c_str()),xpos,ypos - 0.05, ral, kBlack, size);
 	else drawText("Cosmics Running",xpos,ypos - 0.05, ral, 0 , kBlack, size);
       
       }
     else
       {
-	drawText(sPHENIX_MARK.c_str(), xpos,ypos, ral, 0 , kBlack, size);//, 0, kBlack, 22); 
-	drawText(extratext.c_str(), xpos+xpos_diff,ypos, ral, 0 , kBlack, size);
-	if (isBeam) drawText("p+p #kern[-0.2]{#sqrt{s}} = 200 GeV",xpos + 2*xpos_diff,ypos, ral, 0 , kBlack, size);
-	else drawText("Cosmics Running",xpos + 2*xpos_diff ,ypos, ral, 0 , kBlack, size);
+	drawText(txt.c_str(), xpos,ypos, 0, kBlack, size);//, 0, kBlack, 22); 
+	if (isBeam) drawText("p+p #sqrt{s} = 200 GeV", 1 - xpos,ypos, 1, kBlack, size);
+	else drawText("Cosmics Running",xpos + 2*xpos_diff ,ypos, ral, kBlack, size);
       }
   }
   void DrawSPHENIXppPrelim(double xpos, double ypos, int ral = 0, int isBeam = 1, int horiz  = 0, int issim = 0, std::string simmc = "Pythia 8")
@@ -1090,6 +1193,18 @@ namespace dlutility{
     h->GetYaxis()->SetTitleFont(font);
     h->GetYaxis()->SetTitleSize(size);
   }
+  void SetFont(TGraphAsymmErrors* h, int font, float size)
+  {
+    h->GetXaxis()->SetLabelFont(font);
+    h->GetXaxis()->SetLabelSize(size);
+    h->GetXaxis()->SetTitleFont(font);
+    h->GetXaxis()->SetTitleSize(size);
+    h->GetYaxis()->SetLabelFont(font);
+    h->GetYaxis()->SetLabelSize(size);
+    h->GetYaxis()->SetTitleFont(font);
+    h->GetYaxis()->SetTitleSize(size);
+  }
+
   void SetFont(TH1* h, int font, float sizex, float sizey, float slabelx, float slabely)
   {
     h->GetXaxis()->SetLabelFont(font);
@@ -1102,6 +1217,17 @@ namespace dlutility{
     h->GetYaxis()->SetTitleSize(sizey);
   }
   void SetFont(TGraphErrors* h, int font, float sizex, float sizey, float slabelx, float slabely)
+  {
+    h->GetXaxis()->SetLabelFont(font);
+    h->GetXaxis()->SetLabelSize(slabelx);
+    h->GetXaxis()->SetTitleFont(font);
+    h->GetXaxis()->SetTitleSize(sizex);
+    h->GetYaxis()->SetLabelFont(font);
+    h->GetYaxis()->SetLabelSize(slabely);
+    h->GetYaxis()->SetTitleFont(font);
+    h->GetYaxis()->SetTitleSize(sizey);
+  }
+  void SetFont(TGraphAsymmErrors* h, int font, float sizex, float sizey, float slabelx, float slabely)
   {
     h->GetXaxis()->SetLabelFont(font);
     h->GetXaxis()->SetLabelSize(slabelx);

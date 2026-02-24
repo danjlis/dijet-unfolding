@@ -87,6 +87,7 @@ void drawRadialScan()
   const int niterations = 10;
   const int niter = 2;
   TProfile *h_xj_rms[7][mbins][niterations];
+  TH1D *h_final_xj_rms[7][mbins][niterations];
   TFile *finu[7];
   TFile *fins[7];
   TFile *fin[7];  
@@ -121,6 +122,7 @@ void drawRadialScan()
 	    {
 	      h_xj_rms[ic][irange][iter] = (TProfile*) finu[ic]->Get(Form("hp_xj_range_%d_%d", irange, iter));
 	      h_xj_rms[ic][irange][iter]->SetName(Form("hp_xj_range_%d_%d_r%02d", irange, iter, cone_sizes[ic]));
+	      h_final_xj_rms[ic][irange][iter] = new TH1D(Form("h_final_xj_rms_%d_iter%d_r%02d", irange, iter, cone_sizes[ic]), ";x_{J};",nbins, ixj_bins);
 	    }
 	}
 
@@ -201,6 +203,8 @@ void drawRadialScan()
 	 {
 	   histo_opps::normalize_histo(h_xj_unfold[ic][iter], nbins);
 	 }
+
+
        for (int irange = 0; irange < mbins; irange++)
 	 {
 	   for (int iter = 0; iter < niterations; iter++)
@@ -215,85 +219,170 @@ void drawRadialScan()
 	   for (int iter = 0; iter < niterations; iter++)
 	     {
 	       histo_opps::project_xj(h_pt1pt2_unfold[ic][iter], h_xj_unfold_range[ic][irange][iter], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
-	}
-
-	   for (int iter = 0; iter < niterations; iter++)
-	     {
-	       histo_opps::normalize_histo(h_xj_unfold_range[ic][irange][iter], nbins);
-	       histo_opps::normalize_histo(h_xj_rms[ic][irange][iter], nbins);
 	     }
+	   
 	   for (int iter = 0; iter < niterations; iter++)
 	     {
 	       histo_opps::finalize_xj(h_xj_unfold_range[ic][irange][iter], h_final_xj_unfold_range[ic][irange][iter], nbins, first_xj);
+	       histo_opps::normalize_histo(h_xj_rms[ic][irange][iter], nbins);
+
+	       histo_opps::finalize_xj(h_xj_unfold_range[ic][irange][iter], h_final_xj_unfold_range[ic][irange][iter], nbins, first_xj);
+	       histo_opps::normalize_histo(h_final_xj_unfold_range[ic][irange][iter], nbins);
+
 	       histo_opps::set_xj_errors(h_final_xj_unfold_range[ic][irange][iter], h_xj_rms[ic][irange][iter], nbins);
+
 	       h_final_xj_systematics[ic][irange][iter] = (TH1D*) h_final_xj_unfold_range[ic][irange][iter]->Clone();
 	       h_final_xj_systematics[ic][irange][iter]->SetName(Form("h_final_xj_systematics_%d_%d_%d", irange, iter, cone_sizes[ic]));
 	       g_final_xj_systematics[ic][irange][iter] = histo_opps::get_xj_systematics(h_final_xj_systematics[ic][irange][iter], h_total_sys_neg_range[ic][irange][iter], h_total_sys_range[ic][irange][iter], nbins);
+	       /* h_final_xj_statistics[ic][irange][iter] = (TH1D*) h_final_xj_unfold_range[ic][irange][iter]->Clone(); */
+	       /* h_final_xj_statistics[ic][irange][iter]->SetName(Form("h_final_xj_statistics_%d_%d", irange, iter)); */
+	       /* g_final_xj_statistics[ic][irange][iter] = histo_opps::get_xj_statistics(h_final_xj_statistics[ic][irange][iter], nbins); */
+
 	     }
 	 }
     }
   
-  TCanvas *cxj_money = new TCanvas("cxj_money","cxj_money", 500, 500);
 
+  TGraphAsymmErrors *g_final_shift_xj_unfold_range[7][mbins];
+
+  TCanvas *cxj_money = new TCanvas("cxj_money","cxj_money", 1000, 500);
+  cxj_money->Divide(2,1);
+  
   for (int irange = 0; irange < mbins; irange++)
     {
       for (int ic = 0; ic < 7; ic++)
 	{
-	  dlutility::SetLineAtt(h_final_xj_unfold_range[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
-	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[ic][irange][niter], color_unfold[ic], msize_unfold, marker_unfold);
 
-	  dlutility::SetLineAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
-	  dlutility::SetMarkerAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], msize_unfold, marker_unfold);
-	  g_final_xj_systematics[ic][irange][niter]->SetFillColorAlpha(color_fill_unfold[ic], 0.3); 
+	  TH1D *h = (TH1D*) h_final_xj_unfold_range[ic][irange][niter]->Clone();
+	  g_final_shift_xj_unfold_range[ic][irange] = new TGraphAsymmErrors(h);
+	  
+	  int fix_shift_done = 0;
+	  float fix_shift = 0;
+	  float shift_cone = (ic % 2 ? 3. : 4.);
+	  float offset_cone = (ic % 2 ? 1. : 1.5);
+	  
+	  for (int b=1; b<=h->GetNbinsX(); b++)
+	    {
+	      double x = h->GetBinCenter(b);
+	      if (x < 0.3)
+		{
+		  g_final_shift_xj_unfold_range[ic][irange]->SetPoint(b-1, -9999, -9999); // offset each histogram
+		  g_final_shift_xj_unfold_range[ic][irange]->SetPointError(b-1, 0,0, 0,0);
 
-	  h_final_xj_unfold_range[ic][irange][niter] = (TH1D*) h_final_xj_unfold_range[ic][irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d_%d", irange, ic), &dxj_bins[first_bin]);
+		  g_final_xj_systematics[ic][irange][niter]->SetPointEXhigh(b-1, 0);
+		  g_final_xj_systematics[ic][irange][niter]->SetPointEXlow(b-1, 0);
+		  g_final_xj_systematics[ic][irange][niter]->SetPointX(b-1, -9999); 
+		  continue;
+		}
+	      double binwidth = h->GetBinWidth(b);
+	      if (!fix_shift_done)
+		{
+		  fix_shift = binwidth / shift_cone;
+		  fix_shift_done = 1;
+		}
+
+	      double y = h->GetBinContent(b);
+	      double ex = fix_shift/2.;
+	      double ey = h->GetBinError(b);
+
+
+	      double sx= x + ((ic/2)-offset_cone)*fix_shift;
+
+
+	      g_final_shift_xj_unfold_range[ic][irange]->SetPoint(b-1, sx, y); // offset each histogram
+	      g_final_shift_xj_unfold_range[ic][irange]->SetPointError(b-1, 0,0, ey, ey);
+		  
+	      g_final_shift_xj_unfold_range[ic][irange]->SetPoint(b-1, sx, y);
+
+	      g_final_xj_systematics[ic][irange][niter]->SetPointEXhigh(b-1, ex);
+	      g_final_xj_systematics[ic][irange][niter]->SetPointEXlow(b-1, ex);
+	      g_final_xj_systematics[ic][irange][niter]->SetPointX(b-1, sx); 
+	    }
+	  
 	}
+      
+      int marker_range = 20;
+      float msize_range = 0.8;
+      for (int ic = 0; ic < 7; ic++)
+	{
+	  dlutility::SetLineAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], msize_range, marker_range);
+	  g_final_xj_systematics[ic][irange][niter]->SetFillColorAlpha(color_unfold[ic], 0.3); 
+	  
+	  dlutility::SetLineAtt(g_final_shift_xj_unfold_range[ic][irange], color_unfold[ic], lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(g_final_shift_xj_unfold_range[ic][irange], color_unfold[ic], msize_range, marker_range);
+	  
+	}
+	
 
+      
+      TH1D *hblank1 = new TH1D("hb","", 1, 0.25, 1);
+      
+      hblank1->GetYaxis()->SetTitleOffset(1.8);
+      dlutility::SetFont(hblank1, 42, 0.06, 0.04, 0.05, 0.05);
+
+
+      hblank1->SetMaximum(4.0);
+      hblank1->SetMinimum(0);
+      hblank1->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
+
+      //ht->Draw("E4 same");
+      cxj_money->cd(1);
       gPad->SetTopMargin(0.05);
       gPad->SetRightMargin(0.05);
       gPad->SetLeftMargin(0.17);
       gPad->SetBottomMargin(0.17);
-      h_final_xj_unfold_range[4][irange][niter]->GetYaxis()->SetTitleOffset(1.8);
-      dlutility::SetFont(h_final_xj_unfold_range[4][irange][niter], 42, 0.06, 0.04, 0.05, 0.05);
+      
+      hblank1->Draw("p E1");
 
-
-      h_final_xj_unfold_range[4][irange][niter]->SetMaximum(6);
-      h_final_xj_unfold_range[4][irange][niter]->SetMinimum(0);
-      h_final_xj_unfold_range[4][irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
-
-      //ht->Draw("E4 same");
-      h_final_xj_unfold_range[4][irange][niter]->Draw("p E1");
-      //g_final_xj_systematics[4][irange][niter]->Draw("same p E2");
       for (int ic = 0; ic < 7; ic++)
 	{
-	  h_final_xj_unfold_range[ic][irange][niter]->Draw("same p E1");
-	  //g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
+	  if (ic%2 == 1) continue;
+	  g_final_shift_xj_unfold_range[ic][irange]->Draw("same p E1");
+	  g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
 	}
 
       float top = 0.88;
       float ss = 0.05;
-      dlutility::DrawSPHENIXpp(0.22, top);
+      float xtitle = 0.24;
+      dlutility::DrawSPHENIXpp(xtitle, top);
 
-      dlutility::drawText("anti-#it{k}_{t}", 0.22, top - 2*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, top - 3*ss);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, top - 4*ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, top - 5*ss);
+      dlutility::drawText("anti-#it{k}_{t}", xtitle, top - 2*ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), xtitle, top - 3*ss);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), xtitle, top - 4*ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", xtitle, top - 5*ss);
 
       
-      TLegend *leg = new TLegend(0.65, top - 5.5*ss, 0.9, 0.92);
+      TLegend *leg = new TLegend(0.1, top - 5.5*ss, 0.3, 0.92);
       leg->SetLineWidth(0);
       leg->SetTextSize(0.04);
       leg->SetTextFont(42);
-      leg->AddEntry(h_final_xj_unfold_range[0][irange][niter], "R = 0.2");
-      leg->AddEntry(h_final_xj_unfold_range[1][irange][niter], "R = 0.3");
-      leg->AddEntry(h_final_xj_unfold_range[2][irange][niter], "R = 0.4");
-      leg->AddEntry(h_final_xj_unfold_range[3][irange][niter], "R = 0.5");
-      leg->AddEntry(h_final_xj_unfold_range[4][irange][niter], "R = 0.6");
-      leg->AddEntry(h_final_xj_unfold_range[5][irange][niter], "R = 0.7");
-      leg->AddEntry(h_final_xj_unfold_range[6][irange][niter], "R = 0.8");
+      leg->AddEntry(g_final_shift_xj_unfold_range[0][irange], "R = 0.2");
+      leg->AddEntry(g_final_shift_xj_unfold_range[1][irange], "R = 0.3");
+      leg->AddEntry(g_final_shift_xj_unfold_range[2][irange], "R = 0.4");
+      leg->AddEntry(g_final_shift_xj_unfold_range[3][irange], "R = 0.5");
+      leg->AddEntry(g_final_shift_xj_unfold_range[4][irange], "R = 0.6");
+      leg->AddEntry(g_final_shift_xj_unfold_range[5][irange], "R = 0.7");
+      leg->AddEntry(g_final_shift_xj_unfold_range[6][irange], "R = 0.8");
+      
+
+      cxj_money->cd(2);
+      gPad->SetTopMargin(0.05);
+      gPad->SetRightMargin(0.17);
+      gPad->SetLeftMargin(0.05);
+      gPad->SetBottomMargin(0.17);
+      
+      hblank1->Draw("p E1 Y+");
+
+      for (int ic = 0; ic < 7; ic++)
+	{
+	  if (ic%2 == 0) continue;
+	  g_final_shift_xj_unfold_range[ic][irange]->Draw("same p E1");
+	  g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
+	}
+
       
       leg->Draw("same");
-
       cxj_money->Print(Form("h_final_xj_unfolded_radial_range_%d.png", irange));
       cxj_money->Print(Form("h_final_xj_unfolded_radial_range_%d.pdf", irange));
     }

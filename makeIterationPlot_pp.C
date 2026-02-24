@@ -2,18 +2,53 @@
 #include "read_binning.h"
 #include "histo_opps.h"
 
-void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0)
+void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const std::string configfile = "binning.config")
 {
   const int niterations = 10;
 
-  std::string sysname = "nominal";
-  if (prior == 1) sysname = "PRIMER1";
-  if (prior == 2) sysname = "PRIMER2";
   
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
-  read_binning rb("binning.config");
+  read_binning rb(configfile.c_str());
+
+
+  Int_t prior_sys = rb.get_prior_sys();
+
+  Double_t JES_sys = rb.get_jes_sys();
+  Double_t JER_sys = rb.get_jer_sys();
+  std::cout << "JES = " << JES_sys << std::endl;
+  std::cout << "JER = " << JER_sys << std::endl;
+
+  Int_t herwig_sys = rb.get_herwig();
+  
+  std::string sys_name = "nominal";
+  
+  if (prior_sys)
+    sys_name = "PRIOR";
+  if (herwig_sys)
+    sys_name = "HERWIG";
+  
+  if (JER_sys < 0)
+    sys_name = "negJER";
+
+  if (JER_sys > 0)
+    sys_name = "posJER";
+
+  if (JES_sys < 0)
+    sys_name = "negJES";
+
+  if (JES_sys > 0)
+    sys_name = "posJES";
+
+  if (prior == 1)
+    {
+      sys_name = "PRIMER1_" + sys_name;
+    }
+  else if (prior == 2)
+    {
+      sys_name = "PRIMER2_" + sys_name;
+    }
 
   Int_t read_nbins = rb.get_nbins();
   
@@ -91,7 +126,7 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0)
   
   std::cout << __LINE__ << std::endl;
 
-  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sysname.c_str()),"r");
+  TFile *f_uncertainties = new TFile(Form("%s/uncertainties/uncertainties_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sys_name.c_str()),"r");
 
   if (!f_uncertainties)
     {
@@ -101,7 +136,7 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0)
   TProfile *hp_xj[niterations];
   TProfile *hp_pt1pt2[niterations];
     
-  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sysname.c_str()),"r");
+  TFile *fin = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sys_name.c_str()),"r");
   if (!fin)
     {
       std::cout << "no file" << std::endl;
@@ -264,7 +299,19 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0)
   leg->AddEntry(h_total_uncertainties, "#sigma_{conv} = #sqrt{#sigma^{2}_{sim} + #sigma^{2}_{data} + #sigma^{2}_{bin-by-bin}}","p");
   leg->Draw("same");
 
-  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_pp_r%02d_%s.pdf",rb.get_code_location().c_str(), cone_size, sysname.c_str()));
-  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_pp_r%02d_%s.png", rb.get_code_location().c_str(), cone_size, sysname.c_str()));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_pp_r%02d_%s.pdf",rb.get_code_location().c_str(), cone_size, sys_name.c_str()));
+  c_unc->SaveAs(Form("%s/unfolding_plots/iteration_tune_pp_r%02d_%s.png", rb.get_code_location().c_str(), cone_size, sys_name.c_str()));
+
+  TString foutname = "unfolding_hists/iteration_tune_pp_r0" + std::to_string(cone_size) + "_" + sys_name + ".root";
+  
+  TFile *fout = new TFile(foutname.Data(), "recreate");
+
+  h_total_uncertainties->Write();
+  h_statistical_uncertainties->Write();
+  h_binbybin_uncertainties->Write();
+  h_unfold_uncertainties->Write();
+
+  fout->Close();
+
   return;
 }

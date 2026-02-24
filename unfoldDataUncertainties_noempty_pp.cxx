@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+
 using std::cout;
 using std::endl;
 
@@ -9,32 +11,96 @@ using std::endl;
 #include "read_binning.h"
 #include "histo_opps.h"
 
-int unfoldDataUncertainties_noempty_pp(const int niterations = 20, const int cone_size = 4, const int prior = 0)
+#include "dijetfinder.h"
+
+#include "TProfile.h"
+#include "TProfile2D.h"
+#include "TF1.h"
+#include "TFile.h"
+#include "TH1.h"
+#include "TTree.h"
+
+static int verbosity = 0;
+
+int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.config", const int niterations = 20, const int cone_size = 4, const int primer = 0)
 {
 
-  std::string sysname = "nominal";
-  if (prior == 1)
-    {
-      sysname = "PRIMER1";
-    }
-  else if (prior == 2)
-    {
-      sysname = "PRIMER2";
-    }
   
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
-  bool ispp = true;
+
   std::string system_string = "pp";
 
-  read_binning rb("binning.config");
-  std::string data_file = rb.get_tntuple_location() + "/TNTUPLE_DIJET_CALIB_r0" + std::to_string(cone_size) + "_v8_1_ana509_2024p022_v001_gl10-all.root";
+  read_binning rb(configfile.c_str());
 
-  float pt1_reco;
-  float pt2_reco;
-  float dphi_reco;
+  Int_t prior_sys = rb.get_prior_sys();
+
+  Double_t JES_sys = rb.get_jes_sys();
+  Double_t JER_sys = rb.get_jer_sys();
+  std::cout << "JES = " << JES_sys << std::endl;
+  std::cout << "JER = " << JER_sys << std::endl;
+
+  Int_t herwig_sys = rb.get_herwig();
+  
+  std::string sys_name = "nominal";
+  
+  if (prior_sys)
+    sys_name = "PRIOR";
+
+  if (herwig_sys)
+    sys_name = "HERWIG";
+  
+  if (JER_sys < 0)
+    sys_name = "negJER";
+
+  if (JER_sys > 0)
+    sys_name = "posJER";
+
+  if (JES_sys < 0)
+    sys_name = "negJES";
+
+  if (JES_sys > 0)
+    sys_name = "posJES";
+
+  if (primer == 1)
+    {
+      sys_name = "PRIMER1_" + sys_name;
+    }
+  else if (primer == 2)
+    {
+      sys_name = "PRIMER2_" + sys_name;
+    }
+
+  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_5_ana533_2025p007_v001_gl10-all.root";
+  
+  ULong64_t gl1_scaled;
+  float mbd_vertex_z;
+  
+  std::vector<float> *reco_jet_pt = 0;
+  std::vector<float> *reco_jet_emcal = 0;
+  std::vector<float> *reco_jet_e = 0;
+  std::vector<float> *reco_jet_eta = 0;
+  std::vector<float> *reco_jet_eta_det = 0;
+  std::vector<float> *reco_jet_phi = 0;
+
+  TFile *fin = new TFile(data_file.c_str(), "r");
+  TTree *ttree  = (TTree*) fin->Get("ttree");;
+
+  if (!ttree)
+    {
+      std::cout << " no data "<< std::endl;
+    }
+
+  ttree->SetBranchAddress(Form("jet_pt_calib_%d", cone_size), &reco_jet_pt);
+  ttree->SetBranchAddress(Form("jet_emcal_%d", cone_size), &reco_jet_emcal);
+  ttree->SetBranchAddress(Form("jet_e_%d", cone_size), &reco_jet_e);
+  ttree->SetBranchAddress(Form("jet_eta_%d", cone_size), &reco_jet_eta);
+  ttree->SetBranchAddress(Form("jet_eta_det_%d", cone_size), &reco_jet_eta_det);
+  ttree->SetBranchAddress(Form("jet_phi_%d", cone_size), &reco_jet_phi);
+  ttree->SetBranchAddress("mbd_vertex_z", &mbd_vertex_z);
+  ttree->SetBranchAddress("gl1_scaled", &gl1_scaled);
     
-  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sysname.c_str()),"r");
+  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()),"r");
   
   TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
 
@@ -95,23 +161,11 @@ int unfoldDataUncertainties_noempty_pp(const int niterations = 20, const int con
       return 1;
     }
 
-  TFile *fin = new TFile(data_file.c_str(), "r");
-  TNtuple *tn  = (TNtuple*) fin->Get("tn_dijet");;
-  if (!tn)
-    {
-      std::cout << " no data "<< std::endl;
-    }
-  tn->SetBranchAddress("pt1_reco", &pt1_reco);
-  tn->SetBranchAddress("pt2_reco", &pt2_reco);
-  tn->SetBranchAddress("dphi_reco", &dphi_reco);
-
   Int_t read_nbins = rb.get_nbins();
   
-  Double_t dphicut = rb.get_dphicut();
 
 
   const int nbins = read_nbins;
-  const int nbins2 = nbins*nbins;
 
   Double_t ipt_bins[nbins+1];
   Double_t ixj_bins[nbins+1];
@@ -184,7 +238,7 @@ int unfoldDataUncertainties_noempty_pp(const int niterations = 20, const int con
 
   TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_" + system_string + "_r0" + std::to_string(cone_size);
 
-  unfoldpath += "_" + sysname;
+  unfoldpath += "_" + sys_name;
   unfoldpath += ".root";
   
   TFile *funin = new TFile(unfoldpath.Data(),"r");
@@ -352,7 +406,7 @@ int unfoldDataUncertainties_noempty_pp(const int niterations = 20, const int con
   
 
   
-  TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sysname.c_str()),"recreate");
+  TFile *fout = new TFile(Form("%s/uncertainties/uncertainties_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()),"recreate");
   TEnv *penv = new TEnv("binning.config");
   penv->Write();
   for (int iter = 0; iter < niterations; iter++)
@@ -369,5 +423,58 @@ int unfoldDataUncertainties_noempty_pp(const int niterations = 20, const int con
   fout->Close();
 
   return 0;
+  
+}
+int main(int argc, char *argv[])
+{
+
+  std::string config = "binning.config";
+  int niterations = 10;
+  int cone_size = 4;
+  int primer = 0;
+  int set=0;
+  for (int i = 1; i < argc; ++i)
+    {
+      std::string arg = argv[i];
+
+      if (arg == "-n" && i + 1 < argc)
+	{
+	  set++;
+	  niterations = std::stoi(argv[++i]);  // Convert next argument to int
+	}
+      else if (arg == "-c" && i + 1 < argc)
+	{
+	  set++;
+	  config = argv[++i];  // Next argument as string
+	}
+      else if (arg == "-r" && i + 1 < argc)
+	{
+	  set++;
+	  cone_size = std::stoi(argv[++i]);  // Convert next argument to double
+	}
+      else if (arg == "-p" && i + 1 < argc)
+	{
+	  set++;
+	  primer = std::stoi(argv[++i]);  // Convert next argument to double
+	}
+      else if (arg == "-v" && i+1 < argc)
+	{
+	  verbosity = std::stoi(argv[++i]);  // Convert next argument to double
+	}
+      else
+	{
+	  std::cerr << "Unknown or incomplete argument: " << arg << "\n";
+	  return 1;
+	}
+    }
+  if (set < 3)
+    {
+      std::cout << "Not enough settings: " << std::endl;
+      std::cout << "[usage] : " << std::endl;
+      std::cout << "    ./unfoldDataUncertainties_noempty_pp -c binning.config -r 4 -n 10 -p 1 " << std::endl;
+      return 1;
+    }
+  
+  return unfoldDataUncertainties_noempty_pp(config, niterations, cone_size, primer);
   
 }

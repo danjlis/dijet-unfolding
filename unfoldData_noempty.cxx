@@ -196,6 +196,8 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
   TH1D *h_njets = new TH1D("h_njets", ";N_{Jet}; counts", 51, -0.5, 50.5);
   TH1D *h_reco_xj = new TH1D("h_reco_xj",";A_{J};1/N", nbins, ixj_bins);
 
+  TH1D *h_data_lead = new TH1D("h_data_lead",";p_{T} [GeV]", 100, 0, 100);
+  TH1D *h_data_sublead = new TH1D("h_data_sublead",";p_{T} [GeV]", 100, 0, 100);
   TH2D *h_pt1pt2 = new TH2D("h_pt1pt2",";p_{T,1, smear};p_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins);
 
   TH1D *h_flat_data_pt1pt2 = new TH1D("h_data_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
@@ -238,7 +240,9 @@ int unfoldData_noempty(const std::string configfile = "binning.config", const in
       bool reco_good = (maxi >= reco_leading_cut && mini >= reco_subleading_cut && dphi_reco > dphicut);
 
       if (!reco_good) continue;
-      
+
+      h_data_lead->Fill(maxi);
+      h_data_sublead->Fill(mini);
       h_pt1pt2->Fill(es1, es2);
       h_pt1pt2->Fill(es2, es1);
       h_flat_data_pt1pt2->Fill(pt1_reco_bin + nbins*pt2_reco_bin);
