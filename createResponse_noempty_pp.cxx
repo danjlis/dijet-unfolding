@@ -429,6 +429,13 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TH1D *h_flat_truth_to_response_pt1pt2 = new TH1D("h_truth_flat_to_response_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt*nbins_pt, 0, nbins_pt*nbins_pt);
   TH1D *h_flat_reco_to_response_pt1pt2 = new TH1D("h_reco_flat_to_response_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt*nbins_pt, 0, nbins_pt*nbins_pt);
   TH2D *h_flat_response_pt1pt2 = new TH2D("h_flat_response_pt1pt2",";p_{T,1, reco} + p_{T,2, reco};p_{T,1, truth} + p_{T,2, truth}", nbins_pt*nbins_pt, 0, nbins_pt*nbins_pt, nbins_pt*nbins_pt, 0, nbins_pt*nbins_pt);
+
+  h_flat_truth_to_response_pt1pt2->Sumw2();
+  h_flat_reco_to_response_pt1pt2->Sumw2();
+  h_flat_truth_pt1pt2->Sumw2();
+  h_flat_reco_pt1pt2->Sumw2();
+  h_flat_response_pt1pt2->Sumw2();
+  
   TH2D *h_count_flat_response_pt1pt2 = new TH2D("h_count_flat_response_pt1pt2",";p_{T,1, reco} + p_{T,2, reco};p_{T,1, truth} + p_{T,2, truth}", nbins_pt*nbins_pt, 0, nbins_pt*nbins_pt, nbins_pt*nbins_pt, 0, nbins_pt*nbins_pt);
 
   TH1D *h_flat_reco_all_pt1pt2_sample[5];// = new TH1D("h_reco_flat_all_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins*nbins, 0, nbins*nbins);
@@ -1212,11 +1219,11 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      
 	      if (fill_response)
 		{
-		  // h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
-		  // h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
+		  h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
+		  h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
 
-		  // rooResponse.Fake(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
-		  // rooResponse.Fake(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
+		  rooResponse.Fake(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
+		  rooResponse.Fake(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
 
 		  rooResponse.Miss(pt1_truth_bin + nbins_pt*pt2_truth_bin, event_scale);
 		  rooResponse.Miss(pt2_truth_bin + nbins_pt*pt1_truth_bin, event_scale);
@@ -1303,11 +1310,11 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      if (fill_response)
 		{
 
-		  // h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
-		  // h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
+		  h_flat_reco_to_response_pt1pt2->Fill(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
+		  h_flat_reco_to_response_pt1pt2->Fill(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
 
-		  // rooResponse.Fake(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
-		  // rooResponse.Fake(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
+		  rooResponse.Fake(pt1_reco_bin + nbins_pt*pt2_reco_bin, event_scale);
+		  rooResponse.Fake(pt2_reco_bin + nbins_pt*pt1_reco_bin, event_scale);
 
 		  h_count_flat_reco_pt1pt2_sample[isample]->Fill(pt1_reco_bin + nbins_pt*pt2_reco_bin);
 		  h_count_flat_reco_pt1pt2_sample[isample]->Fill(pt2_reco_bin + nbins_pt*pt1_reco_bin);	      
@@ -1373,7 +1380,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  double value = he_dijet_fake_binned->GetEfficiency(ibb);
 
 	  h_fake_v_entries->Fill(value, h_count_flat_reco_pt1pt2->GetBinContent(ibb));
-	  h_flat_reco_pt1pt2->SetBinContent(ibb, h_flat_reco_pt1pt2->GetBinContent(ibb)*value);
+	  //h_flat_reco_pt1pt2->SetBinContent(ibb, h_flat_reco_pt1pt2->GetBinContent(ibb)*value);
 	}
     }
 
