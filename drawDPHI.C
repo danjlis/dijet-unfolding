@@ -29,7 +29,7 @@ const int colorsys[5] = {kBlack, kMagenta + 2, kGreen - 2, kCyan + 1, kPink + 2}
 
 std::pair<float, float> get_ordered_pair(float e1, float e2);
 
-void drawDPHI(const std::string configfile = "binning.config")
+void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.config")
 {
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
@@ -104,31 +104,31 @@ void drawDPHI(const std::string configfile = "binning.config")
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
 
-  TFile *fher = new TFile("herwig_hist.root","r");
-  TH1D *h_herwig_leading_dphi[3];
-  TH1D *h_herwig_subleading_dphi[3];
-  for (int i = 0; i < 3; i++)
-    {
-      h_herwig_leading_dphi[i] = (TH1D*) fher->Get(Form("h_truth_leading_dphi_%d", i));
-      h_herwig_leading_dphi[i]->Rebin(2);
-      h_herwig_leading_dphi[i]->Scale(1./h_herwig_leading_dphi[i]->Integral(0, -1, "width"));
+  /* TFile *fher = new TFile("herwig_hist.root","r"); */
+  /* TH1D *h_herwig_leading_dphi[3]; */
+  /* TH1D *h_herwig_subleading_dphi[3]; */
+  /* for (int i = 0; i < 3; i++) */
+  /*   { */
+  /*     h_herwig_leading_dphi[i] = (TH1D*) fher->Get(Form("h_truth_leading_dphi_%d", i)); */
+  /*     h_herwig_leading_dphi[i]->Rebin(2); */
+  /*     h_herwig_leading_dphi[i]->Scale(1./h_herwig_leading_dphi[i]->Integral(0, -1, "width")); */
 
-      h_herwig_subleading_dphi[i] = (TH1D*) fher->Get(Form("h_truth_subleading_dphi_%d", i));
-      h_herwig_subleading_dphi[i]->Rebin(2);
-      h_herwig_subleading_dphi[i]->Scale(1./h_herwig_subleading_dphi[i]->Integral(0, -1, "width"));
+  /*     h_herwig_subleading_dphi[i] = (TH1D*) fher->Get(Form("h_truth_subleading_dphi_%d", i)); */
+  /*     h_herwig_subleading_dphi[i]->Rebin(2); */
+  /*     h_herwig_subleading_dphi[i]->Scale(1./h_herwig_subleading_dphi[i]->Integral(0, -1, "width")); */
       
-    }
+  /*   } */
 
   float scale_pt1_reco[5][3] = {{0}};
   float scale_pt2_reco[5][3] = {{0}};
   float scale_pt1_truth[5][3] = {{0}};
   float scale_pt2_truth[5][3] = {{0}};
   TString filenames[5];
-  filenames[0] = "dphi_hists.root";
-  filenames[1] = "dphi_hists_negJER.root";
-  filenames[2] = "dphi_hists_posJER.root";
-  filenames[3] = "dphi_hists_negJES.root";
-  filenames[4] = "dphi_hists_posJES.root";
+  filenames[0] = rb.get_code_location() + "/dphihists/dphi_hists_pp_r0" + cone_size + "_nominal.root";
+  filenames[1] = rb.get_code_location() + "/dphihists/dphi_hists_pp_r0" + cone_size + "_negJER.root";
+  filenames[2] = rb.get_code_location() + "/dphihists/dphi_hists_pp_r0" + cone_size + "_posJER.root";
+  filenames[3] = rb.get_code_location() + "/dphihists/dphi_hists_pp_r0" + cone_size + "_negJES.root";
+  filenames[4] = rb.get_code_location() + "/dphihists/dphi_hists_pp_r0" + cone_size + "_posJES.root";
 
   TFile *fin[5];
   
@@ -169,6 +169,7 @@ void drawDPHI(const std::string configfile = "binning.config")
   for (int isys = 0; isys < 5; isys++)
     {
       std::cout << filenames[isys] << std::endl;
+
       fin[isys] = new TFile(filenames[isys].Data(), "r");
       h_data_pt1pt2dphi[isys] = (TH3D*) fin[isys]->Get("h_data_pt1pt2dphi");
       h_reco_match_pt1pt2dphi[isys] = (TH3D*) fin[isys]->Get("h_reco_pt1pt2dphi");;
@@ -236,11 +237,22 @@ void drawDPHI(const std::string configfile = "binning.config")
 	  h_truth_match_dphi_range[isys][i] = h_truth_match_pt1pt2dphi[isys]->ProjectionZ(Form("h_truth_match_dphi_range_%d_%d", isys, i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
 
 	  h_reco_dphi_range[isys][i] = h_reco_match_pt1pt2dphi[isys]->ProjectionZ(Form("h_reco_dphi_range_%d_%d", isys, i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
-	        
+
+	  TH1D *h_reco_norm = (TH1D*) h_reco_dphi_range[isys][i]->Clone();
+	  h_reco_norm->SetName("h_reco_norm");
+	  h_reco_norm->Scale(1./h_reco_norm->Integral(), "width");	  
+	  TH1D *h_truth_norm = (TH1D*) h_truth_match_dphi_range[isys][i]->Clone();
+	  h_truth_norm->SetName("h_truth_norm");
+	  h_truth_norm->Scale(1./h_truth_norm->Integral(), "width");	  
+
 	  h_correction_factors_range[isys][i] = (TH1D*) h_truth_match_dphi_range[isys][i]->Clone();
 	  h_correction_factors_range[isys][i]->SetName(Form("h_correction_factors_range_%d_%d", isys, i));
 	  h_correction_factors_range[isys][i]->Divide( h_reco_dphi_range[isys][i] );
 
+	  TH1D *h_corr_norm = (TH1D*) h_truth_norm->Clone();
+	  h_corr_norm->SetName("h_corr_norm");
+	  h_corr_norm->Divide(h_reco_norm);
+	  
 	  for (int ib = 0; ib < h_correction_factors_range[isys][i]->GetNbinsX(); ib++)
 	    {
 	      float cov = h_corr_reco_dphi_range[isys][i]->GetBinContent(ib+1);
@@ -274,13 +286,16 @@ void drawDPHI(const std::string configfile = "binning.config")
 	      float new_err = vv*sqrt( pow(ea/va, 2) + pow(eb/vb, 2));
 	      h_data_dphi_range[isys][i]->SetBinContent(ib+1, vv);
 	      h_data_dphi_range[isys][i]->SetBinError(ib+1, new_err);
+
 	      if (isys == 0)
 		{
-		  float half_fac = ( h_correction_factors_range[isys][i]->GetBinContent(ib+1) - 1)*0.5 + 1;
-		  float double_fac = ( h_correction_factors_range[isys][i]->GetBinContent(ib+1) - 1)*1.5 + 1;
-
+		  float half_fac = ( h_corr_norm->GetBinContent(ib+1) - 1)*0.5 + 1;
+		  float double_fac = ( h_corr_norm->GetBinContent(ib+1) - 1)*1.5 + 1;
+		  
+		  std::cout << "corr errs: " << h_correction_factors_range[isys][i]->GetBinContent(ib+1) <<  " / " << h_efficiency_factors_range[isys][i]->GetBinContent(ib+1) << " -- " << half_fac << " / " << double_fac << std::endl;
+		  
 		  float va = h_data_dphi_range[5][i]->GetBinContent(ib+1);
-		  float ea = h_data_dphi_range[isys][i]->GetBinError(ib+1);
+		  float ea = h_data_dphi_range[5][i]->GetBinError(ib+1);
 		  float eb = (h_correction_factors_range[isys][i]->GetBinError(ib+1)*0.5);
 		  float ec = (h_correction_factors_range[isys][i]->GetBinError(ib+1)*1.5);
 		  float vvh = va*half_fac;
@@ -314,6 +329,7 @@ void drawDPHI(const std::string configfile = "binning.config")
 
 	  if (i == 1)
 	    {
+	      std::cout << "starting the subleading " << std::endl;
 	      for (int j = 0; j < 3; j++)
 		{
 		        
@@ -321,7 +337,16 @@ void drawDPHI(const std::string configfile = "binning.config")
 		  h_truth_dphi_rangemin[isys][j] = h_truth_pt1pt2dphi[isys]->ProjectionZ(Form("h_truth_dphi_rangemin_%d_%d", isys, j), binranges[i], binranges[i+1], binrangesmin[j], binrangesmin[j+1]);
 		  h_truth_match_dphi_rangemin[isys][j] = h_truth_match_pt1pt2dphi[isys]->ProjectionZ(Form("h_truth_match_dphi_rangemin_%d_%d", isys, j), binranges[i], binranges[i+1], binrangesmin[j], binrangesmin[j+1]);
 		  h_reco_dphi_rangemin[isys][j] = h_reco_match_pt1pt2dphi[isys]->ProjectionZ(Form("h_reco_dphi_rangemin_%d_%d", isys, j), binranges[i], binranges[i+1], binrangesmin[j], binrangesmin[j+1]);
-
+		  TH1D *h_reco_norm_min = (TH1D*) h_reco_dphi_rangemin[isys][j]->Clone();
+		  h_reco_norm_min->SetName("h_reco_norm_min");
+		  h_reco_norm_min->Scale(1./h_reco_norm_min->Integral(), "width");	  
+		  TH1D *h_truth_norm_min = (TH1D*) h_truth_match_dphi_rangemin[isys][j]->Clone();
+		  h_truth_norm_min->SetName("h_truth_norm_min");
+		  h_truth_norm_min->Scale(1./h_truth_norm_min->Integral(), "width");	  
+		  TH1D *h_corr_norm_min = (TH1D*) h_truth_norm_min->Clone();
+		  h_corr_norm_min->SetName("h_corr_norm_min");
+		  h_corr_norm_min->Divide(h_reco_norm_min);
+		  
 		  h_correction_factors_rangemin[isys][j] = (TH1D*) h_truth_match_dphi_rangemin[isys][j]->Clone();
 		  h_correction_factors_rangemin[isys][j]->SetName(Form("h_correction_factors_rangemin_%d_%d", isys, j));
 		  h_correction_factors_rangemin[isys][j]->Divide( h_reco_dphi_rangemin[isys][j] );
@@ -360,11 +385,11 @@ void drawDPHI(const std::string configfile = "binning.config")
 		      h_data_dphi_rangemin[isys][j]->SetBinError(ib+1, new_err);
 		      if (isys == 0)
 			{
-			  float half_fac = ( h_correction_factors_rangemin[isys][j]->GetBinContent(ib+1) - 1)*0.5 + 1;
-			  float double_fac = ( h_correction_factors_rangemin[isys][j]->GetBinContent(ib+1) - 1)*1.5 + 1;
+			  float half_fac = ( h_corr_norm_min->GetBinContent(ib+1) - 1)*0.5 + 1;
+			  float double_fac = ( h_corr_norm_min->GetBinContent(ib+1) - 1)*1.5 + 1;
 
 			  float va = h_data_dphi_rangemin[5][j]->GetBinContent(ib+1);
-			  float ea = h_data_dphi_rangemin[isys][j]->GetBinError(ib+1);
+			  float ea = h_data_dphi_rangemin[5][j]->GetBinError(ib+1);
 			  float eb = (h_correction_factors_rangemin[isys][j]->GetBinError(ib+1)*0.5);
 			  float ec = (h_correction_factors_rangemin[isys][j]->GetBinError(ib+1)*1.5);
 			  float vvh = va*half_fac;
@@ -405,6 +430,13 @@ void drawDPHI(const std::string configfile = "binning.config")
 		      h_data_dphi_rangemin[6][j]->Scale(1./h_data_dphi_rangemin[6][j]->Integral(0, -1, "width"));
 		      h_data_dphi_rangemin[6][j]->SetDirectory(0);//(Form("h_truth_match_dphi_%d", isys));
 		    }
+		  delete h_reco_norm_min;
+
+		  delete h_truth_norm_min;
+
+		  delete h_corr_norm_min;
+
+
 		}
 	    }
 
@@ -422,6 +454,13 @@ void drawDPHI(const std::string configfile = "binning.config")
 	    }
       
 	  std::cout << isys << " " << i << " Mean  "<< h_data_dphi_range[isys][i]->GetMean() << std::endl;
+
+	  delete h_reco_norm;
+
+	  delete h_truth_norm;
+
+	  delete h_corr_norm;
+
 	}
       
     }
@@ -634,11 +673,11 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_jer_sys_range[1][i]->Draw("hist same");
       h_jes_sys_range[0][i]->Draw("hist same");
       h_jes_sys_range[1][i]->Draw("hist same");
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.86);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.4}", 0.22, 0.76);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[i]], ipt_bins[binranges[i+1]]), 0.22, 0.71);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.08]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, 0.66);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.59);
+      dlutility::DrawSPHENIXpp(0.22, 0.86);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.76);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[i]], ipt_bins[binranges[i+1]]), 0.22, 0.71);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.66);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
 
       TLegend *leg = new TLegend(0.61, 0.72, 0.75, 0.88);
@@ -653,8 +692,8 @@ void drawDPHI(const std::string configfile = "binning.config")
 
       leg->Draw("same");
 
-      c_sysdiv->Print(Form("h_sys_all_range_%d.pdf", i));
-      c_sysdiv->Print(Form("h_sys_all_range_%d.png", i));
+      c_sysdiv->Print(Form("%s/dphi_plots/h_sys_all_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, i));
+      c_sysdiv->Print(Form("%s/dphi_plots/h_sys_all_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, i));
     }
   TCanvas *c_sysdiv2 = new TCanvas("c_sysdiv2", "c_sysdiv2", 500, 500);
   for (int i = 0; i < 3; i++)
@@ -686,11 +725,12 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_jes_sys_rangemin[0][i]->Draw("hist same");
       h_jes_sys_rangemin[1][i]->Draw("hist same");
 
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.86);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.2]{#it{R} = 0.4}", 0.22, 0.76);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.71);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,2} < %2.1f GeV}", ipt_bins[binrangesmin[i]], ipt_bins[binrangesmin[i+1]]), 0.22, 0.66);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.61);
+      dlutility::DrawSPHENIXpp(0.22, 0.86);
+
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.76);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.71);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV", ipt_bins[binrangesmin[i]], ipt_bins[binrangesmin[i+1]]), 0.22, 0.66);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.61);
 
 
       TLegend *leg = new TLegend(0.61, 0.72, 0.75, 0.88);
@@ -705,8 +745,8 @@ void drawDPHI(const std::string configfile = "binning.config")
 
       leg->Draw("same");
 
-      c_sysdiv2->Print(Form("h_sys_all_rangemin_%d.pdf", i));
-      c_sysdiv2->Print(Form("h_sys_all_rangemin_%d.png", i));
+      c_sysdiv2->Print(Form("%s/dphi_plots/h_sys_all_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, i));
+      c_sysdiv2->Print(Form("%s/dphi_plots/h_sys_all_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, i));
     }
   
   TCanvas *c_cor = new TCanvas("c_cor","c_cor", 500, 700);
@@ -733,12 +773,12 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_truth_match_dphi_range[0][i]->Draw("p");
       h_reco_dphi_range[0][i]->Draw("p same");
 
-      dlutility::DrawSPHENIXppPrelimSpace(0.22, top , 0.1, 0, 1, 0, 1, "PYTHIA-8");
+      dlutility::DrawSPHENIXpp(0.22, top , 0.04, 0, 1, 0, 1, "PYTHIA-8");
       
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, top - 3*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[i]], ipt_bins[binranges[i+1]]), 0.22, top - 4*ss);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.08]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, top - 5*ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, top - 6*ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, top - 3*ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[i]], ipt_bins[binranges[i+1]]), 0.22, top - 4*ss);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, top - 5*ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, top - 6*ss);
 
       TLegend *leg1 = new TLegend(0.20, top - 9*ss, 0.63, top - 7*ss);
       leg1->SetLineWidth(0);
@@ -778,8 +818,8 @@ void drawDPHI(const std::string configfile = "binning.config")
       dlutility::SetLineAtt(li1, kBlack, 1, 4);
       li1->Draw("same");
 
-      c_cor->Print(Form("correction_range_%d.pdf", i));
-      c_cor->Print(Form("correction_range_%d.png", i));
+      c_cor->Print(Form("%s/dphi_plots/correction_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, i));
+      c_cor->Print(Form("%s/dphi_plots/correction_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, i));
     }
   for (int i = 0; i < 3; i++)
     {
@@ -804,13 +844,12 @@ void drawDPHI(const std::string configfile = "binning.config")
       float top = 0.8;
       float ss = 0.05;
 
-
-      dlutility::DrawSPHENIXppPrelimSpace(0.22, top , 0.1, 0, 1, 0, 1, "PYTHIA-8");
+      dlutility::DrawSPHENIXpp(0.22, top , 0.04, 0, 1, 0, 1, "PYTHIA-8");
       
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, top - 3*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[i]], ipt_bins[binranges[i+1]]), 0.22, top - 4*ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,2} < %2.1f GeV}", ipt_bins[binrangesmin[i]], ipt_bins[binrangesmin[i+1]]), 0.22, top - 5*ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, top - 6*ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, top - 3*ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[i]], ipt_bins[binranges[i+1]]), 0.22, top - 4*ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV", ipt_bins[binrangesmin[i]], ipt_bins[binrangesmin[i+1]]), 0.22, top - 5*ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, top - 6*ss);
 
       TLegend *leg1 = new TLegend(0.20, top - 9*ss, 0.63, top - 7*ss);
       leg1->SetLineWidth(0);
@@ -866,13 +905,14 @@ void drawDPHI(const std::string configfile = "binning.config")
       dlutility::SetLineAtt(li1, kBlack, 1, 4);
       li1->Draw("same");
 
-      c_cor->Print(Form("correction_rangemin_%d.pdf", i));
-      c_cor->Print(Form("correction_rangemin_%d.png", i));
+      c_cor->Print(Form("%s/dphi_plots/correction_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, i));
+      c_cor->Print(Form("%s/dphi_plots/correction_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, i));
     }
   
   TCanvas *c_sys = new TCanvas("c_sys","c_sys", 1000, 500);
   c_sys->Divide(3, 1);
-  for (int j = 0; j < 3; j++)
+
+    for (int j = 0; j < 3; j++)
     {
       c_sys->cd(j+1);
       for (int i = 0; i < 5; i++)
@@ -892,7 +932,32 @@ void drawDPHI(const std::string configfile = "binning.config")
 
     }
   
+  c_sys->Print(Form("%s/dphi_plots/dphi_data_sys_corr_pp_r%02d_range_all.pdf", rb.get_code_location().c_str(), cone_size));
+  c_sys->Print(Form("%s/dphi_plots/dphi_data_sys_corr_pp_r%02d_range_all.png", rb.get_code_location().c_str(), cone_size));
 
+  for (int j = 0; j < 3; j++)
+    {
+      c_sys->cd(j+1);
+      for (int i = 0; i < 5; i++)
+	{
+	  dlutility::SetLineAtt(h_data_dphi_rangemin[i][j], colorsys[i], 1, 1);
+	  dlutility::SetMarkerAtt(h_data_dphi_rangemin[i][j], colorsys[i], 0.5, 8);
+	}
+      dlutility::SetLineAtt(h_data_dphi_rangemin[5][j], colorsys[1], 1, 1);
+      dlutility::SetMarkerAtt(h_data_dphi_rangemin[5][j], colorsys[1], 0.5, 8);
+      dlutility::SetLineAtt(h_data_dphi_rangemin[6][j], colorsys[2], 1, 1);
+      dlutility::SetMarkerAtt(h_data_dphi_rangemin[6][j], colorsys[2], 0.5, 8);
+
+      std::cout << h_data_dphi_rangemin[0][j]->GetMean() << std::endl;
+      h_data_dphi_rangemin[0][j]->Draw("p");
+      h_data_dphi_rangemin[5][j]->Draw("p same");
+      h_data_dphi_rangemin[6][j]->Draw("p same");
+
+    }
+  
+  c_sys->Print(Form("%s/dphi_plots/dphi_data_sys_corr_pp_r%02d_rangemin_all.pdf", rb.get_code_location().c_str(), cone_size));
+  c_sys->Print(Form("%s/dphi_plots/dphi_data_sys_corr_pp_r%02d_rangemin_all.png", rb.get_code_location().c_str(), cone_size));
+  
 
   TCanvas *c_sys1 = new TCanvas("c_sys1","c_sys1", 500, 600);
   dlutility::ratioPanelCanvas(c_sys1, 0.3);
@@ -912,18 +977,18 @@ void drawDPHI(const std::string configfile = "binning.config")
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
       h_data_dphi_range[0][irange]->SetTitle(";#Delta#phi; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#Delta#phi}");
 
-      dlutility::SetLineAtt(h_herwig_leading_dphi[irange], color_herwig, 3, 1);
+      //dlutility::SetLineAtt(h_herwig_leading_dphi[irange], color_herwig, 3, 1);
 
       h_data_dphi_range[0][irange]->Draw("p E1");
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
       float ss = 0.05;
       float topp = 0.8;
-      dlutility::DrawSPHENIXppPrelimsize(0.22, topp, ss);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.08]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, topp - 4*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
+      dlutility::DrawSPHENIXppsize(0.22, topp, ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, topp - 4*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
       TLegend *leg = new TLegend(0.22, topp - 9*(ss+0.01), 0.4, topp - 6*(ss+0.01));
       leg->SetLineWidth(0);
       leg->SetTextSize(0.05);
@@ -933,21 +998,21 @@ void drawDPHI(const std::string configfile = "binning.config")
   
       c_sys1->cd(2);
       TH1D *hratstatpyth = (TH1D*) h_truth_match_dphi_range[0][irange]->Clone();
-      TH1D *hratstatherwig = (TH1D*) h_herwig_leading_dphi[irange]->Clone();
+      //      TH1D *hratstatherwig = (TH1D*) h_herwig_leading_dphi[irange]->Clone();
       dlutility::SetFont(hratstatpyth, 42, 0.16, 0.15, 0.14, 0.14);
       hratstatpyth->GetYaxis()->SetTitleOffset(0.5);
       hratstatpyth->GetXaxis()->SetTitleOffset(0.8);
       dlutility::SetLineAtt(hratstatpyth, color_pythia, 1, 1);
       dlutility::SetMarkerAtt(hratstatpyth, color_pythia, 1, 8);
-      dlutility::SetLineAtt(hratstatherwig, color_herwig, 1, 1);
-      dlutility::SetMarkerAtt(hratstatherwig, color_herwig, 1, 8);
+      /* dlutility::SetLineAtt(hratstatherwig, color_herwig, 1, 1); */
+      /* dlutility::SetMarkerAtt(hratstatherwig, color_herwig, 1, 8); */
 
       dlutility::SetLineAtt(  h_ratio_dphi_range_sys[irange], kBlack, 1, 1);
       dlutility::SetMarkerAtt(  h_ratio_dphi_range_sys[irange], kBlack, 1, 1);
       h_ratio_dphi_range_sys[irange]->SetFillColorAlpha(kBlack, 0.3);
   
       hratstatpyth->Divide(h_data_dphi_range[0][irange]);
-      hratstatherwig->Divide(h_data_dphi_range[0][irange]);
+      //hratstatherwig->Divide(h_data_dphi_range[0][irange]);
 
       TH1D *hcopy = (TH1D*) hratstatpyth->Clone();
       hcopy->Reset();
@@ -966,8 +1031,8 @@ void drawDPHI(const std::string configfile = "binning.config")
       dlutility::SetLineAtt(li, kBlack, 1, 4);
       li->Draw("same");
 
-      c_sys1->Print(Form("dphi_data_range_%d.pdf", irange));
-      c_sys1->Print(Form("dphi_data_range_%d.png", irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
 
       c_sys1->cd(1);
 
@@ -976,11 +1041,11 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelimsize(0.22, topp, ss);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.08]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, topp - 4*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
+      dlutility::DrawSPHENIXppsize(0.22, topp, ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, topp - 4*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
       leg = new TLegend(0.22, topp - 9*(ss+0.01), 0.4, topp - 6*(ss+0.01));
       leg->SetLineWidth(0);
       leg->SetTextSize(0.05);
@@ -998,38 +1063,38 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_ratio_dphi_range_sys[irange]->Draw("p E2 same");
       li->Draw("same");
 
-      c_sys1->Print(Form("dphi_data_pythia_range_%d.pdf", irange));
-      c_sys1->Print(Form("dphi_data_pythia_range_%d.png", irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pythia_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pythia_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
 
       c_sys1->cd(1);
       h_data_dphi_range[0][irange]->Draw("p E1");
       h_truth_match_dphi_range[0][irange]->Draw("same hist C");
-      h_herwig_leading_dphi[irange]->Draw("same hist C");
+      //h_herwig_leading_dphi[irange]->Draw("same hist C");
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelimsize(0.22, topp, ss);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.08]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, topp - 4*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
+      dlutility::DrawSPHENIXppsize(0.22, topp, ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, topp - 4*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
       leg = new TLegend(0.22, topp - 9*(ss+0.01), 0.4, topp - 6*(ss+0.01));
       leg->SetLineWidth(0);
       leg->SetTextSize(0.05);
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_range[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_range[0][irange], "PYTHIA-8","l");
-      leg->AddEntry(h_herwig_leading_dphi[irange], "Herwig 7.3","l");
+      //leg->AddEntry(h_herwig_leading_dphi[irange], "Herwig 7.3","l");
       leg->Draw("same");
   
       c_sys1->cd(2);
       hratstatpyth->Draw("p E1");
-      hratstatherwig->Draw("same p E1");
+      //      hratstatherwig->Draw("same p E1");
       h_ratio_dphi_range_sys[irange]->Draw("p E2 same");
       
       li->Draw("same");
-      c_sys1->Print(Form("dphi_range_%d.pdf", irange));
-      c_sys1->Print(Form("dphi_range_%d.png", irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
 
     }
 
@@ -1048,7 +1113,7 @@ void drawDPHI(const std::string configfile = "binning.config")
       /* h_data_dphi_rangemin_sys[irange]->Scale(1./ h_data_dphi_rangemin_sys[irange]->Integral(), "width"); */
 
       h_data_dphi_rangemin[0][irange]->SetMaximum(10);
-      dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
+      //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_rangemin[0][irange], 42, 0.06);
       dlutility::SetLineAtt(h_truth_match_dphi_rangemin[0][irange], kRed, 3, 1);
       h_data_dphi_rangemin[0][irange]->SetTitle(";#Delta#phi; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#Delta#phi}");
@@ -1058,22 +1123,22 @@ void drawDPHI(const std::string configfile = "binning.config")
       //hcopy
       float ss = 0.05;
       float topp = 0.8;
-      dlutility::DrawSPHENIXppPrelimsize(0.22, topp, ss);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,2} < %2.1f GeV} ", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, topp - 4*(ss+0.01), 0, kBlack, ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
+      dlutility::DrawSPHENIXppsize(0.22, topp, ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV ", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, topp - 4*(ss+0.01), 0, kBlack, ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
       TLegend *leg = new TLegend(0.22, topp - 9*(ss+0.01), 0.4, topp - 6*(ss+0.01));
       leg->SetLineWidth(0);
       leg->SetTextSize(0.05);
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_rangemin[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_rangemin[0][irange], "PYTHIA-8","l");
-      leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
+      //leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
       leg->Draw("same");
       c_sys1->cd(2);
       TH1D *hratstatpyth = (TH1D*) h_truth_match_dphi_rangemin[0][irange]->Clone();
-      TH1D *hratstatherwig = (TH1D*) h_herwig_subleading_dphi[irange]->Clone();
+      //TH1D *hratstatherwig = (TH1D*) h_herwig_subleading_dphi[irange]->Clone();
       TH1D *hcopy = (TH1D*) hratstatpyth->Clone();
       hcopy->Reset();      
       dlutility::SetFont(hcopy, 42, 0.16, 0.15, 0.14, 0.14);
@@ -1089,15 +1154,15 @@ void drawDPHI(const std::string configfile = "binning.config")
       hratstatpyth->GetXaxis()->SetTitleOffset(0.8);
       dlutility::SetLineAtt(hratstatpyth, color_pythia, 1, 1);
       dlutility::SetMarkerAtt(hratstatpyth, color_pythia, 1, 8);
-      dlutility::SetLineAtt(hratstatherwig, color_herwig, 1, 1);
-      dlutility::SetMarkerAtt(hratstatherwig, color_herwig, 1, 8);
+      //dlutility::SetLineAtt(hratstatherwig, color_herwig, 1, 1);
+      //dlutility::SetMarkerAtt(hratstatherwig, color_herwig, 1, 8);
 
       dlutility::SetLineAtt(  h_ratio_dphi_rangemin_sys[irange], kBlack, 1, 1);
       dlutility::SetMarkerAtt(  h_ratio_dphi_rangemin_sys[irange], kBlack, 1, 1);
       h_ratio_dphi_rangemin_sys[irange]->SetFillColorAlpha(kBlack, 0.3);
   
       hratstatpyth->Divide(h_data_dphi_rangemin[0][irange]);
-      hratstatherwig->Divide(h_data_dphi_rangemin[0][irange]);
+      //hratstatherwig->Divide(h_data_dphi_rangemin[0][irange]);
 
       
       hratstatpyth->SetMaximum(3.0);
@@ -1109,8 +1174,8 @@ void drawDPHI(const std::string configfile = "binning.config")
       dlutility::SetLineAtt(li, kBlack, 1, 4);
       li->Draw("same");
 
-      c_sys1->Print(Form("dphi_data_rangemin_%d.pdf", irange));
-      c_sys1->Print(Form("dphi_data_rangemin_%d.png", irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, irange));
 
       c_sys1->cd(1);
 
@@ -1120,11 +1185,11 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_data_dphi_rangemin[0][irange]->Draw("p E1 same");
       h_data_dphi_rangemin_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelimsize(0.22, topp, ss);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,2} < %2.1f GeV} ", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, topp - 4*(ss+0.01), 0, kBlack, ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
+      dlutility::DrawSPHENIXppsize(0.22, topp, ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV ", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, topp - 4*(ss+0.01), 0, kBlack, ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
       leg = new TLegend(0.22, topp - 9*(ss+0.01), 0.4, topp - 6*(ss+0.01));
       leg->SetLineWidth(0);
       leg->SetTextSize(0.05);
@@ -1140,41 +1205,41 @@ void drawDPHI(const std::string configfile = "binning.config")
       hratstatpyth->Draw("p E1 same");
 
       li->Draw("same");
-      c_sys1->Print(Form("dphi_data_pythia_rangemin_%d.pdf", irange));
-      c_sys1->Print(Form("dphi_data_pythia_rangemin_%d.png", irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pythia_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_data_pythia_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, irange));
 
       c_sys1->cd(1);
 
       h_data_dphi_rangemin[0][irange]->Draw("p E1");
       h_truth_match_dphi_rangemin[0][irange]->Draw("same hist C");
-      h_herwig_subleading_dphi[irange]->Draw("same hist C");
+      //h_herwig_subleading_dphi[irange]->Draw("same hist C");
       h_data_dphi_rangemin[0][irange]->Draw("p E1 same");
       h_data_dphi_rangemin_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelimsize(0.22, topp, ss);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R} = 0.4}", 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,1} < %2.1f GeV}", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
-      dlutility::drawText(Form("%2.1f #kern[-0.08]{#leq #it{p}_{T,2} < %2.1f GeV} ", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, topp - 4*(ss+0.01), 0, kBlack, ss);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
+      dlutility::DrawSPHENIXppsize(0.22, topp, ss);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV ", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, topp - 4*(ss+0.01), 0, kBlack, ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, topp - 5*(ss+0.01),0, kBlack,ss);
       leg = new TLegend(0.22, topp - 9*(ss+0.01), 0.4, topp - 6*(ss+0.01));
       leg->SetLineWidth(0);
       leg->SetTextSize(0.05);
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_rangemin[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_rangemin[0][irange], "PYTHIA-8","l");
-      leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
+      //leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
       leg->Draw("same");
       c_sys1->cd(2);
 
       hratstatpyth->Draw("p E1");
-      hratstatherwig->Draw("same p E1");
+      //hratstatherwig->Draw("same p E1");
       h_ratio_dphi_rangemin_sys[irange]->Draw("p E2 same");
       hratstatpyth->Draw("p E1 same");
-      hratstatherwig->Draw("same p E1 same ");
+      //hratstatherwig->Draw("same p E1 same ");
 
       li->Draw("same");
-      c_sys1->Print(Form("dphi_rangemin_%d.pdf", irange));
-      c_sys1->Print(Form("dphi_rangemin_%d.png", irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
+      c_sys1->Print(Form("%s/dphi_plots/dphi_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, irange));
 
     }
 
@@ -1192,21 +1257,21 @@ void drawDPHI(const std::string configfile = "binning.config")
       /* h_data_dphi_rangemin_sys[irange]->Scale(1./ h_data_dphi_rangemin_sys[irange]->Integral(), "width"); */
 
       h_data_dphi_rangemin[0][irange]->SetMaximum(10);
-      dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
+      //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_rangemin[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_rangemin[0][irange], kRed, 3, 1);
       h_data_dphi_rangemin[0][irange]->SetTitle(";#Delta#phi; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#Delta#phi}");
       h_data_dphi_rangemin[0][irange]->Draw("p E1");
       h_truth_match_dphi_rangemin[0][irange]->Draw("same hist C");
-      h_herwig_subleading_dphi[irange]->Draw("same hist C");
+      //h_herwig_subleading_dphi[irange]->Draw("same hist C");
       h_data_dphi_rangemin[0][irange]->Draw("p E1 same");
       h_data_dphi_rangemin_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.84);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R = 0.4}}", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.69);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,2} < %2.1f GeV}", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, 0.64);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.59);
+      dlutility::DrawSPHENIXpp(0.22, 0.84);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, 0.64);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
       TLegend *leg = new TLegend(0.22, 0.39, 0.4, 0.54);
       leg->SetLineWidth(0);
@@ -1214,20 +1279,20 @@ void drawDPHI(const std::string configfile = "binning.config")
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_rangemin[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_rangemin[0][irange], "PYTHIA-8", "l");
-      leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
+      //leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
       leg->Draw("same");
 
-      c_money->Print(Form("h_final_dphi_rangemin_%d.png", irange));
-      c_money->Print(Form("h_final_dphi_rangemin_%d.pdf", irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_dphi_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_dphi_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
 
       h_data_dphi_rangemin[0][irange]->Draw("p E1");
       h_data_dphi_rangemin_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.84);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R = 0.4}}", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.69);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,2} < %2.1f GeV}", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, 0.64);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.59);
+      dlutility::DrawSPHENIXpp(0.22, 0.84);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, 0.64);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
       leg = new TLegend(0.22, 0.39, 0.4, 0.54);
       leg->SetLineWidth(0);
@@ -1236,19 +1301,19 @@ void drawDPHI(const std::string configfile = "binning.config")
       leg->AddEntry(h_data_dphi_rangemin[0][irange], "Data","lp");
       leg->Draw("same");
 
-      c_money->Print(Form("h_final_data_dphi_rangemin_%d.png", irange));
-      c_money->Print(Form("h_final_data_dphi_rangemin_%d.pdf", irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_dphi_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_dphi_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
 
       h_data_dphi_rangemin[0][irange]->Draw("p E1");
       h_truth_match_dphi_rangemin[0][irange]->Draw("same hist C");
       h_data_dphi_rangemin[0][irange]->Draw("p E1 same");
       h_data_dphi_rangemin_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.84);
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R = 0.4}}", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.69);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,2} < %2.1f GeV}", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, 0.64);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.59);
+      dlutility::DrawSPHENIXpp(0.22, 0.84);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[binranges[1]], ipt_bins[binranges[1+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,2} < %2.1f GeV", ipt_bins[binrangesmin[irange]], ipt_bins[binrangesmin[irange+1]]), 0.22, 0.64);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
       leg = new TLegend(0.22, 0.39, 0.4, 0.54);
       leg->SetLineWidth(0);
@@ -1258,8 +1323,8 @@ void drawDPHI(const std::string configfile = "binning.config")
       leg->AddEntry(h_truth_match_dphi_rangemin[0][irange], "PYTHIA-8", "l");
       leg->Draw("same");
 
-      c_money->Print(Form("h_final_data_pythia_dphi_rangemin_%d.png", irange));
-      c_money->Print(Form("h_final_data_pythia_dphi_rangemin_%d.pdf", irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_pythia_dphi_pp_r%02d_rangemin_%d.png", rb.get_code_location().c_str(), cone_size, irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_pythia_dphi_pp_r%02d_rangemin_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
 
 
       
@@ -1277,22 +1342,22 @@ void drawDPHI(const std::string configfile = "binning.config")
       /* h_data_dphi_range_sys[irange]->Scale(1./ h_data_dphi_range_sys[irange]->Integral(), "width"); */
 
       h_data_dphi_range[0][irange]->SetMaximum(10);
-      dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
+      //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_range[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
       h_data_dphi_range[0][irange]->SetTitle(";#Delta#phi; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#Delta#phi}");
       h_data_dphi_range[0][irange]->Draw("p E1");
       h_truth_match_dphi_range[0][irange]->Draw("same hist C");
-      h_herwig_leading_dphi[irange]->Draw("same hist C");
+      //h_herwig_leading_dphi[irange]->Draw("same hist C");
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.84);
+      dlutility::DrawSPHENIXpp(0.22, 0.84);
 
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R = 0.4}}", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, 0.69);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.59);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
 
       TLegend *leg = new TLegend(0.22, 0.39, 0.4, 0.54);
@@ -1301,12 +1366,12 @@ void drawDPHI(const std::string configfile = "binning.config")
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_range[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_range[0][irange], "PYTHIA-8", "l");
-      leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
+      //leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
       leg->Draw("same");
-      c_money->Print(Form("h_final_dphi_range_%d.png", irange));
-      c_money->Print(Form("h_final_dphi_range_%d.pdf", irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_dphi_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_dphi_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
       h_data_dphi_range[0][irange]->SetMaximum(10);
-      dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
+      //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_range[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
 
@@ -1316,12 +1381,12 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.84);
+      dlutility::DrawSPHENIXpp(0.22, 0.84);
 
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R = 0.4}}", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, 0.69);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.59);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
 
       leg = new TLegend(0.22, 0.39, 0.4, 0.54);
@@ -1330,11 +1395,11 @@ void drawDPHI(const std::string configfile = "binning.config")
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_range[0][irange], "Data","lp");
       leg->Draw("same");
-      c_money->Print(Form("h_final_data_dphi_range_%d.png", irange));
-      c_money->Print(Form("h_final_data_dphi_range_%d.pdf", irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_dphi_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_dphi_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
 
       h_data_dphi_range[0][irange]->SetMaximum(10);
-      dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
+      //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_range[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
       h_data_dphi_range[0][irange]->SetTitle(";#Delta#phi; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#Delta#phi}");
@@ -1343,12 +1408,12 @@ void drawDPHI(const std::string configfile = "binning.config")
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
-      dlutility::DrawSPHENIXppPrelim(0.22, 0.84);
+      dlutility::DrawSPHENIXpp(0.22, 0.84);
 
-      dlutility::drawText("anti-#it{k}_{t} #kern[-0.1]{#it{R = 0.4}}", 0.22, 0.74);
-      dlutility::drawText(Form("%2.1f #kern[-0.07]{#leq #it{p}_{T,1} < %2.1f GeV} ", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, 0.69);
-      dlutility::drawText(Form("#it{p}_{T,2} #kern[-0.07]{#geq %2.1f GeV}", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-      dlutility::drawText("#Delta#phi #kern[-0.15]{#geq 3#pi/4}", 0.22, 0.59);
+      dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.74);
+      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, 0.69);
+      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
 
 
       leg = new TLegend(0.22, 0.39, 0.4, 0.54);
@@ -1358,8 +1423,8 @@ void drawDPHI(const std::string configfile = "binning.config")
       leg->AddEntry(h_data_dphi_range[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_range[0][irange], "PYTHIA-8", "l");
       leg->Draw("same");
-      c_money->Print(Form("h_final_data_pythia_dphi_range_%d.png", irange));
-      c_money->Print(Form("h_final_data_pythia_dphi_range_%d.pdf", irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_pythia_dphi_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
+      c_money->Print(Form("%s/dphi_plots/h_final_data_pythia_dphi_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
 
     }
 

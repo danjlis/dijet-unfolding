@@ -17,16 +17,13 @@
 namespace histo_opps
 {
 
-  TGraphAsymmErrors *get_xj_systematics(TH1D *h1, TH1D *hsn,TH1D *hsp, const int nbins)
+  void get_xj_systematics(TGraphAsymmErrors *h1, TH1D *hsn,TH1D *hsp, const int nbins)
   {
-    TGraphAsymmErrors *gg = new TGraphAsymmErrors();
     for (int i = 0; i < nbins; i++)
       {
-	gg->Set(i+1);
-	gg->SetPoint(i, h1->GetBinCenter(i+1), h1->GetBinContent(i+1));
-	gg->SetPointError(i, hsn->GetBinWidth(i+1)/2.,hsn->GetBinWidth(i+1)/2., hsn->GetBinContent(i+1)*h1->GetBinContent(i+1),hsp->GetBinContent(i+1)*h1->GetBinContent(i+1));
+	h1->SetPointError(i, hsn->GetBinWidth(i+1)/2.,hsn->GetBinWidth(i+1)/2., fabs(hsn->GetBinContent(i+1))*h1->GetPointY(i),fabs(hsp->GetBinContent(i+1))*h1->GetPointY(i));
       }
-    return gg;
+
   }
   TGraphAsymmErrors *get_xj_statistics(TH1D *h1, const int nbins)
   {
@@ -61,6 +58,30 @@ namespace histo_opps
       }
   }
 
+
+  void trim_tgraph(TGraphAsymmErrors *g, const int nbins, float first_xj)
+  {
+    for (int i = 0; i < nbins; i++)
+      {
+	if (g->GetPointX(nbins - 1 - i) < first_xj)
+	  {
+	    g->RemovePoint(nbins - 1 -i);
+	  }
+      }
+
+  }
+  void trim_tgraph(TGraph *g, const int nbins, float first_xj)
+  {
+    for (int i = 0; i < nbins; i++)
+      {
+	if (g->GetPointX(nbins - 1 - i) < first_xj)
+	  {
+	    g->RemovePoint(nbins - 1 -i);
+	  }
+      }
+
+  }
+  
   void finalize_xj(TH1D *h1, TH1D *h2, const int nbins, float first_xj)
   {
     for (int i = 0; i < nbins; i++)
@@ -160,15 +181,15 @@ namespace histo_opps
 	  }
       }
 
-    for (int ix = 0; ix < nbins; ix++)
+    for (int ix = 0; ix < nbins - 1; ix++)
       {
 	for (int iy = 0; iy <= ix; iy++)
 	  {
 	    int low =  iy - ix - 1;
-	    int high = iy - ix + 1;
+	    //int high = iy - ix + 1;
 
-	    int xjbin_low = nbins + low + 1;
-	    int xjbin_high = nbins + low + 2;
+	    int xjbin_low = nbins - 1 + low + 1;
+	    int xjbin_high = nbins - 1 + low + 2;
 
 	    
 	    int bin = h_asym_pt1pt2->GetBin(ix+1, iy+1);
@@ -177,6 +198,8 @@ namespace histo_opps
 	    if (iy < start_subleading_bin) continue;
 	    if (ix >= end_leading_bin) continue;
 	    if (iy >= end_subleading_bin) continue;
+
+	    std::cout << ix << " / " << iy << " : " << xjbin_low << " / " << xjbin_high << "( " << h_xj->GetBinCenter(xjbin_low) << " / " << h_xj->GetBinCenter(xjbin_high) << " ) " << std::endl;
 
 	    if (ix == iy)
 	      {
@@ -193,7 +216,7 @@ namespace histo_opps
 	  }
       }
 
-    for (int ix = 0; ix < nbins; ix++)
+    for (int ix = 0; ix < nbins - 1; ix++)
       {
 	h_xj->SetBinError(ix+1, sqrt(h_unc->GetBinContent(ix+1)));
       }

@@ -27,8 +27,15 @@ const int color_data = kAzure - 6;
 const float marker_data = 24;
 const float msize_data = 0.9;
 const float lsize_data = 1.1;
-void drawFullClosure(const int cone_size = 4)
+void drawFullClosure(const int cone_size = 4, const int primer = 0)
 {
+
+  std::string sys_string = "PuP";
+
+  if (primer)
+    {
+      sys_string = "PRIMER" + std::to_string(primer) + "_PuP";
+    }
   gStyle->SetCanvasPreferGL(0);
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
@@ -43,9 +50,10 @@ void drawFullClosure(const int cone_size = 4)
   Double_t dphicut = rb.get_dphicut();
 
   const int nbins = read_nbins;
+  const int nbins_pt = read_nbins + 1;
   int first_bin = 0;
-  float ipt_bins[nbins+1];
-  double  dxj_bins[nbins+1];
+  float ipt_bins[nbins_pt+1];
+  double  dxj_bins[nbins_pt+1];
 
   float ixj_bins[nbins+1];
 
@@ -59,6 +67,7 @@ void drawFullClosure(const int cone_size = 4)
 
     }
 
+  ipt_bins[nbins_pt] = 100;
 
   float truth_leading_cut = rb.get_truth_leading_cut();
   float truth_subleading_cut = rb.get_truth_subleading_cut();
@@ -102,7 +111,7 @@ void drawFullClosure(const int cone_size = 4)
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
   
 
-  TFile *fin = new TFile(Form("%s/response_matrices/response_matrix_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
+  TFile *fin = new TFile(Form("%s/response_matrices/response_matrix_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sys_string.c_str()),"r");
   if (!fin)
     {
       std::cout << " no file " << std::endl;
@@ -116,13 +125,13 @@ void drawFullClosure(const int cone_size = 4)
       h_flat_unfold_pt1pt2[iter] = (TH1D*) fin->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
     }
 
-  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
   TH2D *h_pt1pt2_unfold[niterations];
 
   for (int iter = 0; iter < niterations; iter++)
     {
-      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
       h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
     }
 
@@ -147,18 +156,18 @@ void drawFullClosure(const int cone_size = 4)
 	}
     }
   
-  histo_opps::make_sym_pt1pt2(h_flat_truth_pt1pt2, h_pt1pt2_truth, nbins);
-  histo_opps::make_sym_pt1pt2(h_flat_reco_pt1pt2, h_pt1pt2_reco, nbins);
+  histo_opps::make_sym_pt1pt2(h_flat_truth_pt1pt2, h_pt1pt2_truth, nbins_pt);
+  histo_opps::make_sym_pt1pt2(h_flat_reco_pt1pt2, h_pt1pt2_reco, nbins_pt);
   for (int iter = 0; iter < niterations; iter++)
     {
-      histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins);
+      histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins_pt);
     }
 
-  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
-  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
   for (int iter = 0; iter < niterations; iter++)
     {
-      histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+      histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
     }
   
   histo_opps::normalize_histo(h_xj_truth, nbins);
@@ -183,11 +192,11 @@ void drawFullClosure(const int cone_size = 4)
 
   for (int irange = 0; irange < mbins; irange++)
     {
-      histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
-      histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
       for (int iter = 0; iter < niterations; iter++)
 	{
-	  histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold_range[irange][iter], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	}
 
 
@@ -262,8 +271,8 @@ void drawFullClosure(const int cone_size = 4)
 	  dlutility::SetFont(h_data_compare, 42, 0.1, 0.07, 0.07, 0.07);
 	  dlutility::SetLineAtt(h_data_compare, kBlack, 1,1);
 	  dlutility::SetMarkerAtt(h_data_compare, kBlack, 1,8);
-	  h_data_compare->SetMaximum(2.3);
-	  h_data_compare->SetMinimum(0.0);
+	  h_data_compare->SetMaximum(1.1);
+	  h_data_compare->SetMinimum(0.9);
 	  TH1D *hd = (TH1D*) h_data_compare->Rebin(nbins - first_bin, "h_rebin_compare", &dxj_bins[first_bin]);
 
 	  hd->Draw("p");
@@ -273,8 +282,8 @@ void drawFullClosure(const int cone_size = 4)
 	  line->SetLineColor(kRed + 3);
 	  line->SetLineWidth(2);
 	  line->Draw("same");
-	  cxj->Print(Form("%s/unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter %d.png", rb.get_code_location().c_str(), cone_size, irange, niter));
-	  cxj->Print(Form("%s/unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter_%d.pdf", rb.get_code_location().c_str(), cone_size, irange, niter));
+	  cxj->Print(Form("%s/unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter_%d_%s.png", rb.get_code_location().c_str(), cone_size, irange, niter, sys_string.c_str()));
+	  cxj->Print(Form("%s/unfolding_plots/h_xj_full_closure_r%02d_range_%d_iter_%d_%s.pdf", rb.get_code_location().c_str(), cone_size, irange, niter, sys_string.c_str()));
 	}
     }
   return;
