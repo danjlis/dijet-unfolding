@@ -12,7 +12,7 @@ using std::endl;
 #include "histo_opps.h"
 
 #include "dijetfinder.h"
-
+#include "TNtuple.h"
 #include "TProfile.h"
 #include "TEfficiency.h"
 #include "TF1.h"
@@ -288,12 +288,12 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   if (unfold_generator && input_generator)
     {
       fresponsetest = new TFile(responsetestpath.Data(),"r");
-  
-      h_flat_data_truth_pt1pt2 = (TH1D*) fresponsetest->Get("h_flat_truth_to_unfold_pt1pt2"); 
+
+      h_flat_data_truth_pt1pt2 = (TH1D*) fresponsetest->Get("h_truth_flat_pt1pt2"); 
 
       if (!h_flat_data_truth_pt1pt2)
 	{
-	  std::cout << "no truth" << std::endl;
+	  std::cout << "no truth for data" << std::endl;
 	  return 1;
 	}
     }
@@ -381,7 +381,50 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
       boundary_r4[3] = 30;
       boundary_r4[4] = ipt_bins[nbins_pt];;     
     }
-  TEfficiency *he_dijet_fake_binned = nullptr;
+
+  TH1D *h_flat_truth_mapping_primer = nullptr;;
+
+  int nbins_pt_truth = nbins_pt*nbins_pt + 1;
+  std::map<int, int> mapped_pt_bin;
+
+  TString mappingppath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
+      
+  mappingppath += "_MAPPING";
+    
+  mappingppath += "_" + sys_name_orig;
+      
+  mappingppath += ".root";
+
+  TFile *fr = new TFile(mappingppath.Data(),"r");
+
+  TNtuple *tn_map = (TNtuple*) fr->Get("tn_mapping");
+
+  float ptbin;
+  float mapbin;
+  float use;
+
+  tn_map->SetBranchAddress("ptbin", &ptbin);
+  tn_map->SetBranchAddress("mapbin", &mapbin);
+  tn_map->SetBranchAddress("use", &use);
+  nbins_pt_truth = 0;
+  for (int i = 0; i < tn_map->GetEntries(); i++)
+    {
+      tn_map->GetEntry(i);
+      if (use == 1)
+	{
+	  nbins_pt_truth++;
+	  mapped_pt_bin[ptbin] = mapbin;
+	}
+      else
+	{
+	  mapped_pt_bin[ptbin] = -1;
+	}
+    }
+  h_flat_truth_mapping_primer = (TH1D*)fr->Get("h_flat_truth_mapping_all_samples");      
+
+  int nbins_pt_2 = nbins_pt*nbins_pt;
+  int nbins_pt_truth_2 = nbins_pt_truth;
+  int nbins_pt_truth_2_fake = nbins_pt_truth + 1;
 
   TH1D *h_flat_truth_pt1pt2_primer1 = nullptr;
 
@@ -394,7 +437,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  return 1;
 	}
       
-      h_flat_truth_pt1pt2_primer1 = (TH1D*) fresponse1->Get("h_flat_truth_to_unfold_pt1pt2"); 
+      h_flat_truth_pt1pt2_primer1 = (TH1D*) fresponse1->Get("h_truth_flat_pt1pt2"); 
 
       h_flat_truth_pt1pt2_primer1->SetName("h_truth_flat_pt1pt2_primer1");
 
@@ -404,6 +447,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  return 1;
 	}
     }
+
   TString responsepath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
 
   responsepath += "_" + sys_name;
@@ -413,104 +457,23 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   
   TFile *fresponse = new TFile(responsepath.Data(),"r");
   
-  RooUnfoldResponse *rooResponse = (RooUnfoldResponse*) fresponse->Get("response_noempty");
+  RooUnfoldResponse *rooResponse = (RooUnfoldResponse*) fresponse->Get("response");
+
   if (!rooResponse)
     {
       std::cout << "no repsonse" << std::endl;
       return 1;
     }
 
-  he_dijet_fake_binned = (TEfficiency*) fresponse->Get("he_dijet_fake_binned");
-  if (!he_dijet_fake_binned)
-    {
-      std::cout << "No hist for mbd efficiency" << std::endl;
-      return 1;
-    }
-
-  TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_flat_truth_to_unfold_pt1pt2");//h_truth_flat_pt1pt2"); 
+  TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2");//h_truth_flat_pt1pt2"); 
   if (!h_flat_truth_pt1pt2)
     {
       std::cout << "no truth" << std::endl;
       return 1;
     }
+
   TH1D *h_flat_reco_pt1pt2 = (TH1D*) fresponse->Get("h_reco_flat_pt1pt2"); 
   if (!h_flat_reco_pt1pt2)
-    {
-      std::cout << "no reco" << std::endl;
-      return 1;
-    }
-
-  TH2D *h_pt1pt2_reco_before = (TH2D*) fresponse->Get("h_pt1pt2_reco_before"); 
-  if (!h_pt1pt2_reco_before)
-    {
-      std::cout << "no reco" << std::endl;
-      return 1;
-    }
-
-  TH1D *h_flat_truth_mapping = (TH1D*) fresponse->Get("h_flat_truth_mapping"); 
-  if (!h_flat_truth_mapping)
-    {
-      std::cout << "no truth" << std::endl;
-      return 1;
-    }
-  TH1D *h_flat_reco_mapping = (TH1D*) fresponse->Get("h_flat_reco_mapping"); 
-  if (!h_flat_reco_mapping)
-    {
-      std::cout << "no reco" << std::endl;
-      return 1;
-    }
-
-  TH2D *h_count_flat_response_pt1pt2_sample_primer[5];
-  TH1D *h_count_flat_reco_pt1pt2_sample_primer[5];
-  TH1D *h_count_flat_truth_pt1pt2_sample_primer[5];
-
-    if (primer != 1)
-    {
-      TString responseppath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
-
-      responseppath += "_PRIMER1_" + sys_name_orig;
-      
-      responseppath += ".root";
-  
-      TFile *fresponse = new TFile(responseppath.Data(),"r");
-
-      for (int i = 0; i < 5; i++)
-	{
-	  h_count_flat_truth_pt1pt2_sample_primer[i] = (TH1D*) fresponse->Get(Form("h_truth_count_flat_pt1pt2_%d", i)); 
-	  if (!h_count_flat_truth_pt1pt2_sample_primer[i])
-	    {
-	      std::cout << "no truth" << std::endl;
-	      return 1;
-	    }
-	  h_count_flat_truth_pt1pt2_sample_primer[i]->SetName(Form("h_count_flat_truth_pt1pt2_sample_primer_%d", i));
-	  
-	  h_count_flat_reco_pt1pt2_sample_primer[i] = (TH1D*) fresponse->Get(Form("h_count_reco_flat_pt1pt2_%d", i)); 
-	  if (!h_count_flat_reco_pt1pt2_sample_primer[i])
-	    {
-	      std::cout << "no reco" << std::endl;
-	      return 1;
-	    }
-	  h_count_flat_reco_pt1pt2_sample_primer[i]->SetName(Form("h_count_flat_reco_pt1pt2_sample_primer_%d", i));
-	  
-	  h_count_flat_response_pt1pt2_sample_primer[i] = (TH2D*) fresponse->Get(Form("h_count_flat_response_pt1pt2_%d", i)); 
-	  if (!h_count_flat_response_pt1pt2_sample_primer[i])
-	    {
-	      std::cout << "no response" << std::endl;
-	      return 1;
-	    }
-	  h_count_flat_response_pt1pt2_sample_primer[i]->SetName(Form("h_count_flat_response_pt1pt2_sample_primer_%d", i));
-	}
-
-    }
-
-  TH1D *h_flat_truth_skim = (TH1D*) fresponse->Get("h_flat_truth_skim"); 
-  if (!h_flat_truth_skim)
-    {
-      std::cout << "no truth" << std::endl;
-      return 1;
-    }
-  TH1D *h_flat_reco_skim = (TH1D*) fresponse->Get("h_flat_reco_skim"); 
-  if (!h_flat_reco_skim)
     {
       std::cout << "no reco" << std::endl;
       return 1;
@@ -565,7 +528,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  if (!has_vertex || !has_mbd_hit)
 	    continue;
 
-	  bool truth_good = false;
+
 	  //      if ( !( ((gl1_scaled >> 22) & 0x1 ) == 0x1 ||
 	  bool triggered = true;
 	  if (unfold_generator)
@@ -586,33 +549,12 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	      triggered = ((gl1_scaled[isample] >> 22) & 0x1) == 0x1;
 
 	      h_truth_lead->Fill(maxpttruth, scale_factor[isample]);
-	      int ntruthjets = truth_jet_pt[isample]->size();
-	      for (int j = 0; j < ntruthjets;j++)
-		{
-		  if (truth_jet_pt[isample]->at(j) < truth_subleading_cut) continue;
-		  //if (fabs(truth_jet_eta[isample]->at(j)) > 0.7) continue;
-
-		  struct jet tempjet;
-		  tempjet.istruth = 1;
-		  tempjet.pt = truth_jet_pt[isample]->at(j);
-		  tempjet.eta = truth_jet_eta[isample]->at(j);
-		  tempjet.phi = truth_jet_phi[isample]->at(j);
-		  tempjet.id = j;
-
-		  mytruthjets.push_back(tempjet);	  	  
-
-		}
-	      if (mytruthjets.size() > 1)
-		{
-		  std::sort(mytruthjets.begin(), mytruthjets.end(), [] (auto a, auto b) { return a.pt > b.pt; });
-
-		  truth_good = djf.check_dijet_truth(mytruthjets);
-		}
+	    
 	    }
 	  else
 	    {
 	      triggered = (((gl1_scaled[isample] >> 18) & 0x1)  == 0x1 || ((gl1_scaled[isample] >> 34) & 0x1)  == 0x1 );
-	      if (mbd_avgsigma[isample] >= 0.4) continue;
+	      //if (mbd_avgsigma[isample] >= 0.4) continue;
 	    }
       
 
@@ -633,7 +575,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	      if (unfold_generator)
 		{
 		  int ib = floor((temppt - 3)/0.1) + 1;
-		  float smear1 = 0.0;//hjersmear->GetBinContent(ib);
+		  float smear1 = hjersmear->GetBinContent(ib);
 		  float jersmear = 0;
 		  if (smear1 > 0)
 		    {
@@ -678,8 +620,6 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
 	  float pt1_reco_bin = nbins_pt;
 	  float pt2_reco_bin = nbins_pt;
-	  float pt1_truth_bin = nbins_pt;
-	  float pt2_truth_bin = nbins_pt;
 
 	  float maxi = myrecojets.at(0).pt;
 	  float mini = myrecojets.at(1).pt;
@@ -698,48 +638,10 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 		  pt2_reco_bin = ib;
 		}
 	    }
-	  if (unfold_generator && truth_good)
-	    {
-	      float maxit = mytruthjets.at(0).pt;
-	      float minit = mytruthjets.at(1).pt;
-	      float e1 = maxit;
-	      float e2 = minit;
-	      //if () continue;
 
-	      for (int ib = 0; ib < nbins_pt; ib++)
-		{
-		  if ( e1 < ipt_bins[ib+1] && e1 >= ipt_bins[ib])
-		    {
-		      pt1_truth_bin = ib;
-		    }
-		  if ( e2 < ipt_bins[ib+1] && e2 >= ipt_bins[ib])
-		    {
-		      pt2_truth_bin = ib;
-		    }
-		}
 
-	    }
 	  if (pt1_reco_bin == nbins_pt) continue;
 	  if (pt2_reco_bin == nbins_pt) continue;
-	  if (unfold_generator && primer != 1)
-	    {
-
-	      if (truth_good)
-		{
-		  int binn = h_count_flat_response_pt1pt2_sample_primer[isample]->GetBin(1 + pt1_reco_bin*nbins_pt + pt2_reco_bin, 1 + pt1_truth_bin*nbins_pt + pt2_truth_bin);
-		  if (h_count_flat_response_pt1pt2_sample_primer[isample]->GetBinContent(binn) < 5) continue;
-		}
-	      
-
-	      if (reco_good)
-		{
-		  if (h_count_flat_reco_pt1pt2_sample_primer[isample]->GetBinContent(1 + pt1_reco_bin*nbins_pt + pt2_reco_bin) < 5) continue;
-		}
-	    }
-	  if (!h_flat_reco_mapping->GetBinContent(1 + pt1_reco_bin*nbins_pt + pt2_reco_bin))
-	    {
-	      continue;
-	    }
 
 	  h_pt1pt2->Fill(es1, es2, scale_factor[isample]);
 	  h_pt1pt2->Fill(es2, es1, scale_factor[isample]);
@@ -757,55 +659,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	}
     }
 
-  TH2D *h_pt1pt2_data_before = new TH2D("h_pt1pt2_data_before", ";p_{T1};p_{T2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
-
-  histo_opps::make_sym_pt1pt2(h_flat_data_pt1pt2, h_pt1pt2_data_before, nbins_pt);
-  //  he_dijet_fake_binnedh_flat_data_pt1pt2->Add(h_flat_data_pt1pt2_ZYAM, -1);
-  if (!he_dijet_fake_binned)
-    {
-      std::cout << "nothing" << std::endl;
-    }
-
-  TH2D *h_fake_v_entries = new TH2D("h_fake_v_entries",";Fake Rate; entries", 20, 0, 1, 24000, 0, 24000);
-  for (int ib = 0; ib < nbins_pt; ib++)
-    {
-      for (int ib2 = 0; ib2 < nbins_pt; ib2++)
-	{
-	  int ibb = 1 + ib*nbins_pt + ib2;
-	  double value = he_dijet_fake_binned->GetEfficiency(ibb);
-	  h_fake_v_entries->Fill(value, h_flat_data_pt1pt2->GetBinContent(ibb));
-	  //h_flat_data_pt1pt2->SetBinContent(ibb, h_flat_data_pt1pt2->GetBinContent(ibb)*value);
-
-	}
-    }
-  TH2D *h_pt1pt2_data_after = new TH2D("h_pt1pt2_data_after", ";p_{T1};p_{T2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
-
-  histo_opps::make_sym_pt1pt2(h_flat_data_pt1pt2, h_pt1pt2_data_after, nbins_pt);
-
-  TCanvas *cfake = new TCanvas("cfake","cfake", 1000, 400);
-  cfake->Divide(3,1);
-  cfake->cd(1);
-  gPad->SetLogz();
-  h_pt1pt2_data_before->Draw("colz");
-  dlutility::drawText("Before fake eff.", 0.2, 0.8);
-  cfake->cd(2);
-  gPad->SetLogz();
-  he_dijet_fake_binned->Draw("colz");
-  dlutility::drawText("THE fake eff.", 0.2, 0.8);
-  cfake->cd(3);
-  gPad->SetLogz();
-  h_pt1pt2_data_after->Draw("colz");
-  dlutility::drawText("After fake eff.", 0.2, 0.8);
-cfake->Print(Form("%s/unfolding_plots/pt1pt2fake_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()));
-
-  
   h_flat_data_pt1pt2->Scale(.5);
-
-  TH1D *h_flat_data_skim = (TH1D*) h_flat_reco_skim->Clone();
-  h_flat_data_skim->SetName("h_flat_data_skim");
-  h_flat_data_skim->Reset();
-
-  histo_opps::skim_down_histo(h_flat_data_skim, h_flat_data_pt1pt2, h_flat_reco_mapping); 
   
   TH1D* h_flat_unfold_skim[niterations];
   TH1D* h_flat_unfold_pt1pt2[niterations];
@@ -813,14 +667,23 @@ cfake->Print(Form("%s/unfolding_plots/pt1pt2fake_%s_r%02d_%s.pdf", rb.get_code_l
   for (int iter = 0; iter < niterations; iter++ )
     {
      
-      RooUnfoldBayes   unfold (rooResponse, h_flat_data_skim, iter + 1);    // OR
+      RooUnfoldBayes   unfold (rooResponse, h_flat_data_pt1pt2, iter + 1);    // OR
       h_flat_unfold_skim[iter] = (TH1D*) unfold.Hunfold();
       std::cout <<" Nbins skim reco = "<<h_flat_unfold_skim[iter]->GetNbinsX()<<std::endl;
       h_flat_unfold_pt1pt2[iter] = (TH1D*) h_flat_truth_pt1pt2->Clone();
       std::cout << __LINE__ << std::endl;
       h_flat_unfold_pt1pt2[iter]->Reset();
       h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_pt1pt2_%d",iter));
-      histo_opps::fill_up_histo(h_flat_unfold_skim[iter], h_flat_unfold_pt1pt2[iter], h_flat_truth_mapping);
+      for (int ib = 0; ib < nbins_pt_2; ib++)
+	{
+	  int bin = mapped_pt_bin[ib];
+	  if (bin >= 0)
+	    {
+	      h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(bin));
+	      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin));
+	    }
+	}
+
     }
     
   
@@ -1442,9 +1305,7 @@ cfake->Print(Form("%s/unfolding_plots/pt1pt2fake_%s_r%02d_%s.pdf", rb.get_code_l
   unfoldpath += ".root";
   
   TFile *fout = new TFile(unfoldpath.Data(),"recreate");
-  h_fake_v_entries->Write();
   h_eta_lead_sublead->Write();
-  h_flat_data_skim->Write();
   h_flat_data_pt1pt2->Write();
   h_data_lead->Write();
   h_data_sublead->Write();
@@ -1454,8 +1315,6 @@ cfake->Print(Form("%s/unfolding_plots/pt1pt2fake_%s_r%02d_%s.pdf", rb.get_code_l
   h_flat_truth_pt1pt2->Write();
   h_mbd_vertex->Write();
   h_njets->Write();
-  h_pt1pt2_data_before->Write();
-  h_pt1pt2_reco_before->Write();
   
   for (int iter = 0; iter < niterations; ++iter)
     {
