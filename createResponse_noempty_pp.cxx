@@ -1025,6 +1025,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      
 	      he_dijet_miss_binned->Fill(1, e1, e2, event_scale);
 	      he_dijet_miss_binned->Fill(1, e2, e1, event_scale);
+
 	    }
 
 	  if (reco_good && truth_good && !matched)
@@ -1035,6 +1036,19 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      h_match_fakes->Fill(es2, es1);
 
 	      fill_fake_miss = 2;	      
+
+
+	      // std::cout << "----- RECO JETS -----" << std::endl;
+	      // for (auto rjet : myrecojets2)
+	      // 	{
+	      // 	  rjet.print();
+	      // 	}
+	      // std::cout << "----- TRUTH JETS -----" << std::endl;
+	      // for (auto tjet : mytruthjets2)
+	      // 	{
+	      // 	  tjet.print();
+	      // 	}
+	    	      
 	      he_dijet_fake_binned->Fill(0, pt1_reco_bin + nbins_pt*pt2_reco_bin, fake_event_scale);
 	      he_dijet_fake_binned->Fill(0, pt2_reco_bin + nbins_pt*pt1_reco_bin, fake_event_scale);
 	      he_dijet_miss_binned->Fill(0, e1, e2, event_scale);
@@ -1889,6 +1903,9 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  cjetdiv->Print(Form("%s/unfolding_plots/combined_sample_%s_r%02d_%s%s.pdf", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, (primer?Form("PRIMER%d", primer):""), sys_name.c_str()));
 
 
+	  TH2D *h_dr = (TH2D*) (djf.get_dR_histo())->Clone();
+	  h_dr->SetName("h_dr");
+	  
 	  TString responsepath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
 	  
 	  if (primer > 0)
@@ -1902,6 +1919,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  TFile *fr = new TFile(responsepath.Data(),"recreate");
 	  rooResponsehist.Write();
 	  rooResponse.Write();
+	  h_dr->Write();
 	  h_reco_fakes->Write();
 	  h_match_fakes->Write();
 	  h_no_truth_fakes->Write();

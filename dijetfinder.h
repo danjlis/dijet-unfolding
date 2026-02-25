@@ -9,7 +9,7 @@ using std::endl;
 
 #include <vector>
 #include "TMath.h"
-
+#include "TH2D.h"
 
 struct jet
 {
@@ -38,13 +38,15 @@ class dijetfinder
  public:
   dijetfinder(int cone_size)
     {
+      h_dR_pt = new TH2D("h_dR_pt",";pt;dR", 100, 0, 100, 100, 0, 1);
       m_cone_size = cone_size;
       m_eta_cut = 1.1 - ( ((float) cone_size ) * 0.1 );
-      m_dR_cut = 0.75 * ( ((float) cone_size ) * 0.1 );
+      m_dR_cut = 1;//0.75 * ( ((float) cone_size ) * 0.1 );
     }
   
   ~dijetfinder(){}
 
+  TH2D *get_dR_histo() { return h_dR_pt;}
   void SetVerbosity( int v ) { m_verbosity = v; }
   
   float getDPHI(float phi1, float phi2);
@@ -65,6 +67,8 @@ class dijetfinder
   }
   
  private:
+  TH2D *h_dR_pt = nullptr;
+
   int m_verbosity = 0;
   float m_eta_cut = 0.7;
   int m_cone_size = 4;
