@@ -372,6 +372,11 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
     }
 
+  TH2D *h_reco_fakes = new TH2D("h_reco_fakes","", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+
+  TH2D *h_no_truth_fakes = new TH2D("h_no_truth_fakes","", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_match_fakes = new TH2D("h_match_fakes","", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  
   TEfficiency *he_dijet_fake_binned = new TEfficiency("he_dijet_fake_binned",";Leading #it{p}^{Truth}_{T} [GeV]; Fake Rate", nbins_pt*nbins_pt, 0, nbins_pt*nbins_pt);
   TEfficiency *he_dijet_miss_binned = new TEfficiency("he_dijet_miss_binned",";Leading #it{p}^{Truth}_{T} [GeV]; Miss Rate", nbins_pt, dpt_bins, nbins_pt, dpt_bins);
   TEfficiency *he_dijet_mbd_hit_binned = new TEfficiency("he_dijet_mbd_hit_binned",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", nbins_pt, 0, nbins_pt);
@@ -691,7 +696,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	    {
 
 	      if (truth_jet_pt[isample]->at(j) < truth_subleading_cut) continue;
-	      //if (fabs(truth_jet_eta[isample]->at(j)) > 0.7) continue;
+	      if (fabs(truth_jet_eta[isample]->at(j)) > 0.7) continue;
 
 	      struct jet tempjet;
 	      tempjet.istruth = 1;
@@ -770,7 +775,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 	  if (myrecojets.size() > 1)
 	    {
-	      myrecojets2 = {myrecojets.begin(), myrecojets.begin()+2};
+	      int sizet = myrecojets.size();
+	      myrecojets2 = {myrecojets.begin(), myrecojets.begin() + sizet};
 	      if (verbosity > 5)
 		{
 		  std::cout << "RECO GOOD" << std::endl;
@@ -1014,17 +1020,23 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  if (reco_good && truth_good && matched)
 	    {
 	      fill_fake_miss = 0;
-
+	      he_dijet_fake_binned->Fill(1, pt1_reco_bin + nbins_pt*pt2_reco_bin, fake_event_scale);
+	      he_dijet_fake_binned->Fill(1, pt2_reco_bin + nbins_pt*pt1_reco_bin, fake_event_scale);
+	      
 	      he_dijet_miss_binned->Fill(1, e1, e2, event_scale);
 	      he_dijet_miss_binned->Fill(1, e2, e1, event_scale);
 	    }
 
 	  if (reco_good && truth_good && !matched)
 	    {
+	      h_reco_fakes->Fill(es1, es2);
+	      h_reco_fakes->Fill(es2, es1);
+	      h_match_fakes->Fill(es1, es2);
+	      h_match_fakes->Fill(es2, es1);
 
 	      fill_fake_miss = 2;	      
-	      // he_dijet_fake_binned->Fill(0, pt1_reco_bin + nbins_pt*pt2_reco_bin, fake_event_scale);
-	      // he_dijet_fake_binned->Fill(0, pt2_reco_bin + nbins_pt*pt1_reco_bin, fake_event_scale);
+	      he_dijet_fake_binned->Fill(0, pt1_reco_bin + nbins_pt*pt2_reco_bin, fake_event_scale);
+	      he_dijet_fake_binned->Fill(0, pt2_reco_bin + nbins_pt*pt1_reco_bin, fake_event_scale);
 	      he_dijet_miss_binned->Fill(0, e1, e2, event_scale);
 	      he_dijet_miss_binned->Fill(0, e2, e1, event_scale);
 
@@ -1032,7 +1044,12 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  if (reco_good && !truth_good)
 	    {
 	      fill_fake_miss = 3;
-
+	      h_reco_fakes->Fill(es1, es2);
+	      h_reco_fakes->Fill(es2, es1);
+	      h_no_truth_fakes->Fill(es1, es2);
+	      h_no_truth_fakes->Fill(es2, es1);
+	      he_dijet_fake_binned->Fill(0, pt1_reco_bin + nbins_pt*pt2_reco_bin, fake_event_scale);
+	      he_dijet_fake_binned->Fill(0, pt2_reco_bin + nbins_pt*pt1_reco_bin, fake_event_scale);
 	    }
 	  if (truth_good && !reco_good)
 	    {
@@ -1356,9 +1373,6 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TH1D *h_dijet_fake_rate = (TH1D*) h_flat_reco_to_response_pt1pt2->Clone();
   h_dijet_fake_rate->SetName("h_dijet_fake_rate");
   h_dijet_fake_rate->Divide(h_flat_reco_all_pt1pt2);
-
-  he_dijet_fake_binned = new TEfficiency(*h_flat_reco_to_response_pt1pt2, *h_flat_reco_all_pt1pt2);
-  he_dijet_fake_binned->SetName("he_dijet_fake_binned");
 
 
   TH2D *h_fake_v_entries = new TH2D("h_fake_v_entries",";Fake Rate; entries", 20, 0, 1, 24000, 0, 24000);
@@ -1888,6 +1902,10 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  TFile *fr = new TFile(responsepath.Data(),"recreate");
 	  rooResponsehist.Write();
 	  rooResponse.Write();
+	  h_reco_fakes->Write();
+	  h_match_fakes->Write();
+	  h_no_truth_fakes->Write();
+
 	  h_count_flat_truth_pt1pt2->Write();
 	  h_count_flat_reco_pt1pt2->Write();
 

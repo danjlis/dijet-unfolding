@@ -19,21 +19,22 @@ float dijetfinder::getDR(struct jet j1, struct jet j2)
   double dphi = getDPHI(j1.phi,j2.phi);
 
   double dR = sqrt(TMath::Power(j1.eta - j2.eta, 2) + TMath::Power(dphi, 2));
-  return dR;
+  return dR;//phi;
 }
 
 std::vector<std::pair<struct jet, struct jet>>  dijetfinder::match_dijets(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets)
 {
   std::vector<std::pair<struct jet, struct jet>> matched_dijets = {};
-  for (auto jet : myrecojets)
+  for (auto tjet : mytruthjets)
     {
-      for (auto tjet : mytruthjets)
+      for (auto jet : myrecojets)
 	{
 	  //if (std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == jet.id;}) != matched_dijets.end()) continue;
-	  float dR = fabs(getDPHI(jet.phi, tjet.phi));
+	  float dR = fabs(getDR(jet, tjet));//DPHI(jet.phi, tjet.phi));
 	      
 	  if (dR < m_dR_cut)
 	    {
+	      
 	      if (std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == tjet.id;}) != matched_dijets.end()) continue;
 
 
