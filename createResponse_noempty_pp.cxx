@@ -724,7 +724,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      float temppt = reco_jet_pt[isample]->at(j);
 	      float tempptreco = temppt;
 	      int ib = floor((temppt - 3)/0.1) + 1;
-	      float smear1 = 0.0;//hjersmear->GetBinContent(ib );
+	      float smear1 = hjersmear->GetBinContent(ib );
 	      float jersmear = 0;
 	      if (smear1 > 0)
 		{
