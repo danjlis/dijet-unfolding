@@ -553,7 +553,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  int pt2_bin = ibin%nbins_pt;
 	  int max_bin = std::max(pt1_bin, pt2_bin);
 	  int min_bin = std::min(pt1_bin, pt2_bin);
-	  if (true)//	  if (max_bin >= measure_bins[0] && max_bin < measure_bins[3] && min_bin >= measure_subleading_bin)
+	  if (max_bin >= measure_bins[0] && max_bin < measure_bins[3] && min_bin >= measure_subleading_bin)
 	    {
 	      integral_of_signal += h_unfold_flat->GetBinContent(ibin+1);
 	      integral_of_truth += h_truth_flat->GetBinContent(ibin+1);
