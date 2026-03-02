@@ -691,7 +691,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	    {
 
 	      if (truth_jet_pt[isample]->at(j) < truth_subleading_cut) continue;
-	      if (fabs(truth_jet_eta[isample]->at(j)) > 0.7) continue;
+	      //if (fabs(truth_jet_eta[isample]->at(j)) > 0.7) continue;
 
 	      struct jet tempjet;
 	      tempjet.istruth = 1;
@@ -719,7 +719,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      float temppt = reco_jet_pt[isample]->at(j);
 	      float tempptreco = temppt;
 	      int ib = floor((temppt - 3)/0.1) + 1;
-	      float smear1 = //hjersmear->GetBinContent(ib );
+	      float smear1 = 0.08;//hjersmear->GetBinContent(ib );
 	      float jersmear = 0;
 	      if (smear1 > 0)
 		{
@@ -1448,11 +1448,12 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	    }
 	  if (use_reco)
 	    {
-	      ur = 0;
-	      br = 0;
-	      nempty_reco++;
-	      binnumbers_reco.push_back(0);
-	      h_flat_reco_mapping_all_samples->SetBinContent(ib+1, 0);
+	      ur = 1;
+	      br = nrecobins;
+	      nrecobins++;
+	      //nempty_reco++;
+	      binnumbers_reco.push_back(nrecobins);
+	      h_flat_reco_mapping_all_samples->SetBinContent(ib+1, nrecobins);
 	    }
 	  else
 	    {
@@ -1494,8 +1495,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       int bin = mapped_pt_bin_truth[ib];
       if (bin >= 0)
 	{
-	  h_flat_truth_pt1pt2->SetBinContent(ib+1, h_flat_truth_pt1pt2_raw->GetBinContent(bin));
-	  h_flat_truth_pt1pt2->SetBinError(ib+1, h_flat_truth_pt1pt2_raw->GetBinError(bin));
+	  h_flat_truth_pt1pt2->SetBinContent(ib+1, h_flat_truth_pt1pt2_raw->GetBinContent(bin+1));
+	  h_flat_truth_pt1pt2->SetBinError(ib+1, h_flat_truth_pt1pt2_raw->GetBinError(bin+1));
 	}
     }
   for (int ib = 0; ib < nbins_pt_2; ib++)
@@ -1503,8 +1504,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       int bin = mapped_pt_bin_reco[ib];
       if (bin >= 0)
 	{
-	  h_flat_reco_pt1pt2->SetBinContent(ib+1, h_flat_reco_pt1pt2_raw->GetBinContent(bin));
-	  h_flat_reco_pt1pt2->SetBinError(ib+1, h_flat_reco_pt1pt2_raw->GetBinError(bin));
+	  h_flat_reco_pt1pt2->SetBinContent(ib+1, h_flat_reco_pt1pt2_raw->GetBinContent(bin+1));
+	  h_flat_reco_pt1pt2->SetBinError(ib+1, h_flat_reco_pt1pt2_raw->GetBinError(bin+1));
 	}
     }
   
@@ -1534,8 +1535,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  int bin = mapped_pt_bin_truth[ib];
 	  if (bin >= 0)
 	    {
-	      h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(bin));
-	      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin));
+	      h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(bin+1));
+	      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin+1));
 	    }
 	}
 
@@ -1604,7 +1605,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       
   gStyle->SetPaintTextFormat("4.0f");
 
-  TCanvas *cpt1pt2 = new TCanvas("cpt1pt2","cpt1pt2", 1000, 300);
+  TCanvas *cpt1pt2 = new TCanvas("cpt1pt2","cpt1pt2", 1000, 250);
   cpt1pt2->Divide(4, 1);
   cpt1pt2->cd(1);
   gPad->SetLogz();
