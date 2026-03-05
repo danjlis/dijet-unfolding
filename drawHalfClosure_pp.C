@@ -31,10 +31,10 @@ const float lsize_data = 1.1;
 void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
 {
 
-  std::string sys_string = "HALF_PuP";
+  std::string sys_string = "HALF_nominal";
   if (primer)
     {
-      sys_string = "PRIMER" + std::to_string(primer) + "_HALF_PuP";
+      sys_string = "PRIMER" + std::to_string(primer) + "_HALF_nominal";
     }
 
   gStyle->SetCanvasPreferGL(0);

@@ -199,8 +199,6 @@ namespace histo_opps
 	    if (ix >= end_leading_bin) continue;
 	    if (iy >= end_subleading_bin) continue;
 
-	    std::cout << ix << " / " << iy << " : " << xjbin_low << " / " << xjbin_high << "( " << h_xj->GetBinCenter(xjbin_low) << " / " << h_xj->GetBinCenter(xjbin_high) << " ) " << std::endl;
-
 	    if (ix == iy)
 	      {
 		h_xj->Fill(h_xj->GetBinCenter(xjbin_low), h_asym_pt1pt2->GetBinContent(bin));

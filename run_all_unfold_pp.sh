@@ -13,73 +13,58 @@ interaction () {
     fi
 }
 
-echo "First PRIMER"
 
-echo " FULL" 
+./createResponse_noempty_pp -r ${conesize} -c "binning.config" -n 10 -p 1 -h 0 -f ${fakes} -e 0 -v 2 -m 1
+
 ./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 1 -h 0 -f ${fakes} -e 0
 
 interaction $interactive
 
-echo " DATA"
 ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 1 
+
 interaction $interactive
 
-
-echo " DRAW FULL"
 root -l -q -b "drawFullClosure.C(${conesize}, 1)"
 
 interaction $interactive
 
-echo " DRAW VTX"
 root -l -q -b "getVtxReweighting.C(${conesize}, \"binning.config\")"
 
 interaction $interactive
 
-echo "PRIMER 2"
-
-echo " FULL"
 ./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 2 -h 0 -f ${fakes} -e 0
 
 interaction $interactive
 
-echo " DATA"
 ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 2
 
 interaction $interactive
 
-
-echo " UNCERTAINTIES" 
 ./unfoldDataUncertainties_noempty_pp -c binning.config -r ${conesize} -n 10 -p 2
 
 interaction $interactive
 
-echo " DRAW FULL"
 root -l -q -b "drawFullClosure.C(${conesize}, 2)"
 
 interaction $interactive
 
-echo " DRAW ITERATION"
 root -l -q -b "makeIterationPlot_pp.C(${conesize}, 2)"
+
 interaction $interactive
 
-echo "NOMINAL "
-echo " FULL"
 ./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 0 -f ${fakes} -e 0
+./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 1 -f ${fakes} -e 0
 
 interaction $interactive
 
-echo " DATA"
 ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0
 
 interaction $interactive
-
-echo " UNCERTAINTIES"
 
 ./unfoldDataUncertainties_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 
 
 interaction $interactive
 
-echo " FULL"
 root -l -q -b "drawFullClosure.C(${conesize}, 0)"
 
 interaction $interactive

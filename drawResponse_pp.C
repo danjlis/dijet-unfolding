@@ -96,7 +96,7 @@ void drawResponse_pp(const int cone_size = 4, const int primer = 0, const std::s
 
   TFile *fr = new TFile(responsepath.Data(),"r");
 
-  TH2D *h_flat_response_skim = (TH2D*) fr->Get("h_flat_response_skim");
+  TH2D *h_flat_response_skim = (TH2D*) fr->Get("h_flat_response_pt1pt2");
 
   TH1D *h_xj_reco = (TH1D*) fr->Get("h_xj_reco");
   TH1D *h_xj_truth = (TH1D*) fr->Get("h_xj_truth");

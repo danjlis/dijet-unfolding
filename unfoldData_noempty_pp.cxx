@@ -24,7 +24,7 @@ static int verbosity = 0;
 
 int unfoldData_noempty_pp(const std::string configfile = "binning.config", const int niterations = 10, const int cone_size = 4, const int primer = 0, const int unfold_generator = 0, const int input_generator = 0, const int full_or_half = 0)
 {
-
+  gStyle->SetPalette(kRainBow);
   gRandom->SetSeed(0);
   if (unfold_generator > 2) return 1;
 
@@ -348,6 +348,9 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   float reco_leading_cut = rb.get_reco_leading_cut();
   float reco_subleading_cut = rb.get_reco_subleading_cut();
 
+  float reco_leading_bin = rb.get_reco_leading_bin();
+  float reco_subleading_bin = rb.get_reco_subleading_bin();
+
   float measure_leading_cut = rb.get_measure_leading_cut();
   float measure_subleading_cut = rb.get_measure_subleading_cut();
   
@@ -463,7 +466,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  std::cout << "No file for mbd efficiency" << std::endl;
 	  return 1;
 	}
-      
+
+      std::cout << Form("response_matrices/response_matrix_%s_r%02d_PRIMER1_%s.root", system_string.c_str(), cone_size, sys_name_orig.c_str()) << std::endl;
       h_flat_truth_pt1pt2_primer1 = (TH1D*) fresponse1->Get("h_truth_flat_pt1pt2"); 
 
       h_flat_truth_pt1pt2_primer1->SetName("h_truth_flat_pt1pt2_primer1");
@@ -720,7 +724,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   for (int iter = 0; iter < niterations; iter++ )
     {
      
-      RooUnfoldBayes   unfold (rooResponse, h_flat_data_pt1pt2, iter + 1);    // OR
+      RooUnfoldBayes   unfold (rooResponse, h_flat_data_pt1pt2, iter + 1, false, true);    // OR
       h_flat_unfold_skim[iter] = (TH1D*) unfold.Hunfold();
       std::cout <<" Nbins skim reco = "<<h_flat_unfold_skim[iter]->GetNbinsX()<<std::endl;
       h_flat_unfold_pt1pt2[iter] = (TH1D*) h_flat_truth_pt1pt2->Clone();
@@ -729,12 +733,9 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
       h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_pt1pt2_%d",iter));
       for (int ib = 0; ib < nbins_pt_2; ib++)
 	{
-	  int bin = mapped_pt_bin_truth[ib];
-	  if (bin >= 0)
-	    {
-	      h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(bin+1));
-	      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin+1));
-	    }
+	  h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(ib+1));
+	  h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(ib+1));
+	  
 	}
 
     }
@@ -798,11 +799,13 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
       cpt1pt2->cd(2);
       gPad->SetRightMargin(0.2);
       gPad->SetLogz();
+      h_pt1pt2_truth->SetMinimum(1);
       h_pt1pt2_truth->Draw("colz");
       
       cpt1pt2->cd(3);
       gPad->SetRightMargin(0.2);
       gPad->SetLogz();
+      h_pt1pt2_unfold[i]->SetMinimum(0.01);//Draw("colz");
       h_pt1pt2_unfold[i]->Draw("colz");
 
       TH2D *hc = (TH2D*) h_pt1pt2_unfold[i]->Clone();
@@ -885,36 +888,138 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
   // TColor::CreateGradientColorTable(Number, Stops, Red, Green, Blue, 20);
 
+  TCanvas *cpt2 = new TCanvas("cpt2","cpt2", 1000, 600);
+  TH2D *h_asym_data = (TH2D*) h_pt1pt2_data->Clone();
+  h_asym_data->SetName("h_asym_data");
+  h_asym_data->Reset();
+  TH2D *h_asym_sim = (TH2D*) h_pt1pt2_sim->Clone();
+  h_asym_sim->SetName("h_asym_sim");
+  h_asym_sim->Reset();
 
-  TCanvas *cunpt1pt2 = new TCanvas("cunpt1pt2","cunpt1pt2", 1000, 1000);
+  histo_opps::make_asym_pt1pt2(h_asym_data, h_pt1pt2_data, nbins_pt);
+  histo_opps::make_asym_pt1pt2(h_asym_sim, h_pt1pt2_sim, nbins_pt);
+
+  cpt2->Divide(3,2);
+  TLegend *lcc = new TLegend(0.22, 0.40, 0.75, 0.60);
+  lcc->SetTextSize(0.06);
+  lcc->SetLineWidth(0);
+
+  h_asym_data->Scale(1./h_asym_data->Integral(),"width");
+  h_asym_sim->Scale(1./h_asym_sim->Integral(),"width");
+  for (int i = 0; i < 6; i++)
+    {
+      cpt2->cd(i+1);
+      TH1D *hd = nullptr;
+      TH1D *hs = nullptr;
+      float cut_low = 0;
+      float cut_high = 100;
+
+      if (i == 0)
+	{
+	  hd = h_asym_data->ProjectionY(Form("hd_%d", i), reco_leading_bin, measure_bins[0]);
+	  hs = h_asym_sim->ProjectionY(Form("hs_%d", i), reco_leading_bin, measure_bins[0]);
+	  hd->GetXaxis()->SetRangeUser(0, ipt_bins[measure_bins[0]]);
+	  cut_low = reco_leading_cut;
+	  cut_high = ipt_bins[measure_bins[0]];
+	}
+      else if (i == 4)
+	{
+	  hd = h_asym_data->ProjectionY(Form("hd_%d", i), measure_bins[3], -1);
+	  hs = h_asym_sim->ProjectionY(Form("hs_%d", i), measure_bins[3], -1);
+	  cut_low = ipt_bins[measure_bins[3]];
+	  cut_high = ipt_bins[nbins_pt];
+	}
+      else if (i == 5)
+	{
+	  hd = h_asym_data->ProjectionX(Form("hd_%d", i), 0, -1);
+	  hs = h_asym_sim->ProjectionX(Form("hs_%d", i), 0, -1);
+	}
+      else
+	{
+	  hd = h_asym_data->ProjectionY(Form("hd_%d", i), measure_bins[i - 1], measure_bins[i]);
+	  hs = h_asym_sim->ProjectionY(Form("hs_%d", i), measure_bins[i - 1], measure_bins[i]);
+	  hd->GetXaxis()->SetRangeUser(0, ipt_bins[measure_bins[i]]);
+	  cut_low = ipt_bins[measure_bins[i-1]];
+	  cut_high = ipt_bins[measure_bins[i]];
+
+	}
+      std::string cut_string = Form("%2.1f #geq #it{p}_{T} < %2.1f GeV", cut_low, cut_high);
+      hd->SetTitle("; #it{p}_{T,2} [GeV] ; Self. Norm.");
+      
+      dlutility::SetMarkerAtt(hd, kBlue, 1, 20);
+      dlutility::SetLineAtt(hd, kBlue, 2, 1);
+
+      dlutility::SetMarkerAtt(hs, kRed, 0.9, 21);
+      dlutility::SetLineAtt(hs, kRed, 2, 1);
+
+      if (i == 5)      
+	{
+	  gPad->SetLogy();
+	}
+      hd->Draw("hist E1");
+      hs->Draw("hist E1 same");
+      if (i < 6)
+	dlutility::drawText(cut_string.c_str(), 0.22, 0.8);
+      if (i == 0)
+	{
+	  lcc->AddEntry(hd, "Data");
+	  lcc->AddEntry(hs, "Sim. Reco.");
+	}
+    }
+  // cpt2->cd(6);
+  // dlutility::DrawSPHENIXpp(0.22, 0.85, 0.05);
+  // dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.74,  0, kBlack, 0.05);
+  // dlutility::drawText(Form("Systematic: %s" , sys_name.c_str()), 0.22, 0.69,  0, kBlack, 0.05);
+  //lcc->Draw("same");
+  cpt2->Print(Form("%s/unfolding_plots/subleading_comp_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
+
+  
+  TCanvas *cunpt1pt2 = new TCanvas("cunpt1pt2","cunpt1pt2", 1200, 1000);
 
   TH2D *h_ratio_data_reco = (TH2D*) h_pt1pt2_data->Clone();
 
-  h_ratio_data_reco->SetName("h_ratio_data_reco");
-  if (!unfold_generator)
+  double pt1_unfold_bins[nbins_pt];
+  double pt1_truth_bins[nbins_pt];
+  for (int i = 0; i < nbins_pt; i++)
     {
-      h_ratio_data_reco->Scale(1./h_ratio_data_reco->Integral());
+      pt1_unfold_bins[i] = 0;
+      pt1_truth_bins[i] = 0;
     }
+
+  h_ratio_data_reco->SetName("h_ratio_data_reco");
 
   //h_ratio_data_reco->Scale(1./h_ratio_data_reco->Integral());
   TH2D *h_ratio_sim_reco = (TH2D*) h_pt1pt2_sim->Clone();
   h_ratio_sim_reco->SetName("h_ratio_sim_reco");
-  if (!unfold_generator)
-    {
-      h_ratio_sim_reco->Scale(1./h_ratio_sim_reco->Integral());
-    }
   //h_ratio_sim_reco->Scale(1./h_ratio_sim_reco->Integral());
+
+  for (int ibin = 0; ibin < nbins_pt_truth_2; ibin++)
+    {
+      int pt1_bin = ibin/nbins_pt;
+      int pt2_bin = ibin%nbins_pt;
+      int max_bin = std::max(pt1_bin, pt2_bin);
+      int min_bin = std::min(pt1_bin, pt2_bin);
+
+      pt1_truth_bins[max_bin] += h_ratio_sim_reco->GetBinContent(pt1_bin+1, pt2_bin+1);
+      pt1_unfold_bins[max_bin] += h_ratio_data_reco->GetBinContent(pt1_bin+1, pt2_bin+1);
+    }
+  for (int ibin = 0; ibin < nbins_pt_truth_2; ibin++)
+    {
+      int pt1_bin = ibin/nbins_pt;
+      int pt2_bin = ibin%nbins_pt;
+      int max_bin = std::max(pt1_bin, pt2_bin);
+      int min_bin = std::min(pt1_bin, pt2_bin);
+      int gbin = h_ratio_sim_reco->GetBin(pt1_bin+1, pt2_bin+1);
+      h_ratio_sim_reco->SetBinContent(gbin,  h_ratio_sim_reco->GetBinContent(pt1_bin+1, pt2_bin+1)/pt1_truth_bins[max_bin]);
+      h_ratio_data_reco->SetBinContent(gbin,  h_ratio_data_reco->GetBinContent(pt1_bin+1, pt2_bin+1)/pt1_unfold_bins[max_bin]);
+    }
+
   h_ratio_data_reco->Divide(h_ratio_sim_reco);
   h_ratio_data_reco->SetTitle(";#it{p}_{T1};#it{p}_{T1};Data/Reco");
-			     
-
-  gPad->SetRightMargin(0.2);
-  gPad->SetLeftMargin(0.2);
-  gPad->SetTopMargin(0.2);
-  gPad->SetBottomMargin(0.2);
-
-  h_ratio_data_reco->SetMinimum(0);
-  h_ratio_data_reco->SetMaximum(2);
+  
+  cunpt1pt2->SetRightMargin(0.2);
+  //h_ratio_data_reco->SetMinimum(0);
+  //h_ratio_data_reco->SetMaximum(2);
   if (unfold_generator)
     {
       //h_ratio_data_reco->SetMinimum(0.95);
@@ -923,7 +1028,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   h_ratio_data_reco->Draw("colz");
 
   cunpt1pt2->Print(Form("%s/unfolding_plots/full_unfold_pt1pt2_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
-  
+
+
   histo_opps::normalize_histo(h_reco_xj, nbins);
 
 

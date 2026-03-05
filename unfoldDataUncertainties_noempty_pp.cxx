@@ -19,6 +19,7 @@ using std::endl;
 #include "TFile.h"
 #include "TH1.h"
 #include "TTree.h"
+#include "TNtuple.h"
 
 static int verbosity = 0;
 
@@ -62,6 +63,8 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   if (JES_sys > 0)
     sys_name = "posJES";
 
+  std::string sys_name_orig = sys_name;
+  
   if (primer == 1)
     {
       sys_name = "PRIMER1_" + sys_name;
@@ -71,106 +74,16 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
       sys_name = "PRIMER2_" + sys_name;
     }
 
-  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_5_ana533_2025p007_v001_gl10-all.root";
-  
-  ULong64_t gl1_scaled;
-  float mbd_vertex_z;
-  
-  std::vector<float> *reco_jet_pt = 0;
-  std::vector<float> *reco_jet_emcal = 0;
-  std::vector<float> *reco_jet_e = 0;
-  std::vector<float> *reco_jet_eta = 0;
-  std::vector<float> *reco_jet_eta_det = 0;
-  std::vector<float> *reco_jet_phi = 0;
-
-  TFile *fin = new TFile(data_file.c_str(), "r");
-  TTree *ttree  = (TTree*) fin->Get("ttree");;
-
-  if (!ttree)
-    {
-      std::cout << " no data "<< std::endl;
-    }
-
-  ttree->SetBranchAddress(Form("jet_pt_calib_%d", cone_size), &reco_jet_pt);
-  ttree->SetBranchAddress(Form("jet_emcal_%d", cone_size), &reco_jet_emcal);
-  ttree->SetBranchAddress(Form("jet_e_%d", cone_size), &reco_jet_e);
-  ttree->SetBranchAddress(Form("jet_eta_%d", cone_size), &reco_jet_eta);
-  ttree->SetBranchAddress(Form("jet_eta_det_%d", cone_size), &reco_jet_eta_det);
-  ttree->SetBranchAddress(Form("jet_phi_%d", cone_size), &reco_jet_phi);
-  ttree->SetBranchAddress("mbd_vertex_z", &mbd_vertex_z);
-  ttree->SetBranchAddress("gl1_scaled", &gl1_scaled);
-    
-  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()),"r");
-  
-  TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
-
-  if (!h_flat_truth_pt1pt2)
-    {
-      std::cout << "no truth" << std::endl;
-      return 1;
-    }
-
-  TH1D *h_flat_reco_pt1pt2 = (TH1D*) fresponse->Get("h_reco_flat_pt1pt2"); 
-  if (!h_flat_reco_pt1pt2)
-    {
-      std::cout << "no reco" << std::endl;
-      return 1;
-    }
-
-  TH2D *h_flat_response_pt1pt2 = (TH2D*) fresponse->Get("h_flat_response_pt1pt2"); 
-
-  if (!h_flat_response_pt1pt2)
-    {
-      std::cout << "no response" << std::endl;
-      return 1;
-    }
-
-  TH1D *h_flat_truth_skim = (TH1D*) fresponse->Get("h_flat_truth_skim"); 
-  if (!h_flat_truth_skim)
-    {
-      std::cout << "no truth" << std::endl;
-      return 1;
-    }
-
-  TH1D *h_flat_reco_skim = (TH1D*) fresponse->Get("h_flat_reco_skim"); 
-  if (!h_flat_reco_skim)
-    {
-      std::cout << "no reco" << std::endl;
-      return 1;
-    }
-
-  TH1D *h_flat_truth_mapping = (TH1D*) fresponse->Get("h_flat_truth_mapping"); 
-  if (!h_flat_truth_mapping)
-    {
-      std::cout << "no truth" << std::endl;
-      return 1;
-    }
-
-  TH1D *h_flat_reco_mapping = (TH1D*) fresponse->Get("h_flat_reco_mapping"); 
-  if (!h_flat_reco_mapping)
-    {
-      std::cout << "no reco" << std::endl;
-      return 1;
-    }
-
-  TH2D *h_flat_response_skim = (TH2D*) fresponse->Get("h_flat_response_skim"); 
-
-  if (!h_flat_response_skim)
-    {
-      std::cout << "no response" << std::endl;
-      return 1;
-    }
-
   Int_t read_nbins = rb.get_nbins();
   
 
-
   const int nbins = read_nbins;
+  const int nbins_pt = read_nbins + 1;
 
-  Double_t ipt_bins[nbins+1];
+  Double_t ipt_bins[nbins_pt+1];
   Double_t ixj_bins[nbins+1];
 
-  float fipt_bins[nbins+1];
+  float fipt_bins[nbins_pt+1];
   float fixj_bins[nbins+1];
 
   rb.get_pt_bins(fipt_bins);
@@ -182,6 +95,7 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
       std::cout << ipt_bins[i] << " -- " << ixj_bins[i] << std::endl;
     }
 
+  ipt_bins[nbins_pt] = 100;
   Int_t max_reco_bin = rb.get_maximum_reco_bin();
   
   float truth_leading_cut = rb.get_truth_leading_cut();
@@ -236,6 +150,147 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
+  
+  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_5_ana533_2025p007_v001_gl10-all.root";
+  
+  ULong64_t gl1_scaled;
+  float mbd_vertex_z;
+  
+  std::vector<float> *reco_jet_pt = 0;
+  std::vector<float> *reco_jet_emcal = 0;
+  std::vector<float> *reco_jet_e = 0;
+  std::vector<float> *reco_jet_eta = 0;
+  std::vector<float> *reco_jet_eta_det = 0;
+  std::vector<float> *reco_jet_phi = 0;
+
+  TFile *fin = new TFile(data_file.c_str(), "r");
+  TTree *ttree  = (TTree*) fin->Get("ttree");;
+
+  if (!ttree)
+    {
+      std::cout << " no data "<< std::endl;
+    }
+
+  ttree->SetBranchAddress(Form("jet_pt_calib_%d", cone_size), &reco_jet_pt);
+  ttree->SetBranchAddress(Form("jet_emcal_%d", cone_size), &reco_jet_emcal);
+  ttree->SetBranchAddress(Form("jet_e_%d", cone_size), &reco_jet_e);
+  ttree->SetBranchAddress(Form("jet_eta_%d", cone_size), &reco_jet_eta);
+  ttree->SetBranchAddress(Form("jet_eta_det_%d", cone_size), &reco_jet_eta_det);
+  ttree->SetBranchAddress(Form("jet_phi_%d", cone_size), &reco_jet_phi);
+  ttree->SetBranchAddress("mbd_vertex_z", &mbd_vertex_z);
+  ttree->SetBranchAddress("gl1_scaled", &gl1_scaled);
+
+
+  TH1D *h_flat_truth_mapping_primer = nullptr;
+  TH1D *h_flat_reco_mapping_primer = nullptr;
+  TH2D *h_flat_response_mapping_primer[5] = {0};
+
+  int nbins_pt_truth = nbins_pt*nbins_pt;
+  std::map<int, int> mapped_pt_bin_truth;
+  int nbins_pt_reco = nbins_pt*nbins_pt;
+  std::map<int, int> mapped_pt_bin_reco;
+
+  TString mappingppath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
+      
+  mappingppath += "_MAPPING";
+    
+  mappingppath += "_" + sys_name_orig;
+      
+  mappingppath += ".root";
+
+  TFile *fr = new TFile(mappingppath.Data(),"r");
+
+  TNtuple *tn_map = (TNtuple*) fr->Get("tn_mapping");
+
+  float ptbin;
+  float mapbin_truth;
+  float use_truth;
+  float mapbin_reco;
+  float use_reco;
+
+  tn_map->SetBranchAddress("ptbin", &ptbin);
+  tn_map->SetBranchAddress("mapbin_truth", &mapbin_truth);
+  tn_map->SetBranchAddress("use_truth", &use_truth);
+  tn_map->SetBranchAddress("mapbin_reco", &mapbin_reco);
+  tn_map->SetBranchAddress("use_reco", &use_reco);
+  nbins_pt_truth = 0;
+  nbins_pt_reco = 0;
+
+  for (int i = 0; i < tn_map->GetEntries(); i++)
+    {
+      tn_map->GetEntry(i);
+      if (use_truth == 1)
+	{
+	  nbins_pt_truth++;
+	  mapped_pt_bin_truth[ptbin] = mapbin_truth;
+	}
+      else
+	{
+	  mapped_pt_bin_truth[ptbin] = -1;
+	}
+      if (use_reco == 1)
+	{
+	  nbins_pt_reco++;
+	  mapped_pt_bin_reco[ptbin] = mapbin_reco;
+	}
+      else
+	{
+	  mapped_pt_bin_reco[ptbin] = -1;
+	}
+    }
+  h_flat_truth_mapping_primer = (TH1D*)fr->Get("h_flat_truth_mapping_all_samples");
+  h_flat_reco_mapping_primer = (TH1D*)fr->Get("h_flat_reco_mapping_all_samples");
+      
+  for (int i = 0; i < 5; i++)
+    {
+      h_flat_response_mapping_primer[i] = (TH2D*) fr->Get(Form("h_flat_response_mapping_%d", i));
+    }      
+
+  TFile *fresponse = new TFile(Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()),"r");
+
+  std::cout << Form("%s/response_matrices/response_matrix_%s_r%02d_%s.root", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()) << std::endl;
+  TH1D *h_flat_truth_pt1pt2_raw = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2_raw"); 
+
+  if (!h_flat_truth_pt1pt2_raw)
+    {
+      std::cout << "no truth" << std::endl;
+      return 1;
+    }
+  TH1D *h_flat_truth_pt1pt2 = (TH1D*) fresponse->Get("h_truth_flat_pt1pt2"); 
+
+  if (!h_flat_truth_pt1pt2)
+    {
+      std::cout << "no truth" << std::endl;
+      return 1;
+    }
+
+  
+  TH1D *h_flat_reco_pt1pt2 = (TH1D*) fresponse->Get("h_reco_flat_pt1pt2"); 
+  if (!h_flat_reco_pt1pt2)
+    {
+      std::cout << "no reco" << std::endl;
+      return 1;
+    }
+
+  
+  RooUnfoldResponse *rooResponse = (RooUnfoldResponse*) fresponse->Get("response");
+
+  if (!rooResponse)
+    {
+      std::cout << "no repsonse" << std::endl;
+      return 1;
+    }
+
+  TH2D *h_flat_response_pt1pt2 = (TH2D*) fresponse->Get("h_flat_response_pt1pt2"); 
+
+  if (!h_flat_response_pt1pt2)
+    {
+      std::cout << "no response" << std::endl;
+      return 1;
+    }
+
+
+
   TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_" + system_string + "_r0" + std::to_string(cone_size);
 
   unfoldpath += "_" + sys_name;
@@ -249,11 +304,6 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
       std::cout << " no h_flat_data_pt1pt2 " << std::endl;
       
     }
-  TH1D *h_flat_data_skim = (TH1D*) h_flat_reco_skim->Clone();
-  h_flat_data_skim->SetName("h_flat_data_skim");
-  h_flat_data_skim->Reset();
-
-  histo_opps::skim_down_histo(h_flat_data_skim, h_flat_data_pt1pt2, h_flat_reco_mapping);
 
   TH1D *h_flat_unfold_pt1pt2[niterations];
   
@@ -264,11 +314,11 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   TProfile *hp_pt1pt2[niterations];
   TProfile *hp_xj_range[mbins][niterations];
 
-  int nbins_pt1pt2 = nbins*nbins;
+  int nbins_pt1pt2 = nbins_pt*nbins_pt;
   
   for (int iter = 0; iter < niterations; iter++)
     {
-      hp_pt1pt2_stats[iter] = new TProfile2D(Form("hp_pt1pt2_stats_%d", iter),";p_{T,1}; p_{T,2}; average +/- rms", nbins, ipt_bins, nbins, ipt_bins, "s");
+      hp_pt1pt2_stats[iter] = new TProfile2D(Form("hp_pt1pt2_stats_%d", iter),";p_{T,1}; p_{T,2}; average +/- rms", nbins_pt, ipt_bins, nbins_pt, ipt_bins, "s");
       hp_pt1pt2[iter] = new TProfile(Form("hp_pt1pt2_%d", iter),";pt1pt2 bin; Avg +/- RMS", nbins_pt1pt2, 0, nbins_pt1pt2,"s");
       hp_xj[iter] = new TProfile(Form("hp_xj_%d", iter),";x_{J}; Avg +/- RMS", nbins, ixj_bins,"s");
       for (int i = 0; i < mbins; i++)
@@ -289,7 +339,7 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
       
   for (int iter = 0; iter < niterations; iter++)
     {
-      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";p_{T1};p_{T2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
       h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
     }
 
@@ -311,13 +361,14 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   for (int itoy = 0; itoy < ntoys; ++itoy)
     {
       std::cout << "Toy: " << itoy << std::endl;
-      TH2D *h_flat_response_clone = (TH2D*) h_flat_response_skim->Clone();
+
+      TH2D *h_flat_response_clone = (TH2D*) h_flat_response_pt1pt2->Clone();
       for (int ibin = 0; ibin < h_flat_response_clone->GetXaxis()->GetNbins(); ++ibin)
 	{
 	  for (int jbin = 0; jbin < h_flat_response_clone->GetYaxis()->GetNbins(); ++jbin)
 	    {
-	      int ijbin = h_flat_response_skim->GetBin(ibin+1, jbin + 1);
-	      float smear = ferror_response->GetRandom() * h_flat_response_skim->GetBinError(ijbin);
+	      int ijbin = h_flat_response_pt1pt2->GetBin(ibin+1, jbin + 1);
+	      float smear = ferror_response->GetRandom() * h_flat_response_pt1pt2->GetBinError(ijbin);
 	      float value = h_flat_response_clone->GetBinContent(ijbin);
 	      float newvalue = value + smear;
 	      if (newvalue < 0) newvalue = 0;
@@ -325,16 +376,18 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
 	    }
 	}
       
-      RooUnfoldResponse rooResponse(h_flat_reco_skim, h_flat_truth_skim, h_flat_response_clone);
+      RooUnfoldResponse rooResponse(h_flat_reco_pt1pt2, h_flat_truth_pt1pt2_raw, h_flat_response_clone);
       for (int iter = 0; iter < niterations; iter++ )
 	{
-	  RooUnfoldBayes   unfold (&rooResponse, h_flat_data_skim, iter + 1);    // OR
+	  RooUnfoldBayes   unfold (&rooResponse, h_flat_data_pt1pt2, iter + 1, false, true);    // OR
 	  TH1D *h_flat_unfold_skim = (TH1D*) unfold.Hunfold();
 	  h_flat_unfold_pt1pt2[iter] = (TH1D*) h_flat_truth_pt1pt2->Clone();
 	  h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_pt1pt2_%d", iter));
 	  h_flat_unfold_pt1pt2[iter]->Reset();
 	  
-	  histo_opps::fill_up_histo(h_flat_unfold_skim, h_flat_unfold_pt1pt2[iter], h_flat_truth_mapping);
+	  histo_opps::fill_up_histo(h_flat_unfold_skim, h_flat_unfold_pt1pt2[iter], h_flat_truth_mapping_primer);
+
+
 	}
     
       for (int iter = 0; iter < niterations; iter++)
@@ -348,10 +401,10 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
 	}
       
 
-      for (int ib = 0; ib < nbins*nbins; ib++)
+      for (int ib = 0; ib < nbins_pt*nbins_pt; ib++)
 	{
-	  int xbin = ib/nbins;
-	  int ybin = ib%nbins;
+	  int xbin = ib/nbins_pt;
+	  int ybin = ib%nbins_pt;
 	  
 	  int b = h_pt1pt2_unfold[0]->GetBin(xbin+1, ybin+1);
 	  
@@ -362,10 +415,10 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  h_pt1pt2_unfold_sym[iter] = (TH2D*) h_pt1pt2_unfold[iter]->Clone();
-	  histo_opps::project_xj(h_pt1pt2_unfold_sym[iter], h_xj_unfold[iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_unfold_sym[iter], h_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
 	  for (int irange = 0; irange < mbins; irange++)
 	    {
-	      histo_opps::project_xj(h_pt1pt2_unfold_sym[iter], h_xj_unfold_range[irange][iter], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	      histo_opps::project_xj(h_pt1pt2_unfold_sym[iter], h_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	    }
 	  for (int ib = 0; ib < nbins; ib++)
 	    {
