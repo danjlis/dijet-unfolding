@@ -577,14 +577,15 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	      if (maxptreco >= maxreco_r4[isample]) continue;
 
 	      
-	      triggered = ((gl1_scaled[isample] >> 22) & 0x1) == 0x1;
+	      triggered = ((gl1_scaled[isample] >> 34) & 0x1) == 0x1;
 
 	      h_truth_lead->Fill(maxpttruth, scale_factor[isample]);
 	    
 	    }
 	  else
 	    {
-	      triggered = (((gl1_scaled[isample] >> 18) & 0x1)  == 0x1 || ((gl1_scaled[isample] >> 34) & 0x1)  == 0x1 );
+	      // 
+	      triggered = ((gl1_scaled[isample] >> 18) & 0x1)  == 0x1 ||((gl1_scaled[isample] >> 34) & 0x1)  == 0x1;
 	      //if (mbd_avgsigma[isample] >= 0.4) continue;
 	    }
       
@@ -616,7 +617,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 		  float tempptreco = temppt + jersmear*temppt;
 		  tempjet.pt = tempptreco;
 		}
-	      if (tempjet.pt > 7) nnrecojets++;
+	      if (tempjet.pt > 5) nnrecojets++;
 	      if (tempjet.pt < reco_subleading_cut) continue;
 	      // if (fabs(reco_jet_eta_det[isample]->at(j)) > 0.7) continue;
 	      // if (fabs(reco_jet_eta[isample]->at(j)) > 0.7) continue;
@@ -731,13 +732,16 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
       std::cout << __LINE__ << std::endl;
       h_flat_unfold_pt1pt2[iter]->Reset();
       h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_pt1pt2_%d",iter));
+
       for (int ib = 0; ib < nbins_pt_2; ib++)
 	{
-	  h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(ib+1));
-	  h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(ib+1));
-	  
-	}
-
+	  int bin = mapped_pt_bin_truth[ib];
+	  if (bin >= 0)
+	    {
+	      h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim[iter]->GetBinContent(bin+1));
+	      h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim[iter]->GetBinError(bin+1));
+	    }	  
+	}      
     }
     
   
@@ -993,7 +997,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   h_ratio_sim_reco->SetName("h_ratio_sim_reco");
   //h_ratio_sim_reco->Scale(1./h_ratio_sim_reco->Integral());
 
-  for (int ibin = 0; ibin < nbins_pt_truth_2; ibin++)
+  for (int ibin = 0; ibin < nbins_pt_2; ibin++)
     {
       int pt1_bin = ibin/nbins_pt;
       int pt2_bin = ibin%nbins_pt;
@@ -1003,7 +1007,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
       pt1_truth_bins[max_bin] += h_ratio_sim_reco->GetBinContent(pt1_bin+1, pt2_bin+1);
       pt1_unfold_bins[max_bin] += h_ratio_data_reco->GetBinContent(pt1_bin+1, pt2_bin+1);
     }
-  for (int ibin = 0; ibin < nbins_pt_truth_2; ibin++)
+  for (int ibin = 0; ibin < nbins_pt_2; ibin++)
     {
       int pt1_bin = ibin/nbins_pt;
       int pt2_bin = ibin%nbins_pt;

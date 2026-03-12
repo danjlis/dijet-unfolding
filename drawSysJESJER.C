@@ -1070,7 +1070,7 @@ void drawSysJESJER(const int cone_size = 4)
     {
       cxj_split->Clear();
       
-      dlutility::systematic_split_canvas(cxj_split, 3);
+      dlutility::systematic_split_canvas(cxj_split, 3, 0.55);
       
       for (int irange = 0; irange < mbins; irange++)
 	{
@@ -1085,16 +1085,16 @@ void drawSysJESJER(const int cone_size = 4)
 	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
 	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
 
-	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.08);
+	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(3.5);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
 	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
 	  TH1D *hpjes = (TH1D*) h_pjes_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_pjes_%d", irange), &dxj_bins[first_bin]);
 	  TH1D *hnjes = (TH1D*) h_njes_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_njes_%d", irange), &dxj_bins[first_bin]);
-	  
+	  hu->GetYaxis()->ChangeLabel(1, -1, 0);
 	  hu->Draw("p");
 	  hpjes->Draw("same p");
 	  hnjes->Draw("same p");
@@ -1115,12 +1115,16 @@ void drawSysJESJER(const int cone_size = 4)
 	  TH1D *h_pjes_compare = (TH1D*) hpjes->Clone();
 	  h_pjes_compare->Divide(hu);
 	  h_pjes_compare->SetTitle(";x_{J}; #frac{Var. - Nom.}{Nom}");
-	  dlutility::SetFont(h_pjes_compare, 42, 0.12);
+	  h_pjes_compare->GetYaxis()->SetTitleOffset(1.1);
+	  h_pjes_compare->GetXaxis()->SetTitleOffset(1.2);
+
+	  dlutility::SetFont(h_pjes_compare, 42, 0.09);
+	  h_pjes_compare->GetXaxis()->SetTitleSize(0.11);
 	  dlutility::SetLineAtt(h_pjes_compare, color_pjes, 1,1);
 	  dlutility::SetMarkerAtt(h_pjes_compare, color_pjes, 1,8);
 
-	  h_pjes_compare->SetMaximum(0.2);
-	  h_pjes_compare->SetMinimum(-0.2);
+	  h_pjes_compare->SetMaximum(0.4);
+	  h_pjes_compare->SetMinimum(-0.4);
 
 	  TH1D *h_njes_compare = (TH1D*) hnjes->Clone();
 	  h_njes_compare->Divide(hu);
@@ -1139,13 +1143,17 @@ void drawSysJESJER(const int cone_size = 4)
 	  h_sys_njes[irange][niter] = (TH1D*) h_njes_compare->Clone();
 	  h_sys_pjes[irange][niter] = (TH1D*) h_pjes_compare->Clone();
 
-	  h_pjes_compare->SetFillColor(color_pjes);
-	  h_njes_compare->SetFillColor(color_njes);
+	  h_pjes_compare->SetFillColorAlpha(color_pjes, 0.5);
+	  h_njes_compare->SetFillColorAlpha(color_njes, 0.5);
 	  
 	  h_pjes_compare->SetLineColor(kBlack);
 	  h_njes_compare->SetLineColor(kBlack);
 
 	  h_pjes_compare->Draw("hist");
+	  h_pjes_compare->GetYaxis()->SetNdivisions(508);
+	  h_pjes_compare->GetYaxis()->ChangeLabel(-1, -1, 0);
+	  h_pjes_compare->GetYaxis()->ChangeLabel(1, -1, 0);
+
 	  h_njes_compare->Draw("hist same");
 
 	  
@@ -1157,17 +1165,18 @@ void drawSysJESJER(const int cone_size = 4)
 
 	}
       cxj_split->cd(7);
-      dlutility::DrawSPHENIXpp(0.22, 0.84, 0.08);
-      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.22, 0.74, 0, kBlack, 0.08);
-      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59, 0, kBlack, 0.08);
-      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49, 0, kBlack, 0.08);
-      TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.73, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.65, 0, kBlack, 0.08);
+      dlutility::drawText("|#eta| #leq 0.7", 0.15, 0.57, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.20, 0.4, 0.41);
       leg->SetLineWidth(0);
-      leg->SetTextSize(0.07);
+      leg->SetTextSize(0.08);
       leg->SetTextFont(42);
       leg->AddEntry(h_final_xj_unfold_range[0][niter], "Nominal");
-      leg->AddEntry(h_pjes_final_xj_unfold_range[0][niter], "+ JES");
-      leg->AddEntry(h_njes_final_xj_unfold_range[0][niter], "- JES");
+      leg->AddEntry(h_pjes_final_xj_unfold_range[0][niter], "+ 2.5% JES Corr.");
+      leg->AddEntry(h_njes_final_xj_unfold_range[0][niter], "- 2.5% JES Corr.");
       leg->Draw("same");
 
       cxj_split->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_pp_r%02d_range_all_iter_%d.png",  rb.get_code_location().c_str(), cone_size, niter));
@@ -1179,7 +1188,7 @@ void drawSysJESJER(const int cone_size = 4)
     {
       cxj_split->Clear();
       
-      dlutility::systematic_split_canvas(cxj_split, 3);
+      dlutility::systematic_split_canvas(cxj_split, 3, 0.55);
       
       for (int irange = 0; irange < mbins; irange++)
 	{
@@ -1194,16 +1203,16 @@ void drawSysJESJER(const int cone_size = 4)
 	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
 	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
 
-	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.08);
+	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(3.5);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
 	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
 	  TH1D *hpjer = (TH1D*) h_pjer_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_pjer_%d", irange), &dxj_bins[first_bin]);
 	  TH1D *hnjer = (TH1D*) h_njer_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_njer_%d", irange), &dxj_bins[first_bin]);
-	  
+	  hu->GetYaxis()->ChangeLabel(1, -1, 0);
 	  hu->Draw("p");
 	  hpjer->Draw("same p");
 	  hnjer->Draw("same p");
@@ -1224,12 +1233,14 @@ void drawSysJESJER(const int cone_size = 4)
 	  TH1D *h_pjer_compare = (TH1D*) hpjer->Clone();
 	  h_pjer_compare->Divide(hu);
 	  h_pjer_compare->SetTitle(";x_{J}; #frac{Var. - Nom.}{Nom}");
-	  dlutility::SetFont(h_pjer_compare, 42, 0.12);
+	  h_pjer_compare->GetYaxis()->SetTitleOffset(1.1);
+	  dlutility::SetFont(h_pjer_compare, 42, 0.09);
+	  h_pjer_compare->GetXaxis()->SetTitleSize(0.11);
 	  dlutility::SetLineAtt(h_pjer_compare, color_pjer, 1,1);
 	  dlutility::SetMarkerAtt(h_pjer_compare, color_pjer, 1,8);
 
-	  h_pjer_compare->SetMaximum(0.2);
-	  h_pjer_compare->SetMinimum(-0.2);
+	  h_pjer_compare->SetMaximum(0.4);
+	  h_pjer_compare->SetMinimum(-0.4);
 
 	  TH1D *h_njer_compare = (TH1D*) hnjer->Clone();
 	  h_njer_compare->Divide(hu);
@@ -1249,13 +1260,16 @@ void drawSysJESJER(const int cone_size = 4)
 	  h_sys_pjer[irange][niter] = (TH1D*) h_pjer_compare->Clone();
 
 	  
-	  h_pjer_compare->SetFillColor(color_pjer);
-	  h_njer_compare->SetFillColor(color_njer);
+	  h_pjer_compare->SetFillColorAlpha(color_pjer, 0.5);
+	  h_njer_compare->SetFillColorAlpha(color_njer, 0.5);
 	  
 	  h_pjer_compare->SetLineColor(kBlack);
 	  h_njer_compare->SetLineColor(kBlack);
 
 	  h_pjer_compare->Draw("hist");
+	  h_pjer_compare->GetYaxis()->SetNdivisions(508);
+	  h_pjer_compare->GetYaxis()->ChangeLabel(-1, -1, 0);
+	  h_pjer_compare->GetYaxis()->ChangeLabel(1, -1, 0);
 	  h_njer_compare->Draw("hist same");
 
 	  
@@ -1267,17 +1281,18 @@ void drawSysJESJER(const int cone_size = 4)
 
 	}
       cxj_split->cd(7);
-      dlutility::DrawSPHENIXpp(0.22, 0.84, 0.08);
-      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.22, 0.74, 0, kBlack, 0.08);
-      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59, 0, kBlack, 0.08);
-      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49, 0, kBlack, 0.08);
-      TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.73, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.65, 0, kBlack, 0.08);
+      dlutility::drawText("|#eta| #leq 0.7", 0.15, 0.57, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.20, 0.4, 0.41);
       leg->SetLineWidth(0);
-      leg->SetTextSize(0.07);
+      leg->SetTextSize(0.08);
       leg->SetTextFont(42);
       leg->AddEntry(h_final_xj_unfold_range[0][niter], "Nominal");
-      leg->AddEntry(h_pjer_final_xj_unfold_range[0][niter], "+ JER");
-      leg->AddEntry(h_njer_final_xj_unfold_range[0][niter], "- JER");
+      leg->AddEntry(h_pjer_final_xj_unfold_range[0][niter], "+2% JER");
+      leg->AddEntry(h_njer_final_xj_unfold_range[0][niter], "-2% JER");
       leg->Draw("same");
 
       cxj_split->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_pp_r%02d_range_all_iter_%d.png",  rb.get_code_location().c_str(), cone_size, niter));
@@ -1296,7 +1311,7 @@ void drawSysJESJER(const int cone_size = 4)
     {
       cxj_split->Clear();
       
-      dlutility::systematic_split_canvas(cxj_split, 3);
+      dlutility::systematic_split_canvas(cxj_split, 3, 0.55);
       
       for (int irange = 0; irange < mbins; irange++)
 	{
@@ -1309,14 +1324,14 @@ void drawSysJESJER(const int cone_size = 4)
 	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
 	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
 
-	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.08);
+	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(3.5);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
 	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
-	  
+	  hu->GetYaxis()->ChangeLabel(1, -1, 0);
 	  hu->Draw("p");
 	  hprior[irange]->Draw("same p");
 	  if (irange == 0)
@@ -1336,12 +1351,14 @@ void drawSysJESJER(const int cone_size = 4)
 	  TH1D *h_prior_compare = (TH1D*) hprior[irange]->Clone();
 	  h_prior_compare->Divide(hu);
 	  h_prior_compare->SetTitle(";x_{J}; #frac{Var. - Nom.}{Nom}");
-	  dlutility::SetFont(h_prior_compare, 42, 0.12);
+	  h_prior_compare->GetYaxis()->SetTitleOffset(1.1);
+	  dlutility::SetFont(h_prior_compare, 42, 0.09);
+	  h_prior_compare->GetXaxis()->SetTitleSize(0.11);
 	  dlutility::SetLineAtt(h_prior_compare, color_prior, 1,1);
 	  dlutility::SetMarkerAtt(h_prior_compare, color_prior, 1,8);
 
-	  h_prior_compare->SetMaximum(0.2);
-	  h_prior_compare->SetMinimum(-0.2);
+	  h_prior_compare->SetMaximum(0.4);
+	  h_prior_compare->SetMinimum(-0.4);
 
 
 	  for (int ib = 0; ib < h_prior_compare->GetNbinsX(); ib++)
@@ -1353,9 +1370,12 @@ void drawSysJESJER(const int cone_size = 4)
 
 	  h_sys_prior[irange][niter] = (TH1D*) h_prior_compare->Clone();
 		  
-	  h_prior_compare->SetFillColor(color_prior);
+	  h_prior_compare->SetFillColorAlpha(color_prior, 0.5);
 	  
 	  h_prior_compare->SetLineColor(kBlack);
+	  h_prior_compare->GetYaxis()->SetNdivisions(508);
+	  h_prior_compare->GetYaxis()->ChangeLabel(-1, -1, 0);
+	  h_prior_compare->GetYaxis()->ChangeLabel(1, -1, 0);
 
 	  h_prior_compare->Draw("hist");
 	  
@@ -1367,13 +1387,14 @@ void drawSysJESJER(const int cone_size = 4)
 
 	}
       cxj_split->cd(7);
-      dlutility::DrawSPHENIXpp(0.22, 0.84, 0.08);
-      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.22, 0.74, 0, kBlack, 0.08);
-      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59, 0, kBlack, 0.08);
-      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49, 0, kBlack, 0.08);
-      TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.73, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.65, 0, kBlack, 0.08);
+      dlutility::drawText("|#eta| #leq 0.7", 0.15, 0.57, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.20, 0.4, 0.41);
       leg->SetLineWidth(0);
-      leg->SetTextSize(0.07);
+      leg->SetTextSize(0.08);
       leg->SetTextFont(42);
       leg->AddEntry(h_final_xj_unfold_range[0][niter], "Nominal");
       leg->AddEntry(h_prior_final_xj_unfold_range[0][niter], " No Prior Weighting");
@@ -1402,7 +1423,7 @@ void drawSysJESJER(const int cone_size = 4)
 
 	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.08);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(3.5);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -1448,11 +1469,11 @@ void drawSysJESJER(const int cone_size = 4)
 
 	}
       cxj_split->cd(7);
-      dlutility::DrawSPHENIXpp(0.22, 0.84, 0.08);
-      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.22, 0.74, 0, kBlack, 0.08);
-      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59, 0, kBlack, 0.08);
-      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.22, 0.49, 0, kBlack, 0.08);
-      TLegend *leg = new TLegend(0.22, 0.30, 0.4, 0.44);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.74, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.59, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.30, 0.4, 0.44);
       leg->SetLineWidth(0);
       leg->SetTextSize(0.07);
       leg->SetTextFont(42);

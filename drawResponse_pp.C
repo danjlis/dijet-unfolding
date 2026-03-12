@@ -3,7 +3,8 @@
 
 void drawResponse_pp(const int cone_size = 4, const int primer = 0, const std::string configfile = "binning.config")
 {
-
+  gStyle->SetPalette(kRainBow);
+  
   read_binning rb(configfile.c_str());
 
   Int_t prior_sys = rb.get_prior_sys();
@@ -116,11 +117,11 @@ void drawResponse_pp(const int cone_size = 4, const int primer = 0, const std::s
   h_flat_response_skim->SetTitle(";#it{p}_{T,1}^{reco, bin} #times nbins + #it{p}_{T,2}^{reco, bin};#it{p}_{T,1}^{truth, bin} #times nbins + #it{p}_{T,2}^{truth, bin}");
   h_flat_response_skim->Draw("col");
 
-  dlutility::DrawSPHENIXpp(0.13, 0.95 , 0.04, 0, 1, 1, 1, "PYTHIA-8");
-  dlutility::drawText(Form("%s", generator.Data()), 0.13, 0.9);
-  dlutility::drawText(Form("PRIMER/SYS: %s", sys_name.Data()), 0.13, 0.85);
-  dlutility::drawText(Form("anti-#it{k}_{t} R = 0.%d", cone_size), 0.87, 0.9, 1);
-  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.87, 0.85, 1);
+  dlutility::DrawSPHENIXpp(0.15, 0.9 , 0.04, 0, 1, 1, 1, "PYTHIA-8");
+  dlutility::drawText(Form("%s", generator.Data()), 0.15, 0.85);
+  //dlutility::drawText(Form("PRIMER/SYS: %s", sys_name.Data()), 0.13, 0.85);
+  dlutility::drawText(Form("anti-#it{k}_{t} R = 0.%d", cone_size), 0.85, 0.85, 1);
+  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.85, 0.8, 1);
 
   cresponseskim->Print(Form("%s/unfolding_plots/response_matrix_pp_r%02d_%s.pdf", rb.get_code_location().c_str(), cone_size, sys_name.Data()));
   
@@ -129,11 +130,11 @@ void drawResponse_pp(const int cone_size = 4, const int primer = 0, const std::s
   cresponseskimzoom->SetLogz();
   
   gPad->SetRightMargin(0.05);
-  h_flat_response_skim->GetXaxis()->SetRangeUser(46, 60);
-  h_flat_response_skim->GetYaxis()->SetRangeUser(121, 140);
+  h_flat_response_skim->GetXaxis()->SetRangeUser(281, 282+19);
+  h_flat_response_skim->GetYaxis()->SetRangeUser(177, 197);
   h_flat_response_skim->Draw("col");
-  dlutility::DrawSPHENIX_Prelim(0.93, 0.4);
-  dlutility::drawText("Response matrix", 0.93, 0.3, 1);
+  dlutility::DrawSPHENIXpp(0.20, 0.85);
+  dlutility::drawText("Response matrix", 0.2, 0.75);
 
   cresponseskimzoom->Print(Form("%s/unfolding_plots/response_matrix_zoom_pp_r%02d_%s.pdf", rb.get_code_location().c_str(), cone_size, sys_name.Data()));
 

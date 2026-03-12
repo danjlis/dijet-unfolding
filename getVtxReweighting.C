@@ -4,7 +4,7 @@
 int color_sim = kRed - 2;
 int color_data = kAzure - 6;
 
-void getVtxReweighting(const int cone_size = 4, const std::string configfile = "binning.config", const int input_generator = 0, const int unfold_generator = 0, const int full_or_half = 0)
+void getVtxReweighting(const int cone_size = 4, const std::string configfile = "binning.config", const int input_generator = 0, const int unfold_generator = 0, const int final = 0, const int full_or_half = 0)
 {
   int primer = 1;
   gStyle->SetOptStat(0);
@@ -59,8 +59,20 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
     {
       sys_name = "HALF_" + sys_name;
     }
+
+  std::string sys_name_orig = sys_name;
+  if (final == 1)
+    {
+      sys_name = "FINAL_" + sys_name;
+    }
+  std::string fsimname = Form("%s/response_matrices/response_matrix_pp_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), cone_size, sys_name_orig.c_str());
+
+  if (final == 1)
+    {
+      fsimname = Form("%s/response_matrices/response_matrix_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sys_name_orig.c_str());
+    }
   
-  TFile *f_sim = new TFile(Form("%s/response_matrices/response_matrix_pp_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), cone_size, sys_name.c_str()),"r");
+  TFile *f_sim = new TFile(fsimname.c_str(),"r");
 
   TH1D *h_mbd_sim = (TH1D*) f_sim->Get("h_mbd_vertex");
   h_mbd_sim->SetName("h_mbd_sim");
@@ -70,8 +82,14 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   TH2D *h_eta_sim = (TH2D*) f_sim->Get("h_eta_lead_sublead");
   h_eta_sim->SetName("h_eta_sim");
   h_eta_sim->Rebin2D(10, 10);
-  
-  TFile *f_data = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), cone_size, sys_name.c_str()),"r");
+
+  std::string f_data_name = Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), cone_size, sys_name_orig.c_str());
+  if (final == 1)
+    {
+      f_data_name = Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sys_name_orig.c_str());
+    }
+    
+  TFile *f_data = new TFile(f_data_name.c_str(),"r");
 
   TH1D *h_mbd_data = (TH1D*) f_data->Get("h_mbd_vertex");
   h_mbd_data->SetName("h_mbd_data");

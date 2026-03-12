@@ -29,6 +29,7 @@ struct jet
   {
     std::cout << "Jet " << id << std::endl;
     std::cout << "    pt/eta/phi : " << pt << " / " << eta << " / " << phi << std::endl;
+    std::cout << "    matched/dr: " << matched << " / " << dR << std::endl;
     if (!istruth) std::cout << "    uncalib/em/det/t   : " << pt_uncalib << " / " << emcal << " / " << eta_det << " / " << t << std::endl;
   };
 };
@@ -40,7 +41,7 @@ class dijetfinder
     {
       m_cone_size = cone_size;
       m_eta_cut = 1.1 - ( ((float) cone_size ) * 0.1 );
-      m_dR_cut = 1;//0.75 * ( ((float) cone_size ) * 0.1 );
+      m_dR_cut = 0.75 * ( ((float) cone_size ) * 0.1 );
     }
   
   ~dijetfinder(){}

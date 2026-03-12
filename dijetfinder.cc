@@ -39,22 +39,24 @@ std::vector<std::pair<struct jet, struct jet>>  dijetfinder::match_dijets(std::v
       
       for (auto jet : myrecojets)
 	{
-	  auto reco_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == jet.id;});
-	  if (reco_iter != matched_dijets.end()) continue;
+	  // auto reco_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == jet.id;});
+	  //if (reco_iter != matched_dijets.end()) continue;
 	  
-	  float dR = fabs(getDPHI(jet.phi, tjet.phi));
-	  
-	  if (dR < m_dR_cut && truth_closest_jet > dR)
+	  float dR = fabs(getDR(jet, tjet));
+	  float dphi = fabs(getDPHI(jet.phi, tjet.phi));
+	  if (dphi < m_dR_cut && truth_closest_jet > dR)
 	    {
 	      if (already_matched)
 		{
-		  matched_dijets.erase(truth_iter);
+		  auto truth_iter2 = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == tjet.id;});
+		  matched_dijets.erase(truth_iter2);
 		}
 	      tjet.matched = 1;
 	      tjet.dR = dR;
 	      jet.matched = 1;
 	      jet.dR = dR;
-
+	      already_matched = true;
+	      truth_closest_jet = dR;
 	      matched_dijets.push_back(std::make_pair(tjet, jet));	
 	      break;
 	    }	  
