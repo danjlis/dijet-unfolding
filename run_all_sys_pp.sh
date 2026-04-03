@@ -19,14 +19,7 @@ if [[ $final -eq 0 ]]; then
     
     ./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 2 -h 0 -f ${usefakes} -e 0
     ./unfoldData_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 2
-    
-    ./unfoldDataUncertainties_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 2
-    
-    root -l -q -b "makeIterationPlot_pp.C(${conesize}, 2, \"${sysconfig}\")"
 fi
 ./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0 -h 0 -f ${usefakes} -e 0
 ./unfoldData_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0
-if [[ $final -eq 0 ]]; then
-    ./unfoldDataUncertainties_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0
-fi
 

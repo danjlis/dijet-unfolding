@@ -16,6 +16,7 @@ using std::endl;
 #include "TProfile.h"
 #include "TEfficiency.h"
 #include "TF1.h"
+#include "TF2.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TTree.h"
@@ -53,21 +54,23 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   std::string system_string = "pp";
     
   read_binning rb(configfile.c_str());
-
-  TF1 *finjes = nullptr;
-
-  TFile *infilejes = new TFile(Form("%s/r%02d/jes/jes_fits_r%02d_0JES_PYTHIA.root", rb.get_jesr_location().c_str(), cone_size, cone_size), "r");
-  finjes = (TF1*) infilejes->Get("fjesprime_2");
+  std::vector<int> runnumbers = rb.getRunnumbers();
 
   TF1 *fsmear = new TF1("fsmear", "gaus", -1, 1);
   fsmear->SetParameters(1, 0, 0.13);
   TFile *finjer = new TFile(Form("%s/r%02d/jer/jer_fits_r%02d_1JES_0_closure.root", rb.get_jesr_location().c_str(), (cone_size == 2 ? 3 : cone_size), (cone_size == 2 ? 3 : cone_size)), "r");
 
-  
+
+  TFile *in_trigger = new TFile(Form("%s/efficiencies/trigger_efficiencies.root", rb.get_code_location().c_str()), "r");
+  TF2 *ftrigger = (TF2*) in_trigger->Get(Form("f2_jet10_eff_r0%d", cone_size));
+
+  // TFile *in_purity = new TFile(Form("%s/efficiencies/purity_correction_r%02d.root", rb.get_code_location().c_str(), cone_size), "r");
+  // TH1D *h_purity = (TH1D*) in_purity->Get(Form("h_purity_r%02d", cone_size));
+
   dijetfinder djf(cone_size);
   djf.SetVerbosity(verbosity);
 
-  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_5_ana533_2025p007_v001_gl10-all.root";
+  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_7_ana533_2025p007_v001_gl10-alltime.root";
 
   int sim_version = version_arr[unfold_generator];
   
@@ -111,9 +114,10 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   ULong64_t gl1_scaled[5];;
   float mbd_vertex_z[5];
   int mbd_hit[5];  
-
+  int runnumber[5];
   double mbd_avgsigma[5];
-  
+  double calib_lead_time;
+  double calib_delta_time;
   std::vector<float> *truth_jet_pt_ref[5] = {0};
   std::vector<float> *truth_jet_pt[5] = {0};
   std::vector<float> *truth_jet_eta[5] = {0};
@@ -129,6 +133,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   float n_events[5];
   TFile *fin[5];
   TTree *ttree[5];
+
+  
   for (int i = 0; i < 5; i ++)
     {
       if (!sample_skip[i]) continue;
@@ -153,6 +159,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	}
       else
 	{
+	  ttree[i]->SetBranchAddress("runnumber", &runnumber[i]);
 	  ttree[i]->SetBranchAddress("mbd_avgsigma", &mbd_avgsigma[i]);
 	}
       ttree[i]->SetBranchAddress(Form("jet_pt_calib_%d", cone_size), &reco_jet_pt[i]);
@@ -163,6 +170,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
       ttree[i]->SetBranchAddress(Form("jet_eta_det_%d", cone_size), &reco_jet_eta_det[i]);
       ttree[i]->SetBranchAddress(Form("jet_phi_%d", cone_size), &reco_jet_phi[i]);
       ttree[i]->SetBranchAddress("mbd_vertex_z", &mbd_vertex_z[i]);
+      ttree[i]->SetBranchAddress("calib_lead_time", &calib_lead_time);
+      ttree[i]->SetBranchAddress("calib_delta_time", &calib_delta_time);
 
       ttree[i]->SetBranchAddress("mbd_hit", &mbd_hit[i]);
       ttree[i]->SetBranchAddress("gl1_scaled", &gl1_scaled[i]);
@@ -201,12 +210,16 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   //Double_t dphicut = rb.get_dphicut();
   Double_t vtx_cut = rb.get_vtx_cut();
   Double_t njet_cut = rb.get_njet_cut();
+  Int_t trigger_sys = rb.get_trigger_sys();
+  Int_t philoc_sys = rb.get_philoc_sys();
+  Int_t ca_sys = rb.get_crossingangle_sys();
   
   const int nbins = read_nbins;
   const int nbins_pt = read_nbins + 1;
   
   //Int_t njet_sys = rb.get_njet_sys();
   Int_t prior_sys = rb.get_prior_sys();
+  Int_t emfrac_sys = rb.get_emfrac_sys();
 
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
@@ -220,6 +233,33 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   
   if (prior_sys)
     sys_name = "PRIOR";
+  if (emfrac_sys)
+    sys_name = "EMFRAC";
+
+  if (trigger_sys)
+    {
+      sys_name = "TRIGGER";
+    }
+  int runnumber_low = 0;
+  int runnumber_high = 100000;
+  if (ca_sys)
+    {      
+      sys_name = "CA" + std::to_string(ca_sys) ;
+      if (ca_sys == 1)
+	{
+	  runnumber_high = 52212;
+	}
+      else
+	{
+	  runnumber_low = 52212;
+	}
+    }
+
+  if (philoc_sys)
+    {
+      sys_name = "PHILOC" + std::to_string(philoc_sys);;
+    }
+
   if (herwig_sys)
     sys_name = "HERWIG";
   
@@ -332,15 +372,18 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
   
   float ipt_bins[nbins_pt+1];
+  double dpt_bins[nbins_pt+1];
   float ixj_bins[nbins+1];
 
   rb.get_pt_bins(ipt_bins);
   rb.get_xj_bins(ixj_bins);
   for (int i = 0 ; i < nbins + 1; i++)
     {
+      dpt_bins[i] = (double) ipt_bins[i];
       std::cout << ipt_bins[i] << " -- " << ixj_bins[i] << std::endl;
     }
   ipt_bins[nbins_pt] = 100;
+  dpt_bins[nbins_pt] = 100;
   
   float truth_leading_cut = rb.get_truth_leading_cut();
   float truth_subleading_cut = rb.get_truth_subleading_cut();
@@ -348,8 +391,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   float reco_leading_cut = rb.get_reco_leading_cut();
   float reco_subleading_cut = rb.get_reco_subleading_cut();
 
-  float reco_leading_bin = rb.get_reco_leading_bin();
-  float reco_subleading_bin = rb.get_reco_subleading_bin();
+  int reco_leading_bin = rb.get_reco_leading_bin();
+  int reco_subleading_bin = rb.get_reco_subleading_bin();
 
   float measure_leading_cut = rb.get_measure_leading_cut();
   float measure_subleading_cut = rb.get_measure_subleading_cut();
@@ -359,7 +402,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
   djf.setRecoCuts(reco_leading_cut, reco_subleading_cut);
   djf.setTruthCuts(truth_leading_cut, truth_subleading_cut);
-
+  djf.setPhiLocation(philoc_sys);
+  
 
   int exbin = 1;
   int measure_bins[10] = {0};
@@ -371,6 +415,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
 
   Int_t max_reco_bin = rb.get_maximum_reco_bin();
+
   std::cout << "Max reco: " << max_reco_bin << " - ( " << ipt_bins[max_reco_bin] << ")" << std::endl;
   std::cout << "Reco 1: " <<  reco_leading_cut << std::endl;
   std::cout << "Meas 1: " <<  measure_leading_cut << std::endl;
@@ -522,15 +567,37 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
     }
 
+  TH1D *h_reco_lead = (TH1D*) fresponse->Get("h_reco_lead");
+  if (!h_reco_lead)
+    {
+      std::cout << "no reco lead" << std::endl;
+      return 1;
+    }
+  TH1D *h_reco_sublead = (TH1D*) fresponse->Get("h_reco_sublead");
+  if (!h_reco_sublead)
+    {
+      std::cout << "no reco sublead" << std::endl;
+      return 1;
+    }
+  TH2D *h_reco_eta_phi_lead = (TH2D*) fresponse->Get("h_eta_phi_lead");
+  if (!h_reco_eta_phi_lead)
+    {
+      std::cout << "no reco sublead" << std::endl;
+      return 1;
+    }
+  h_reco_eta_phi_lead->SetName("h_reco_eta_phi_lead");
 
   TH2D *h_eta_lead_sublead = new TH2D("h_eta_lead_sublead","", 220, -1.1, 1.1, 220, -1.1, 1.1);
-  
+  TH2D *h_eta_phi_lead = new TH2D("h_eta_phi_lead","", 48, -1.1, 1.1, 128, -TMath::Pi(), TMath::Pi());
+
+  TH2D *h_lead_pt_v_emfrac = new TH2D("h_lead_pt_v_emfrac","",nbins_pt, dpt_bins, 12, -0.1, 1.1);
   TH1D *h_mbd_vertex = new TH1D("h_mbd_vertex", ";z_{vtx}; counts", 120, -60, 60);
   TH1D *h_njets = new TH1D("h_njets", ";N_{Jet}; counts", 21, -0.5, 20.5);
   TH1D *h_reco_xj = new TH1D("h_reco_xj",";x_{J};1/N", nbins, ixj_bins);
 
   TH2D *h_pt1pt2 = new TH2D("h_pt1pt2",";p_{T1, data};p_{T2, data}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
   TH1D *h_flat_data_pt1pt2 = new TH1D("h_data_flat_pt1pt2",";p_{T1, smear} + p_{T2, smear}", nbins_pt_reco_2, 0, nbins_pt_reco_2);
+  TH1D *h_flat_data_pt1pt2_eff = new TH1D("h_data_flat_pt1pt2_eff",";p_{T1, smear} + p_{T2, smear}", nbins_pt_reco_2, 0, nbins_pt_reco_2);
   TH1D *h_data_lead = new TH1D("h_data_lead", ";p_{T} [GeV];", 100, 0, 100);
   TH1D *h_data_sublead = new TH1D("h_data_sublead", ";p_{T} [GeV];", 100, 0, 100);
   TH1D *h_truth_lead = new TH1D("h_truth_lead", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
@@ -542,13 +609,33 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
       if (!sample_skip[isample]) continue;
       int entries = ttree[isample]->GetEntries();
+
       int start = 0;
       if (full_or_half) entries /= 2;// entries/2;
+      int last_runnumber = 0;
+      bool skip_run = false;
       for (int i = start; i < entries; i++)
 	{
 
 	  ttree[isample]->GetEntry(i);
+
+	  if (last_runnumber != runnumber[isample])
+	    {
+	      last_runnumber = runnumber[isample];
+	      if (std::find(runnumbers.begin(), runnumbers.end(), runnumber[isample]) == runnumbers.end())
+		{
+		  std::cout << "Skipping run " << runnumber[isample] << std::endl;
+		  skip_run = true;
+		}
+	      else
+		{
+		  std::cout << "Analysing run " << runnumber[isample] << std::endl;
+		  skip_run = false;
+		}
+	    }
+	  if (skip_run) continue;
 	  
+	  if (runnumber[isample] >= runnumber_high || runnumber[isample] < runnumber_low) continue;
 	  std::cout << "Event : " << i << " \r" << std::flush;
 	  myrecojets.clear();
 	  mytruthjets.clear();
@@ -584,7 +671,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	    }
 	  else
 	    {
-	      // 
+	      
 	      triggered = ((gl1_scaled[isample] >> 18) & 0x1)  == 0x1 ||((gl1_scaled[isample] >> 34) & 0x1)  == 0x1;
 	      //if (mbd_avgsigma[isample] >= 0.4) continue;
 	    }
@@ -621,7 +708,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	      if (tempjet.pt < reco_subleading_cut) continue;
 	      // if (fabs(reco_jet_eta_det[isample]->at(j)) > 0.7) continue;
 	      // if (fabs(reco_jet_eta[isample]->at(j)) > 0.7) continue;
-
+	      tempjet.e = reco_jet_e[isample]->at(j);
 	      tempjet.emcal = reco_jet_emcal[isample]->at(j);
 	      tempjet.eta = reco_jet_eta[isample]->at(j);
 	      tempjet.eta_det = reco_jet_eta_det[isample]->at(j);
@@ -637,6 +724,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  std::sort(myrecojets.begin(), myrecojets.end(), [] (auto a, auto b) { return a.pt > b.pt; });
 
 	  bool reco_good = djf.check_dijet_reco(myrecojets);
+	  bool time_good = djf.passes_time_cut(calib_lead_time, calib_delta_time);
+	  reco_good &= time_good;
 	  reco_good &= triggered;
 	  reco_good &= has_mbd_hit;
 	  reco_good &= has_vertex;
@@ -648,7 +737,6 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	    }
       
 	  if (!reco_good) continue;
-	  
 
 	  float pt1_reco_bin = nbins_pt;
 	  float pt2_reco_bin = nbins_pt;
@@ -657,6 +745,9 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  float mini = myrecojets.at(1).pt;
 	  float es1 = maxi;
 	  float es2 = mini;
+
+	  float trigger_eff = 1./ftrigger->Eval(maxi, mini);
+	  
 	  //if () continue;
 
 	  for (int ib = 0; ib < nbins_pt; ib++)
@@ -692,22 +783,45 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  
 	  h_pt1pt2->Fill(es1, es2, scale_factor[isample]);
 	  h_pt1pt2->Fill(es2, es1, scale_factor[isample]);
-	  h_flat_data_pt1pt2->Fill(total_bin_reco_1, scale_factor[isample]);
-	  h_flat_data_pt1pt2->Fill(total_bin_reco_2, scale_factor[isample]);
-	  if (maxi >= ipt_bins[measure_bins[exbin]] && maxi < ipt_bins[measure_bins[exbin+1]] && mini >= measure_subleading_cut)
+	  if (!unfold_generator)
+	    {
+	      if (trigger_sys)
+		{
+		  h_flat_data_pt1pt2->Fill(total_bin_reco_1, 1./trigger_eff);
+		  h_flat_data_pt1pt2->Fill(total_bin_reco_2, 1./trigger_eff);
+		}
+	      else
+		{
+		  h_flat_data_pt1pt2->Fill(total_bin_reco_1);
+		  h_flat_data_pt1pt2->Fill(total_bin_reco_2);
+
+		}	      
+	      h_flat_data_pt1pt2_eff->Fill(total_bin_reco_1);
+	      h_flat_data_pt1pt2_eff->Fill(total_bin_reco_2);
+	    }
+	  else
+	    {
+	      h_flat_data_pt1pt2->Fill(total_bin_reco_1, scale_factor[isample]);
+	      h_flat_data_pt1pt2->Fill(total_bin_reco_2, scale_factor[isample]);
+
+	    }
+	  if (maxi >= ipt_bins[measure_bins[0]] && maxi < ipt_bins[measure_bins[2]] && mini >= measure_subleading_cut)
 	    {
 	      h_reco_xj->Fill(mini/maxi, scale_factor[isample]);
 	    }
 	  h_mbd_vertex->Fill(mbd_vertex_z[isample], scale_factor[isample]);
 	  h_njets->Fill(nnrecojets, scale_factor[isample]);
 	  h_data_lead->Fill(maxi, scale_factor[isample]);
+	  h_eta_phi_lead->Fill(myrecojets.at(0).eta, myrecojets.at(0).phi, scale_factor[isample]);
+	  h_lead_pt_v_emfrac->Fill(myrecojets.at(0).pt, myrecojets.at(0).emcal,  scale_factor[isample]); 
 	  h_data_sublead->Fill(mini, scale_factor[isample]);
 	  h_eta_lead_sublead->Fill(myrecojets.at(0).eta, myrecojets.at(1).eta, scale_factor[isample]);
 	}
     }
 
   h_flat_data_pt1pt2->Scale(.5);
-
+  h_flat_data_pt1pt2_eff->Scale(.5);
+  //h_flat_data_pt1pt2->Multiply(h_purity);
   TH1D *h_flat_data_pt1pt2_full = new TH1D("h_data_flat_pt1pt2_full",";p_{T1, smear} + p_{T2, smear}", nbins_pt_2, 0, nbins_pt_2);
   for (int ib = 0; ib < nbins_pt_2; ib++)
 	{
@@ -758,6 +872,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
     }
 
   TH1D *h_xj_data = new TH1D("h_xj_data", ";x_{J};", nbins, ixj_bins);
+  TH1D *h_xj_data_all = new TH1D("h_xj_data_all", ";x_{J};", nbins, ixj_bins);
   TH1D *h_xj_truth = new TH1D("h_xj_truth", ";x_{J};",nbins, ixj_bins);
   TH1D *h_xj_truth_primer1 = new TH1D("h_xj_truth_primer1", ";x_{J};",nbins, ixj_bins);
   TH1D *h_xj_sim = new TH1D("h_xj_sim", ";x_{J};",nbins, ixj_bins);
@@ -788,6 +903,13 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   hct->SetName("hct");
   hct->Scale(1./hct->Integral());
 
+  TCanvas *ceff = new TCanvas("ceff","ceff", 1000, 300);
+  ceff->SetLogy();
+  h_flat_data_pt1pt2->Draw();
+  h_flat_data_pt1pt2_eff->SetLineColor(kRed);
+  h_flat_data_pt1pt2_eff->Draw("same");
+
+  ceff->Print(Form("%s/unfolding_plots/pt1pt2_eff_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(),  cone_size, sys_name.c_str()));
   TCanvas *cpt1pt2 = new TCanvas("cpt1pt2","cpt1pt2", 2000, 2000);
   cpt1pt2->Divide(2, 2);
 
@@ -891,7 +1013,71 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   // Double_t  Stops[Number] = {0.00, 0.15, 0.15001, 0.25, 0.2501, 0.4, 0.4001, 0.8, 0.8001, 1.0};
 
   // TColor::CreateGradientColorTable(Number, Stops, Red, Green, Blue, 20);
+  gStyle->SetPalette(kRainBow);
+  TCanvas *ceta = new TCanvas("ceta","ceta", 1000, 500);
+  ceta->Divide(2,1);
+  ceta->cd(1);
+  gPad->SetTopMargin(0.2);
+  gPad->SetRightMargin(0.15);
+  h_eta_phi_lead->SetTitle(";#eta;#phi;Counts");
+  h_eta_phi_lead->Draw("colz");
+  dlutility::DrawSPHENIXpp(0.15, 0.95, 0.03, 0, 1, 1);
+  dlutility::drawText("anti-k_{T} R = 0.4", 0.15, 0.9, 0, kBlack, 0.03);
+  dlutility::drawText("Data", 0.15, 0.85, 0, kBlack, 0.03);
+  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.85, 0.9, 1, kBlack, 0.03);
+  dlutility::drawText("|#eta| < 1.1 - #it{R}", 0.85, 0.85, 1, kBlack, 0.03);
 
+
+  ceta->cd(2);
+  gPad->SetTopMargin(0.2);
+  gPad->SetRightMargin(0.15);
+  h_reco_eta_phi_lead->SetTitle(";#eta;#phi;Counts");
+  h_reco_eta_phi_lead->Draw("colz");
+  dlutility::DrawSPHENIXpp(0.15, 0.95, 0.03, 0, 1, 1, 1, "PYTHIA-8");
+
+  dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[reco_leading_bin], ipt_bins[nbins]), 0.15, 0.9, 0, kBlack, 0.03);
+  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[reco_subleading_bin]), 0.15, 0.85, 0, kBlack, 0.03);
+  dlutility::drawText("Simulation", 0.85, 0.85, 1, kBlack, 0.03);
+  ceta->Print(Form("%s/unfolding_plots/etaphi_comp_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
+  TCanvas *ccomp = new TCanvas("ccomp","ccomp", 500, 500);
+
+  h_data_lead->Scale(1./h_data_lead->Integral(), "width");
+  h_data_sublead->Scale(1./h_data_sublead->Integral(), "width");
+  h_reco_lead->Scale(1./h_reco_lead->Integral(), "width");
+  h_reco_sublead->Scale(1./h_reco_sublead->Integral(), "width");
+
+  dlutility::SetMarkerAtt(h_data_lead, kBlue, 1, 20);
+  dlutility::SetMarkerAtt(h_data_sublead, kBlue, 1, 24);
+  dlutility::SetMarkerAtt(h_reco_lead, kRed, 1, 21);
+  dlutility::SetMarkerAtt(h_reco_sublead, kRed, 1, 25);
+  dlutility::SetLineAtt(h_data_lead, kBlue, 1, 1);
+  dlutility::SetLineAtt(h_data_sublead, kBlue, 1, 1);
+  dlutility::SetLineAtt(h_reco_lead, kRed, 1, 1);
+  dlutility::SetLineAtt(h_reco_sublead, kRed, 1, 1);
+
+  h_reco_lead->SetTitle(";Jet #it{p}_{T}; Arb.");
+  h_reco_lead->Draw("p");
+  h_reco_sublead->Draw("p same");
+  h_data_lead->Draw("p same");
+  h_data_sublead->Draw("p same");
+  ccomp->SetLogy();
+  dlutility::DrawSPHENIXpp(0.56, 0.89, 0.03);
+  dlutility::drawText("anti-k_{T} R = 0.4", 0.56, 0.79, 0, kBlack, 0.03);
+  dlutility::drawText(Form("%2.1f GeV #leq p_{T,1} < %2.1f GeV ", ipt_bins[reco_leading_bin], ipt_bins[nbins]), 0.56, 0.75, 0, kBlack, 0.03);
+  dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", ipt_bins[reco_subleading_bin]), 0.56, 0.71, 0, kBlack, 0.03);
+
+  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.56, 0.67, 0, kBlack, 0.03);
+  dlutility::drawText("|#eta| < 1.1 - #it{R}", 0.56, 0.63, 0, kBlack, 0.03);
+
+  TLegend *ldr = new TLegend(0.6, 0.46, 0.75, 0.61);
+  ldr->SetTextSize(0.03);
+  ldr->SetLineWidth(0);
+  ldr->AddEntry(h_data_lead, "Data - Lead","p");
+  ldr->AddEntry(h_data_sublead, "Data - Sublead","p");
+  ldr->AddEntry(h_reco_lead, "Reco. Sim - Lead","p");
+  ldr->AddEntry(h_reco_sublead, "Reco. Sim - Sublead","p");
+  ldr->Draw("same");
+  ccomp->Print(Form("%s/unfolding_plots/spectra_comp_%s_r%02d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, sys_name.c_str()));
   TCanvas *cpt2 = new TCanvas("cpt2","cpt2", 1000, 600);
   TH2D *h_asym_data = (TH2D*) h_pt1pt2_data->Clone();
   h_asym_data->SetName("h_asym_data");
@@ -947,6 +1133,10 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	  cut_high = ipt_bins[measure_bins[i]];
 
 	}
+
+      hd->Scale(1./hd->Integral(),"width");
+      hs->Scale(1./hs->Integral(),"width");
+
       std::string cut_string = Form("%2.1f #geq #it{p}_{T} < %2.1f GeV", cut_low, cut_high);
       hd->SetTitle("; #it{p}_{T,2} [GeV] ; Self. Norm.");
       
@@ -1019,7 +1209,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
     }
 
   h_ratio_data_reco->Divide(h_ratio_sim_reco);
-  h_ratio_data_reco->SetTitle(";#it{p}_{T1};#it{p}_{T1};Data/Reco");
+  h_ratio_data_reco->SetTitle(";#it{p}_{T,1};#it{p}_{T,1};Data/Reco");
   
   cunpt1pt2->SetRightMargin(0.2);
   //h_ratio_data_reco->SetMinimum(0);
@@ -1043,6 +1233,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
     {
       histo_opps::make_sym_pt1pt2(h_flat_data_truth_pt1pt2, h_pt1pt2_data_truth, nbins_pt);
     }
+  histo_opps::project_xj(h_pt1pt2_data, h_xj_data_all, nbins_pt, measure_bins[0], measure_bins[2], measure_subleading_bin, nbins - 1);
   TCanvas *cunfold = new TCanvas("cunfold","cunfold", 700, 1000);
   dlutility::ratioPanelCanvas(cunfold);
   
@@ -1080,23 +1271,6 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	}
 
 
-      histo_opps::normalize_histo(h_xj_truth, nbins);
-      if (primer != 1)
-	{
-	  histo_opps::normalize_histo(h_xj_truth_primer1, nbins);
-	}
-      if (unfold_generator > 0)
-	{
-	  histo_opps::normalize_histo(h_xj_data_truth, nbins);
-	}
-
-      histo_opps::normalize_histo(h_xj_sim, nbins);
-      histo_opps::normalize_histo(h_xj_data, nbins);
-      histo_opps::normalize_histo(h_filled_xj_truth[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_xj_unfold[iter], nbins);
-	}
 
 
 
@@ -1124,7 +1298,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
       dlutility::SetLineAtt(h_filled_xj_truth[irange], kBlack, 1, 1);
       dlutility::SetMarkerAtt(h_filled_xj_truth[irange], kBlack, 1, 25);
 
-      h_xj_truth->SetMaximum(5);
+      h_xj_truth->SetMaximum(h_xj_unfold[0]->GetBinContent(h_xj_unfold[0]->GetMaximumBin())*1.3);
       h_xj_truth->SetTitle(";x_{J};#frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");
       cunfold->cd(1);
       
@@ -1166,7 +1340,7 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
       dlutility::DrawSPHENIXpp(0.22, 0.85, 0.03);
       dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.75, 0, kBlack, 0.03);
-      dlutility::drawText(Form("p_{T2} #geq %2.1f GeV", measure_subleading_cut), 0.22, 0.7, 0, kBlack, 0.03);
+      dlutility::drawText(Form("p_{T,2} #geq %2.1f GeV", measure_subleading_cut), 0.22, 0.7, 0, kBlack, 0.03);
       TLegend *lc = new TLegend(0.55, 0.68, 0.75, 0.88);
       lc->SetTextSize(0.03);
       lc->SetLineWidth(0);
@@ -1232,7 +1406,28 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 	    }
 	}
       cunfold->Print(Form("%s/unfolding_plots/full_unfold_%s_r%02d_range_%d_%s.pdf", rb.get_code_location().c_str(), system_string.c_str(), cone_size, irange, sys_name.c_str()));
+
+      histo_opps::normalize_histo(h_xj_truth, nbins);
+      if (primer != 1)
+	{
+	  histo_opps::normalize_histo(h_xj_truth_primer1, nbins);
+	}
+      if (unfold_generator > 0)
+	{
+	  histo_opps::normalize_histo(h_xj_data_truth, nbins);
+	}
+
+      histo_opps::normalize_histo(h_xj_sim, nbins);
+      histo_opps::normalize_histo(h_xj_data, nbins);
+      histo_opps::normalize_histo(h_filled_xj_truth[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_xj_unfold[iter], nbins);
+	}
+
     }
+
+
   // TCanvas *cdphi = new TCanvas("cphi","cdphi", 500, 500);
 
   
@@ -1410,8 +1605,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
 
 
-  dlutility::SetLineAtt(h_xj_data, kBlue, 2, 1);
-  dlutility::SetMarkerAtt(h_xj_data, kBlue, 1, 8);
+  dlutility::SetLineAtt(h_xj_data_all, kBlue, 2, 1);
+  dlutility::SetMarkerAtt(h_xj_data_all, kBlue, 1, 8);
 
   dlutility::SetLineAtt(h_reco_xj, kBlack, 2, 1);
   dlutility::SetMarkerAtt(h_reco_xj, kBlack, 1, 24);
@@ -1419,13 +1614,16 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   TCanvas *cproj = new TCanvas("cproj","cproj", 500, 700);
   dlutility::ratioPanelCanvas(cproj);
 
+  histo_opps::normalize_histo(h_xj_data_all, nbins);
   cproj->cd(1);
-  h_xj_data->SetMaximum(3);
-  h_xj_data->SetTitle(";x_{J}; #frac{1}{N_{pairs}}#frac{dN_{pair}}{dx_{J}}");
-  dlutility::SetFont(h_xj_data, 42, 0.04);
+  h_xj_data_all->SetMaximum(3);
+  h_xj_data_all->SetTitle(";x_{J}; #frac{1}{N_{pairs}}#frac{dN_{pair}}{dx_{J}}");
+  dlutility::SetFont(h_xj_data_all, 42, 0.04);
   
-  h_xj_data->Draw();
+  h_xj_data_all->Draw();
   h_reco_xj->Draw("same");
+
+  
   if (!ispp) dlutility::DrawSPHENIX(0.22, 0.85);
   else dlutility::DrawSPHENIXpp(0.22, 0.85);
   //  dlutility::DrawSPHENIX(0.22, 0.84);
@@ -1433,16 +1631,16 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   dlutility::drawText(Form("%2.1f GeV #leq p_{T1} < %2.1f GeV ", ipt_bins[measure_leading_bin], ipt_bins[nbins - 1]), 0.22, 0.69);
   dlutility::drawText(Form("p_{T2}^{lead} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
   dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
-  TLegend *legp = new TLegend(0.22, 0.45, 0.4, 0.55);
+  TLegend *legp = new TLegend(0.63, 0.75, 0.8, 0.85);
   legp->SetLineWidth(0);
   legp->SetTextFont(42);
   legp->SetTextSize(0.04);
   legp->AddEntry(h_reco_xj, "Data Filled");
-  legp->AddEntry(h_xj_data, "Data Projected");
+  legp->AddEntry(h_xj_data_all, "Data Projected");
   legp->Draw("same");
 
   cproj->cd(2);
-  TH1D *h_fillproj_compare = (TH1D*) h_xj_data->Clone();
+  TH1D *h_fillproj_compare = (TH1D*) h_xj_data_all->Clone();
 
   dlutility::SetFont(h_fillproj_compare, 42, 0.06);
   h_fillproj_compare->Divide(h_reco_xj);
@@ -1468,6 +1666,8 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   unfoldpath += ".root";
   
   TFile *fout = new TFile(unfoldpath.Data(),"recreate");
+  h_lead_pt_v_emfrac->Write();
+  h_eta_phi_lead->Write();
   h_eta_lead_sublead->Write();
   h_flat_data_pt1pt2->Write();
   h_flat_data_pt1pt2_full->Write();

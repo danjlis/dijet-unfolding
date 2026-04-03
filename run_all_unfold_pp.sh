@@ -12,6 +12,8 @@ interaction () {
 	read -n 1 -s -r -p "Press any key to continue..."
     fi
 }
+
+
 if [[ $final -eq 0 ]]; then
     ./createResponse_noempty_pp -r ${conesize} -c "binning.config" -n 10 -p 1 -h 0 -f ${fakes} -e 0 -v 2 -m 1
 
@@ -61,6 +63,8 @@ interaction $interactive
 ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0
 
 interaction $interactive
+
+
 if [[ $final -eq 0 ]]; then
     ./unfoldDataUncertainties_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 
     
@@ -80,6 +84,11 @@ if [[ $final -eq 0 ]]; then
 	bash run_all_sys_pp.sh ${conesize} binning_negJER.config ${fakes} ${final}
 	bash run_all_sys_pp.sh ${conesize} binning_posJER.config ${fakes} ${final}
 	bash run_all_sys_pp.sh ${conesize} binning_herwig.config ${fakes} ${final}
+	bash run_all_sys_pp.sh ${conesize} binning_trigger.config ${fakes} ${final}
+	bash run_all_sys_pp.sh ${conesize} binning_horizontal.config ${fakes} ${final}
+	bash run_all_sys_pp.sh ${conesize} binning_vertical.config ${fakes} ${final}
+	bash run_all_sys_pp.sh ${conesize} binning_0.config ${fakes} ${final}
+	bash run_all_sys_pp.sh ${conesize} binning_1.5.config ${fakes} ${final}
 	root -l -b -q "drawSysJESJER.C(${conesize})"
 	root -l -b -q "drawFinalUnfold.C(${conesize})"
     fi

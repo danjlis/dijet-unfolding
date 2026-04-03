@@ -2,7 +2,7 @@
 #include "read_binning.h"
 #include "histo_opps.h"
 
-const int color_unfold = kAzure - 6;
+const int color_unfold = kBlack;
 const float marker_unfold = 20;
 const float msize_unfold = 0.9;
 const float lsize_unfold = 1.1;
@@ -11,6 +11,11 @@ const int color_njet = kOrange + 7;
 const float marker_njet = 20;
 const float msize_njet = 0.9;
 const float lsize_njet = 1.1;
+
+const int color_trigger = kOrange + 7;
+const float marker_trigger = 20;
+const float msize_trigger = 0.9;
+const float lsize_trigger = 1.1;
 
 const int color_half = kOrange + 7;
 const float marker_half = 20;
@@ -21,6 +26,11 @@ const int color_herwig = kBlue + 1;
 const float marker_herwig = 20;
 const float msize_herwig = 0.9;
 const float lsize_herwig = 1.1;
+
+const int color_emfrac = kBlue + 1;
+const float marker_emfrac = 20;
+const float msize_emfrac = 0.9;
+const float lsize_emfrac = 1.1;
 
 const int color_prior = kRed - 2;
 const float marker_prior = 20;
@@ -36,6 +46,28 @@ const int color_pjer = kMagenta + 2;
 const float marker_pjer = 20;
 const float msize_pjer = 0.9;
 const float lsize_pjer = 1.1;
+
+
+const int color_15mrad = kGreen + 3;
+const float marker_15mrad = 20;
+const float msize_15mrad = 0.9;
+const float lsize_15mrad = 1.1;
+
+const int color_0mrad = kGreen - 4;
+const float marker_0mrad = 20;
+const float msize_0mrad = 0.9;
+const float lsize_0mrad = 1.1;
+
+const int color_vphi = TColor::GetColor(238, 166, 0);
+const float marker_vphi = 20;
+const float msize_vphi = 0.9;
+const float lsize_vphi = 1.1;
+
+const int color_hphi = kRed;
+const float marker_hphi = 20;
+const float msize_hphi = 0.9;
+const float lsize_hphi = 1.1;
+
 
 const int color_pjes = kCyan + 1;
 const float marker_pjes = 20;
@@ -134,8 +166,23 @@ void drawSysJESJER(const int cone_size = 4)
   std::cout << "Truth2: " <<  truth_subleading_cut << std::endl;
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
+
   
   const int niterations = 10;
+
+  TH2D *h_average_xj[niterations];
+
+  std::vector<std::pair<double, int>> *variation_average_xj[niterations][3];
+
+  for (int iter = 0 ; iter < niterations; iter++)
+    {
+      h_average_xj[iter] = new TH2D(Form("h_average_xj_%d", iter),";range;variation;", 3, 0, 3, 3, 0, 3);
+      for (int j = 0 ; j < 3; j++)
+	{
+	  variation_average_xj[iter][j] = new std::vector<std::pair<double, int>>();
+	}
+    }
+  
   TFile *finu = new TFile(Form("%s/uncertainties/uncertainties_pp_r%02d_nominal.root", rb.get_code_location().c_str(), cone_size),"r");
 
   TProfile *h_xj_rms[niterations];
@@ -231,6 +278,70 @@ void drawSysJESJER(const int cone_size = 4)
       h_njes_flat_unfold_pt1pt2[iter] = (TH1D*) finnjes->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
       h_njes_flat_unfold_pt1pt2[iter]->SetName(Form("h_njes_flat_unfold_pt1pt2_%d", iter));
     }
+
+  // PHI +
+  TFile *finhphi = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_PHILOC1.root", rb.get_code_location().c_str(), cone_size),"r");
+
+  TH1D *h_hphi_flat_data_pt1pt2 = (TH1D*) finhphi->Get("h_data_flat_pt1pt2");
+  h_hphi_flat_data_pt1pt2->SetName("h_hphi_flat_data_pt1pt2");
+  TH1D *h_hphi_flat_reco_pt1pt2 = (TH1D*) finhphi->Get("h_reco_flat_pt1pt2");
+  h_hphi_flat_reco_pt1pt2->SetName("h_hphi_flat_reco_pt1pt2");
+  TH1D *h_hphi_flat_truth_pt1pt2 = (TH1D*) finhphi->Get("h_truth_flat_pt1pt2");
+  h_hphi_flat_truth_pt1pt2->SetName("h_hphi_flat_truth_pt1pt2");
+  TH1D *h_hphi_flat_unfold_pt1pt2[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_hphi_flat_unfold_pt1pt2[iter] = (TH1D*) finhphi->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_hphi_flat_unfold_pt1pt2[iter]->SetName(Form("h_hphi_flat_unfold_pt1pt2_%d", iter));
+    }
+
+  // PHI -
+  TFile *finvphi = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_PHILOC2.root", rb.get_code_location().c_str(), cone_size),"r");
+
+  TH1D *h_vphi_flat_data_pt1pt2 = (TH1D*) finvphi->Get("h_data_flat_pt1pt2");
+  h_vphi_flat_data_pt1pt2->SetName("h_vphi_flat_data_pt1pt2");
+  TH1D *h_vphi_flat_reco_pt1pt2 = (TH1D*) finvphi->Get("h_reco_flat_pt1pt2");
+  h_vphi_flat_reco_pt1pt2->SetName("h_vphi_flat_reco_pt1pt2");
+  TH1D *h_vphi_flat_truth_pt1pt2 = (TH1D*) finvphi->Get("h_truth_flat_pt1pt2");
+  h_vphi_flat_truth_pt1pt2->SetName("h_vphi_flat_truth_pt1pt2");
+  TH1D *h_vphi_flat_unfold_pt1pt2[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_vphi_flat_unfold_pt1pt2[iter] = (TH1D*) finvphi->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_vphi_flat_unfold_pt1pt2[iter]->SetName(Form("h_vphi_flat_unfold_pt1pt2_%d", iter));
+    }
+
+  // TRIGEFF
+  TFile *fintrigeff = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_TRIGGER.root", rb.get_code_location().c_str(), cone_size),"r");
+
+  TH1D *h_trigeff_flat_data_pt1pt2 = (TH1D*) fintrigeff->Get("h_data_flat_pt1pt2");
+  h_trigeff_flat_data_pt1pt2->SetName("h_trigeff_flat_data_pt1pt2");
+  TH1D *h_trigeff_flat_reco_pt1pt2 = (TH1D*) fintrigeff->Get("h_reco_flat_pt1pt2");
+  h_trigeff_flat_reco_pt1pt2->SetName("h_trigeff_flat_reco_pt1pt2");
+  TH1D *h_trigeff_flat_truth_pt1pt2 = (TH1D*) fintrigeff->Get("h_truth_flat_pt1pt2");
+  h_trigeff_flat_truth_pt1pt2->SetName("h_trigeff_flat_truth_pt1pt2");
+  TH1D *h_trigeff_flat_unfold_pt1pt2[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_trigeff_flat_unfold_pt1pt2[iter] = (TH1D*) fintrigeff->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_trigeff_flat_unfold_pt1pt2[iter]->SetName(Form("h_trigeff_flat_unfold_pt1pt2_%d", iter));
+    }
+  // EMFRAC
+  TFile *finemfrac = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_EMFRAC.root", rb.get_code_location().c_str(), cone_size),"r");
+
+  TH1D *h_emfrac_flat_data_pt1pt2 = (TH1D*) finemfrac->Get("h_data_flat_pt1pt2");
+  h_emfrac_flat_data_pt1pt2->SetName("h_emfrac_flat_data_pt1pt2");
+  TH1D *h_emfrac_flat_reco_pt1pt2 = (TH1D*) finemfrac->Get("h_reco_flat_pt1pt2");
+  h_emfrac_flat_reco_pt1pt2->SetName("h_emfrac_flat_reco_pt1pt2");
+  TH1D *h_emfrac_flat_truth_pt1pt2 = (TH1D*) finemfrac->Get("h_truth_flat_pt1pt2");
+  h_emfrac_flat_truth_pt1pt2->SetName("h_emfrac_flat_truth_pt1pt2");
+  TH1D *h_emfrac_flat_unfold_pt1pt2[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_emfrac_flat_unfold_pt1pt2[iter] = (TH1D*) finemfrac->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_emfrac_flat_unfold_pt1pt2[iter]->SetName(Form("h_emfrac_flat_unfold_pt1pt2_%d", iter));
+    }
+
   // posJER
   TFile *finpjer = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_posJER.root",  rb.get_code_location().c_str(), cone_size),"r");
 
@@ -260,6 +371,37 @@ void drawSysJESJER(const int cone_size = 4)
     {
       h_njer_flat_unfold_pt1pt2[iter] = (TH1D*) finnjer->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
       h_njer_flat_unfold_pt1pt2[iter]->SetName(Form("h_njer_flat_unfold_pt1pt2_%d", iter));
+    }
+
+    // posJER
+  TFile *fin0mrad = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_CA1.root",  rb.get_code_location().c_str(), cone_size),"r");
+
+  TH1D *h_0mrad_flat_data_pt1pt2 = (TH1D*) fin0mrad->Get("h_data_flat_pt1pt2");
+  h_0mrad_flat_data_pt1pt2->SetName("h_0mrad_flat_data_pt1pt2");
+  TH1D *h_0mrad_flat_reco_pt1pt2 = (TH1D*) fin0mrad->Get("h_reco_flat_pt1pt2");
+  h_0mrad_flat_reco_pt1pt2->SetName("h_0mrad_flat_reco_pt1pt2");
+  TH1D *h_0mrad_flat_truth_pt1pt2 = (TH1D*) fin0mrad->Get("h_truth_flat_pt1pt2");
+  h_0mrad_flat_truth_pt1pt2->SetName("h_0mrad_flat_truth_pt1pt2");
+  TH1D *h_0mrad_flat_unfold_pt1pt2[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_0mrad_flat_unfold_pt1pt2[iter] = (TH1D*) fin0mrad->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_0mrad_flat_unfold_pt1pt2[iter]->SetName(Form("h_0mrad_flat_unfold_pt1pt2_%d", iter));
+    }
+  // 15mrad
+  TFile *fin15mrad = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_CA2.root",  rb.get_code_location().c_str(), cone_size),"r");
+
+  TH1D *h_15mrad_flat_data_pt1pt2 = (TH1D*) fin15mrad->Get("h_data_flat_pt1pt2");
+  h_15mrad_flat_data_pt1pt2->SetName("h_15mrad_flat_data_pt1pt2");
+  TH1D *h_15mrad_flat_reco_pt1pt2 = (TH1D*) fin15mrad->Get("h_reco_flat_pt1pt2");
+  h_15mrad_flat_reco_pt1pt2->SetName("h_15mrad_flat_reco_pt1pt2");
+  TH1D *h_15mrad_flat_truth_pt1pt2 = (TH1D*) fin15mrad->Get("h_truth_flat_pt1pt2");
+  h_15mrad_flat_truth_pt1pt2->SetName("h_15mrad_flat_truth_pt1pt2");
+  TH1D *h_15mrad_flat_unfold_pt1pt2[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_15mrad_flat_unfold_pt1pt2[iter] = (TH1D*) fin15mrad->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_15mrad_flat_unfold_pt1pt2[iter]->SetName(Form("h_15mrad_flat_unfold_pt1pt2_%d", iter));
     }
 
   /* // VTX */
@@ -374,6 +516,62 @@ void drawSysJESJER(const int cone_size = 4)
 	  h_herwig_xj_unfold_range[irange][iter] = new TH1D(Form("h_herwig_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
     }
+
+  // trigeff
+
+  TH2D *h_trigeff_pt1pt2_reco = new TH2D("h_trigeff_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_trigeff_pt1pt2_unfold[niterations];
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_trigeff_pt1pt2_unfold[iter] = new TH2D("h_trigeff_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+      h_trigeff_pt1pt2_unfold[iter]->SetName(Form("h_trigeff_pt1pt2_unfold_iter%d", iter));
+    }
+  TH1D *h_trigeff_xj_reco = new TH1D("h_trigeff_xj_reco", ";x_{J};", nbins, ixj_bins);
+  TH1D *h_trigeff_xj_unfold[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_trigeff_xj_unfold[iter] = new TH1D(Form("h_trigeff_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+    }
+  
+  TH1D *h_trigeff_xj_reco_range[mbins];
+  TH1D *h_trigeff_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_trigeff_xj_reco_range[irange] = new TH1D(Form("h_trigeff_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_trigeff_xj_unfold_range[irange][iter] = new TH1D(Form("h_trigeff_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+
+  // emfrac
+
+  TH2D *h_emfrac_pt1pt2_reco = new TH2D("h_emfrac_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_emfrac_pt1pt2_unfold[niterations];
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_emfrac_pt1pt2_unfold[iter] = new TH2D("h_emfrac_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+      h_emfrac_pt1pt2_unfold[iter]->SetName(Form("h_emfrac_pt1pt2_unfold_iter%d", iter));
+    }
+  TH1D *h_emfrac_xj_reco = new TH1D("h_emfrac_xj_reco", ";x_{J};", nbins, ixj_bins);
+  TH1D *h_emfrac_xj_unfold[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_emfrac_xj_unfold[iter] = new TH1D(Form("h_emfrac_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+    }
+  
+  TH1D *h_emfrac_xj_reco_range[mbins];
+  TH1D *h_emfrac_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_emfrac_xj_reco_range[irange] = new TH1D(Form("h_emfrac_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_emfrac_xj_unfold_range[irange][iter] = new TH1D(Form("h_emfrac_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
   // pJES
   TH2D *h_pjes_pt1pt2_reco = new TH2D("h_pjes_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
   TH2D *h_pjes_pt1pt2_unfold[niterations];
@@ -427,6 +625,61 @@ void drawSysJESJER(const int cone_size = 4)
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  h_njes_xj_unfold_range[irange][iter] = new TH1D(Form("h_njes_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+    // hphi
+  TH2D *h_hphi_pt1pt2_reco = new TH2D("h_hphi_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_hphi_pt1pt2_unfold[niterations];
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_hphi_pt1pt2_unfold[iter] = new TH2D("h_hphi_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+      h_hphi_pt1pt2_unfold[iter]->SetName(Form("h_hphi_pt1pt2_unfold_iter%d", iter));
+    }
+
+  TH1D *h_hphi_xj_reco = new TH1D("h_hphi_xj_reco", ";x_{J};", nbins, ixj_bins);
+  TH1D *h_hphi_xj_unfold[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_hphi_xj_unfold[iter] = new TH1D(Form("h_hphi_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+    }
+  
+  TH1D *h_hphi_xj_reco_range[mbins];
+  TH1D *h_hphi_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_hphi_xj_reco_range[irange] = new TH1D(Form("h_hphi_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_hphi_xj_unfold_range[irange][iter] = new TH1D(Form("h_hphi_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+
+  // vphi
+
+  TH2D *h_vphi_pt1pt2_reco = new TH2D("h_vphi_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_vphi_pt1pt2_unfold[niterations];
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_vphi_pt1pt2_unfold[iter] = new TH2D("h_vphi_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+      h_vphi_pt1pt2_unfold[iter]->SetName(Form("h_vphi_pt1pt2_unfold_iter%d", iter));
+    }
+  TH1D *h_vphi_xj_reco = new TH1D("h_vphi_xj_reco", ";x_{J};", nbins, ixj_bins);
+  TH1D *h_vphi_xj_unfold[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_vphi_xj_unfold[iter] = new TH1D(Form("h_vphi_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+    }
+  
+  TH1D *h_vphi_xj_reco_range[mbins];
+  TH1D *h_vphi_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_vphi_xj_reco_range[irange] = new TH1D(Form("h_vphi_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_vphi_xj_unfold_range[irange][iter] = new TH1D(Form("h_vphi_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
     }
   
@@ -483,6 +736,61 @@ void drawSysJESJER(const int cone_size = 4)
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  h_njer_xj_unfold_range[irange][iter] = new TH1D(Form("h_njer_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+    //POSJER
+  TH2D *h_0mrad_pt1pt2_reco = new TH2D("h_0mrad_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_0mrad_pt1pt2_unfold[niterations];
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_0mrad_pt1pt2_unfold[iter] = new TH2D("h_0mrad_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+      h_0mrad_pt1pt2_unfold[iter]->SetName(Form("h_0mrad_pt1pt2_unfold_iter%d", iter));
+    }
+
+  TH1D *h_0mrad_xj_reco = new TH1D("h_0mrad_xj_reco", ";x_{J};", nbins, ixj_bins);
+  TH1D *h_0mrad_xj_unfold[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_0mrad_xj_unfold[iter] = new TH1D(Form("h_0mrad_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+    }
+
+  TH1D *h_0mrad_xj_reco_range[mbins];
+  TH1D *h_0mrad_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_0mrad_xj_reco_range[irange] = new TH1D(Form("h_0mrad_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_0mrad_xj_unfold_range[irange][iter] = new TH1D(Form("h_0mrad_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+  
+  //15MRAD
+  TH2D *h_15mrad_pt1pt2_reco = new TH2D("h_15mrad_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_15mrad_pt1pt2_unfold[niterations];
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_15mrad_pt1pt2_unfold[iter] = new TH2D("h_15mrad_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+      h_15mrad_pt1pt2_unfold[iter]->SetName(Form("h_15mrad_pt1pt2_unfold_iter%d", iter));
+    }
+
+  TH1D *h_15mrad_xj_reco = new TH1D("h_15mrad_xj_reco", ";x_{J};", nbins, ixj_bins);
+  TH1D *h_15mrad_xj_unfold[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_15mrad_xj_unfold[iter] = new TH1D(Form("h_15mrad_xj_unfold_iter%d", iter), ";x_{J};",nbins, ixj_bins);
+    }
+
+  TH1D *h_15mrad_xj_reco_range[mbins];
+  TH1D *h_15mrad_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_15mrad_xj_reco_range[irange] = new TH1D(Form("h_15mrad_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_15mrad_xj_unfold_range[irange][iter] = new TH1D(Form("h_15mrad_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
     }
   /* //VTX */
@@ -609,6 +917,44 @@ void drawSysJESJER(const int cone_size = 4)
     {
       histo_opps::normalize_histo(h_herwig_xj_unfold[iter], nbins);
     }
+
+  //trigeff
+  histo_opps::make_sym_pt1pt2(h_trigeff_flat_reco_pt1pt2, h_trigeff_pt1pt2_reco, nbins_pt);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::make_sym_pt1pt2(h_trigeff_flat_unfold_pt1pt2[iter], h_trigeff_pt1pt2_unfold[iter], nbins_pt);
+    }
+
+  histo_opps::project_xj(h_trigeff_pt1pt2_reco, h_trigeff_xj_reco, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::project_xj(h_trigeff_pt1pt2_unfold[iter], h_trigeff_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+    }
+  
+  histo_opps::normalize_histo(h_trigeff_xj_reco, nbins);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::normalize_histo(h_trigeff_xj_unfold[iter], nbins);
+    }
+  //emfrac
+  histo_opps::make_sym_pt1pt2(h_emfrac_flat_reco_pt1pt2, h_emfrac_pt1pt2_reco, nbins_pt);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::make_sym_pt1pt2(h_emfrac_flat_unfold_pt1pt2[iter], h_emfrac_pt1pt2_unfold[iter], nbins_pt);
+    }
+
+  histo_opps::project_xj(h_emfrac_pt1pt2_reco, h_emfrac_xj_reco, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::project_xj(h_emfrac_pt1pt2_unfold[iter], h_emfrac_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+    }
+  
+  histo_opps::normalize_histo(h_emfrac_xj_reco, nbins);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::normalize_histo(h_emfrac_xj_unfold[iter], nbins);
+    }
+
   //pjes
   histo_opps::make_sym_pt1pt2(h_pjes_flat_reco_pt1pt2, h_pjes_pt1pt2_reco, nbins_pt);
   for (int iter = 0; iter < niterations; iter++)
@@ -627,7 +973,6 @@ void drawSysJESJER(const int cone_size = 4)
     {
       histo_opps::normalize_histo(h_pjes_xj_unfold[iter], nbins);
     }
-
   //njes
   histo_opps::make_sym_pt1pt2(h_njes_flat_reco_pt1pt2, h_njes_pt1pt2_reco, nbins_pt);
   for (int iter = 0; iter < niterations; iter++)
@@ -646,6 +991,43 @@ void drawSysJESJER(const int cone_size = 4)
     {
       histo_opps::normalize_histo(h_njes_xj_unfold[iter], nbins);
     }
+  //hphi
+  histo_opps::make_sym_pt1pt2(h_hphi_flat_reco_pt1pt2, h_hphi_pt1pt2_reco, nbins_pt);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::make_sym_pt1pt2(h_hphi_flat_unfold_pt1pt2[iter], h_hphi_pt1pt2_unfold[iter], nbins_pt);
+    }
+
+  histo_opps::project_xj(h_hphi_pt1pt2_reco, h_hphi_xj_reco, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::project_xj(h_hphi_pt1pt2_unfold[iter], h_hphi_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+    }
+  
+  histo_opps::normalize_histo(h_hphi_xj_reco, nbins);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::normalize_histo(h_hphi_xj_unfold[iter], nbins);
+    }
+  //vphi
+  histo_opps::make_sym_pt1pt2(h_vphi_flat_reco_pt1pt2, h_vphi_pt1pt2_reco, nbins_pt);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::make_sym_pt1pt2(h_vphi_flat_unfold_pt1pt2[iter], h_vphi_pt1pt2_unfold[iter], nbins_pt);
+    }
+
+  histo_opps::project_xj(h_vphi_pt1pt2_reco, h_vphi_xj_reco, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::project_xj(h_vphi_pt1pt2_unfold[iter], h_vphi_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+    }
+  
+  histo_opps::normalize_histo(h_vphi_xj_reco, nbins);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::normalize_histo(h_vphi_xj_unfold[iter], nbins);
+    }
+
   //pjer
   histo_opps::make_sym_pt1pt2(h_pjer_flat_reco_pt1pt2, h_pjer_pt1pt2_reco, nbins_pt);
   for (int iter = 0; iter < niterations; iter++)
@@ -663,6 +1045,42 @@ void drawSysJESJER(const int cone_size = 4)
   for (int iter = 0; iter < niterations; iter++)
     {
       histo_opps::normalize_histo(h_pjer_xj_unfold[iter], nbins);
+    }
+  //15mrad
+  histo_opps::make_sym_pt1pt2(h_15mrad_flat_reco_pt1pt2, h_15mrad_pt1pt2_reco, nbins_pt);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::make_sym_pt1pt2(h_15mrad_flat_unfold_pt1pt2[iter], h_15mrad_pt1pt2_unfold[iter], nbins_pt);
+    }
+
+  histo_opps::project_xj(h_15mrad_pt1pt2_reco, h_15mrad_xj_reco, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::project_xj(h_15mrad_pt1pt2_unfold[iter], h_15mrad_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+    }
+  
+  histo_opps::normalize_histo(h_15mrad_xj_reco, nbins);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::normalize_histo(h_15mrad_xj_unfold[iter], nbins);
+    }
+  //0mrad
+  histo_opps::make_sym_pt1pt2(h_0mrad_flat_reco_pt1pt2, h_0mrad_pt1pt2_reco, nbins_pt);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::make_sym_pt1pt2(h_0mrad_flat_unfold_pt1pt2[iter], h_0mrad_pt1pt2_unfold[iter], nbins_pt);
+    }
+
+  histo_opps::project_xj(h_0mrad_pt1pt2_reco, h_0mrad_xj_reco, nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::project_xj(h_0mrad_pt1pt2_unfold[iter], h_0mrad_xj_unfold[iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+    }
+  
+  histo_opps::normalize_histo(h_0mrad_xj_reco, nbins);
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      histo_opps::normalize_histo(h_0mrad_xj_unfold[iter], nbins);
     }
   //njer
   histo_opps::make_sym_pt1pt2(h_njer_flat_reco_pt1pt2, h_njer_pt1pt2_reco, nbins_pt);
@@ -682,6 +1100,7 @@ void drawSysJESJER(const int cone_size = 4)
     {
       histo_opps::normalize_histo(h_njer_xj_unfold[iter], nbins);
     }
+
   /* //vtx */
   /* histo_opps::make_sym_pt1pt2(h_vtx_flat_reco_pt1pt2, h_vtx_pt1pt2_reco, nbins); */
   /* for (int iter = 0; iter < niterations; iter++) */
@@ -764,6 +1183,28 @@ void drawSysJESJER(const int cone_size = 4)
 	  h_herwig_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_herwig_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
     }
+  //trigeff
+  TH1D *h_trigeff_final_xj_reco_range[mbins];
+  TH1D *h_trigeff_final_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_trigeff_final_xj_reco_range[irange] = new TH1D(Form("h_trigeff_final_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_trigeff_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_trigeff_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+  //emfrac
+  TH1D *h_emfrac_final_xj_reco_range[mbins];
+  TH1D *h_emfrac_final_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_emfrac_final_xj_reco_range[irange] = new TH1D(Form("h_emfrac_final_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_emfrac_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_emfrac_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
   //pjes
   TH1D *h_pjes_final_xj_reco_range[mbins];
   TH1D *h_pjes_final_xj_unfold_range[mbins][niterations];
@@ -786,6 +1227,28 @@ void drawSysJESJER(const int cone_size = 4)
 	  h_njes_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_njes_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
     }
+  //hphi
+  TH1D *h_hphi_final_xj_reco_range[mbins];
+  TH1D *h_hphi_final_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_hphi_final_xj_reco_range[irange] = new TH1D(Form("h_hphi_final_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_hphi_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_hphi_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+  //vphi
+  TH1D *h_vphi_final_xj_reco_range[mbins];
+  TH1D *h_vphi_final_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_vphi_final_xj_reco_range[irange] = new TH1D(Form("h_vphi_final_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_vphi_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_vphi_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
   //pjer
   TH1D *h_pjer_final_xj_reco_range[mbins];
   TH1D *h_pjer_final_xj_unfold_range[mbins][niterations];
@@ -806,6 +1269,28 @@ void drawSysJESJER(const int cone_size = 4)
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  h_njer_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_njer_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+    //0mrad
+  TH1D *h_0mrad_final_xj_reco_range[mbins];
+  TH1D *h_0mrad_final_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_0mrad_final_xj_reco_range[irange] = new TH1D(Form("h_0mrad_final_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_0mrad_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_0mrad_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	}
+    }
+  //15mrad
+  TH1D *h_15mrad_final_xj_reco_range[mbins];
+  TH1D *h_15mrad_final_xj_unfold_range[mbins][niterations];
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_15mrad_final_xj_reco_range[irange] = new TH1D(Form("h_15mrad_final_xj_reco_range_%d", irange), ";x_{J};", nbins, ixj_bins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_15mrad_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_15mrad_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
     }
   /* //vtx */
@@ -855,15 +1340,6 @@ void drawSysJESJER(const int cone_size = 4)
 	  histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	}
 
-
-      histo_opps::normalize_histo(h_xj_truth_range[irange], nbins);
-      histo_opps::normalize_histo(h_xj_data_range[irange], nbins);
-      histo_opps::normalize_histo(h_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_xj_unfold_range[irange][iter], nbins);
-	}
-
       histo_opps::finalize_xj(h_xj_truth_range[irange], h_final_xj_truth_range[irange], nbins, first_xj);
       histo_opps::finalize_xj(h_xj_data_range[irange], h_final_xj_data_range[irange], nbins, first_xj);
       histo_opps::finalize_xj(h_xj_reco_range[irange], h_final_xj_reco_range[irange], nbins, first_xj);
@@ -871,6 +1347,19 @@ void drawSysJESJER(const int cone_size = 4)
 	{
 	  histo_opps::finalize_xj(h_xj_unfold_range[irange][iter], h_final_xj_unfold_range[irange][iter], nbins, first_xj);
 	}
+
+      
+      histo_opps::normalize_histo(h_final_xj_truth_range[irange], nbins);
+      histo_opps::normalize_histo(h_final_xj_data_range[irange], nbins);
+      histo_opps::normalize_histo(h_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_final_xj_unfold_range[irange][iter], nbins);
+	  double nominal = histo_opps::get_average_xj(h_final_xj_unfold_range[irange][iter]);
+	  h_average_xj[iter]->SetBinContent(irange + 1, 1, nominal);
+
+	}
+
 
     }
 
@@ -883,30 +1372,68 @@ void drawSysJESJER(const int cone_size = 4)
 	  histo_opps::project_xj(h_herwig_pt1pt2_unfold[iter], h_herwig_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	}
 
-      histo_opps::normalize_histo(h_herwig_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_herwig_xj_unfold_range[irange][iter], nbins);
-	}
-
       
       histo_opps::finalize_xj(h_herwig_xj_reco_range[irange], h_herwig_final_xj_reco_range[irange], nbins, first_xj);
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  histo_opps::finalize_xj(h_herwig_xj_unfold_range[irange][iter], h_herwig_final_xj_unfold_range[irange][iter], nbins, first_xj);
 	}
+      histo_opps::normalize_histo(h_herwig_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_herwig_final_xj_unfold_range[irange][iter], nbins);
+	}
+
+
+
+      //trigeff
+      histo_opps::project_xj(h_trigeff_pt1pt2_reco, h_trigeff_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::project_xj(h_trigeff_pt1pt2_unfold[iter], h_trigeff_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	}
+
+
+
+      histo_opps::finalize_xj(h_trigeff_xj_reco_range[irange], h_trigeff_final_xj_reco_range[irange], nbins, first_xj);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::finalize_xj(h_trigeff_xj_unfold_range[irange][iter], h_trigeff_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	}
+      histo_opps::normalize_histo(h_trigeff_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_trigeff_final_xj_unfold_range[irange][iter], nbins);
+	}
+
+
+      //emfrac
+      histo_opps::project_xj(h_emfrac_pt1pt2_reco, h_emfrac_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::project_xj(h_emfrac_pt1pt2_unfold[iter], h_emfrac_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	}
+
+
+
+      histo_opps::finalize_xj(h_emfrac_xj_reco_range[irange], h_emfrac_final_xj_reco_range[irange], nbins, first_xj);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::finalize_xj(h_emfrac_xj_unfold_range[irange][iter], h_emfrac_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	}
+
+      histo_opps::normalize_histo(h_emfrac_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_emfrac_final_xj_unfold_range[irange][iter], nbins);
+	}
+
 
       //pjes
       histo_opps::project_xj(h_pjes_pt1pt2_reco, h_pjes_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  histo_opps::project_xj(h_pjes_pt1pt2_unfold[iter], h_pjes_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
-	}
-
-      histo_opps::normalize_histo(h_pjes_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_pjes_xj_unfold_range[irange][iter], nbins);
 	}
 
       
@@ -916,6 +1443,12 @@ void drawSysJESJER(const int cone_size = 4)
 	  histo_opps::finalize_xj(h_pjes_xj_unfold_range[irange][iter], h_pjes_final_xj_unfold_range[irange][iter], nbins, first_xj);
 	}
 
+      histo_opps::normalize_histo(h_pjes_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_pjes_final_xj_unfold_range[irange][iter], nbins);
+	  variation_average_xj[iter][irange]->push_back(std::make_pair(histo_opps::get_average_xj(h_pjes_final_xj_unfold_range[irange][iter]), 0));
+	}
 
       //njes
       histo_opps::project_xj(h_njes_pt1pt2_reco, h_njes_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
@@ -925,18 +1458,61 @@ void drawSysJESJER(const int cone_size = 4)
 	}
 
 
-      histo_opps::normalize_histo(h_njes_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_njes_xj_unfold_range[irange][iter], nbins);
-	}
-
-
       histo_opps::finalize_xj(h_njes_xj_reco_range[irange], h_njes_final_xj_reco_range[irange], nbins, first_xj);
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  histo_opps::finalize_xj(h_njes_xj_unfold_range[irange][iter], h_njes_final_xj_unfold_range[irange][iter], nbins, first_xj);
 	}
+
+            histo_opps::normalize_histo(h_njes_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_njes_final_xj_unfold_range[irange][iter], nbins);
+	  variation_average_xj[iter][irange]->push_back(std::make_pair(histo_opps::get_average_xj(h_njes_final_xj_unfold_range[irange][iter]), 0));
+	}
+
+
+
+      //hphi
+      histo_opps::project_xj(h_hphi_pt1pt2_reco, h_hphi_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::project_xj(h_hphi_pt1pt2_unfold[iter], h_hphi_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	}
+      
+      histo_opps::finalize_xj(h_hphi_xj_reco_range[irange], h_hphi_final_xj_reco_range[irange], nbins, first_xj);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::finalize_xj(h_hphi_xj_unfold_range[irange][iter], h_hphi_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	}
+
+      histo_opps::normalize_histo(h_hphi_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_hphi_final_xj_unfold_range[irange][iter], nbins);
+	}
+
+
+      //vphi
+      histo_opps::project_xj(h_vphi_pt1pt2_reco, h_vphi_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::project_xj(h_vphi_pt1pt2_unfold[iter], h_vphi_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	}
+
+      histo_opps::finalize_xj(h_vphi_xj_reco_range[irange], h_vphi_final_xj_reco_range[irange], nbins, first_xj);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::finalize_xj(h_vphi_xj_unfold_range[irange][iter], h_vphi_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	}
+
+
+      histo_opps::normalize_histo(h_vphi_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_vphi_final_xj_unfold_range[irange][iter], nbins);
+	}
+
 
       
       //pjer
@@ -946,12 +1522,6 @@ void drawSysJESJER(const int cone_size = 4)
 	  histo_opps::project_xj(h_pjer_pt1pt2_unfold[iter], h_pjer_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	}
 
-      histo_opps::normalize_histo(h_pjer_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_pjer_xj_unfold_range[irange][iter], nbins);
-	}
-
       histo_opps::finalize_xj(h_pjer_xj_reco_range[irange], h_pjer_final_xj_reco_range[irange], nbins, first_xj);
       for (int iter = 0; iter < niterations; iter++)
 	{
@@ -959,6 +1529,14 @@ void drawSysJESJER(const int cone_size = 4)
 	}
 
       
+      histo_opps::normalize_histo(h_pjer_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_pjer_final_xj_unfold_range[irange][iter], nbins);
+	  variation_average_xj[iter][irange]->push_back(std::make_pair(histo_opps::get_average_xj(h_pjer_final_xj_unfold_range[irange][iter]), 0));
+	}
+
+
 
       //njer
       histo_opps::project_xj(h_njer_pt1pt2_reco, h_njer_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
@@ -968,18 +1546,63 @@ void drawSysJESJER(const int cone_size = 4)
 	}
 
 
-      histo_opps::normalize_histo(h_njer_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_njer_xj_unfold_range[irange][iter], nbins);
-	}
-
-      
       histo_opps::finalize_xj(h_njer_xj_reco_range[irange], h_njer_final_xj_reco_range[irange], nbins, first_xj);
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  histo_opps::finalize_xj(h_njer_xj_unfold_range[irange][iter], h_njer_final_xj_unfold_range[irange][iter], nbins, first_xj);
 	}
+
+      histo_opps::normalize_histo(h_njer_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_njer_final_xj_unfold_range[irange][iter], nbins);
+	  variation_average_xj[iter][irange]->push_back(std::make_pair(histo_opps::get_average_xj(h_njer_final_xj_unfold_range[irange][iter]), 0));
+	}
+
+      
+
+      //0mrad
+      histo_opps::project_xj(h_0mrad_pt1pt2_reco, h_0mrad_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::project_xj(h_0mrad_pt1pt2_unfold[iter], h_0mrad_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	}
+
+      histo_opps::finalize_xj(h_0mrad_xj_reco_range[irange], h_0mrad_final_xj_reco_range[irange], nbins, first_xj);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::finalize_xj(h_0mrad_xj_unfold_range[irange][iter], h_0mrad_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	}
+
+      histo_opps::normalize_histo(h_0mrad_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_0mrad_final_xj_unfold_range[irange][iter], nbins);
+	}
+
+      
+
+      //15mrad
+      histo_opps::project_xj(h_15mrad_pt1pt2_reco, h_15mrad_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::project_xj(h_15mrad_pt1pt2_unfold[iter], h_15mrad_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	}
+
+
+      
+      histo_opps::finalize_xj(h_15mrad_xj_reco_range[irange], h_15mrad_final_xj_reco_range[irange], nbins, first_xj);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::finalize_xj(h_15mrad_xj_unfold_range[irange][iter], h_15mrad_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	}
+
+      histo_opps::normalize_histo(h_15mrad_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_15mrad_final_xj_unfold_range[irange][iter], nbins);
+	}
+
 
 
       /* //vtx */
@@ -1029,20 +1652,18 @@ void drawSysJESJER(const int cone_size = 4)
 	  histo_opps::project_xj(h_prior_pt1pt2_unfold[iter], h_prior_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	}
 
-      histo_opps::normalize_histo(h_prior_xj_reco_range[irange], nbins);
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  histo_opps::normalize_histo(h_prior_xj_unfold_range[irange][iter], nbins);
-	}
-
       histo_opps::finalize_xj(h_prior_xj_reco_range[irange], h_prior_final_xj_reco_range[irange], nbins, first_xj);
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  histo_opps::finalize_xj(h_prior_xj_unfold_range[irange][iter], h_prior_final_xj_unfold_range[irange][iter], nbins, first_xj);
 	}
 
-
-
+      histo_opps::normalize_histo(h_prior_final_xj_reco_range[irange], nbins);
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  histo_opps::normalize_histo(h_prior_final_xj_unfold_range[irange][iter], nbins);
+	  variation_average_xj[iter][irange]->push_back(std::make_pair(histo_opps::get_average_xj(h_prior_final_xj_unfold_range[irange][iter]), 1));
+	}
     }
     
 
@@ -1051,6 +1672,21 @@ void drawSysJESJER(const int cone_size = 4)
   TH1D *h_sys_njer[mbins][niterations];
   TH1D *h_sys_pjes[mbins][niterations];  
   TH1D *h_sys_njes[mbins][niterations];
+
+  // crossing angle
+  TH1D *h_sys_0mrad[mbins][niterations];
+  TH1D *h_sys_15mrad[mbins][niterations];
+
+  // phi locationjes
+
+  TH1D *h_sys_hphi[mbins][niterations];  
+  TH1D *h_sys_vphi[mbins][niterations];
+
+  //trigger
+  TH1D *h_sys_trigeff[mbins][niterations];
+
+  //emfrac
+  TH1D *h_sys_emfrac[mbins][niterations];
 
   // NJET systematics
   //TH1D *h_sys_njet[mbins][niterations];
@@ -1087,7 +1723,7 @@ void drawSysJESJER(const int cone_size = 4)
 
 	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -1183,6 +1819,123 @@ void drawSysJESJER(const int cone_size = 4)
       cxj_split->SaveAs(Form("%s/systematic_plots/h_JES_xj_unfolded_pp_r%02d_range_all_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, niter));
     }
 
+    for (int niter = 0; niter < niterations; niter++)
+    {
+      cxj_split->Clear();
+      
+      dlutility::systematic_split_canvas(cxj_split, 3, 0.55);
+      
+      for (int irange = 0; irange < mbins; irange++)
+	{
+	  std::cout << irange << std::endl;
+	  cxj_split->cd(1 + irange*2);
+
+	  dlutility::SetLineAtt(h_hphi_final_xj_unfold_range[irange][niter], color_hphi, lsize_hphi, 1);
+	  dlutility::SetMarkerAtt(h_hphi_final_xj_unfold_range[irange][niter], color_hphi, msize_hphi, marker_hphi);
+	  dlutility::SetLineAtt(h_vphi_final_xj_unfold_range[irange][niter], color_vphi, lsize_vphi, 1);
+	  dlutility::SetMarkerAtt(h_vphi_final_xj_unfold_range[irange][niter], color_vphi, msize_vphi, marker_vphi);
+
+	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
+
+	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
+
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
+	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
+
+	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
+	  TH1D *hhphi = (TH1D*) h_hphi_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_hphi_%d", irange), &dxj_bins[first_bin]);
+	  TH1D *hvphi = (TH1D*) h_vphi_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_vphi_%d", irange), &dxj_bins[first_bin]);
+	  hu->GetYaxis()->ChangeLabel(1, -1, 0);
+	  hu->Draw("p");
+	  hhphi->Draw("same p");
+	  hvphi->Draw("same p");
+	  if (irange == 0)
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.4, 0.8 ,0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.4, 0.7, 0, kBlack, 0.08);
+	    }
+	  else
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.1, 0.8, 0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.1, 0.7, 0, kBlack, 0.08);
+	    }
+
+    
+	  cxj_split->cd(2 + irange*2);
+
+	  TH1D *h_hphi_compare = (TH1D*) hhphi->Clone();
+	  h_hphi_compare->Divide(hu);
+	  h_hphi_compare->SetTitle(";x_{J}; #frac{Var. - Nom.}{Nom}");
+	  h_hphi_compare->GetYaxis()->SetTitleOffset(1.1);
+	  h_hphi_compare->GetXaxis()->SetTitleOffset(1.2);
+
+	  dlutility::SetFont(h_hphi_compare, 42, 0.09);
+	  h_hphi_compare->GetXaxis()->SetTitleSize(0.11);
+	  dlutility::SetLineAtt(h_hphi_compare, color_hphi, 1,1);
+	  dlutility::SetMarkerAtt(h_hphi_compare, color_hphi, 1,8);
+
+	  h_hphi_compare->SetMaximum(0.4);
+	  h_hphi_compare->SetMinimum(-0.4);
+
+	  TH1D *h_vphi_compare = (TH1D*) hvphi->Clone();
+	  h_vphi_compare->Divide(hu);
+	  dlutility::SetLineAtt(h_vphi_compare, color_vphi, 1,1);
+	  dlutility::SetMarkerAtt(h_vphi_compare, color_vphi, 1,8);
+
+
+	  for (int ib = 0; ib < h_vphi_compare->GetNbinsX(); ib++)
+	    {
+
+	      if (h_vphi_compare->GetBinCenter(ib+1) < 0.3) continue;
+	      h_vphi_compare->SetBinContent(ib+1, h_vphi_compare->GetBinContent(ib+1) - 1);
+	      h_hphi_compare->SetBinContent(ib+1, h_hphi_compare->GetBinContent(ib+1) - 1);
+	    }
+
+	  h_sys_vphi[irange][niter] = (TH1D*) h_vphi_compare->Clone();
+	  h_sys_hphi[irange][niter] = (TH1D*) h_hphi_compare->Clone();
+
+	  h_hphi_compare->SetFillColorAlpha(color_hphi, 0.5);
+	  h_vphi_compare->SetFillColorAlpha(color_vphi, 0.5);
+	  
+	  h_hphi_compare->SetLineColor(kBlack);
+	  h_vphi_compare->SetLineColor(kBlack);
+
+	  h_hphi_compare->Draw("hist");
+	  h_hphi_compare->GetYaxis()->SetNdivisions(508);
+	  h_hphi_compare->GetYaxis()->ChangeLabel(-1, -1, 0);
+	  h_hphi_compare->GetYaxis()->ChangeLabel(1, -1, 0);
+
+	  h_vphi_compare->Draw("hist same");
+
+	  
+	  TLine *line = new TLine(h_vphi_compare->GetBinLowEdge(1), 0, 1, 0);
+	  line->SetLineStyle(1);
+	  line->SetLineColor(kBlack);
+	  line->SetLineWidth(1);
+	  line->Draw("same");
+
+	}
+      cxj_split->cd(7);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.73, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.65, 0, kBlack, 0.08);
+      dlutility::drawText("|#eta| #leq 0.7", 0.15, 0.57, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.20, 0.4, 0.41);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.08);
+      leg->SetTextFont(42);
+      leg->AddEntry(h_final_xj_unfold_range[0][niter], "Nominal");
+      leg->AddEntry(h_hphi_final_xj_unfold_range[0][niter], "Vertical #phi");
+      leg->AddEntry(h_vphi_final_xj_unfold_range[0][niter], "Horizontal #phi");
+      leg->Draw("same");
+
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_PHI_xj_unfolded_pp_r%02d_range_all_iter_%d.png",  rb.get_code_location().c_str(), cone_size, niter));
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_PHI_xj_unfolded_pp_r%02d_range_all_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, niter));
+    }
+
 
   for (int niter = 0; niter < niterations; niter++)
     {
@@ -1205,7 +1958,7 @@ void drawSysJESJER(const int cone_size = 4)
 
 	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -1299,6 +2052,121 @@ void drawSysJESJER(const int cone_size = 4)
       cxj_split->SaveAs(Form("%s/systematic_plots/h_JER_xj_unfolded_pp_r%02d_range_all_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, niter));
     }
 
+    for (int niter = 0; niter < niterations; niter++)
+    {
+      cxj_split->Clear();
+      
+      dlutility::systematic_split_canvas(cxj_split, 3, 0.55);
+      
+      for (int irange = 0; irange < mbins; irange++)
+	{
+	  std::cout << irange << std::endl;
+	  cxj_split->cd(1 + irange*2);
+
+	  dlutility::SetLineAtt(h_0mrad_final_xj_unfold_range[irange][niter], color_0mrad, lsize_0mrad, 1);
+	  dlutility::SetMarkerAtt(h_0mrad_final_xj_unfold_range[irange][niter], color_0mrad, msize_0mrad, marker_0mrad);
+	  dlutility::SetLineAtt(h_15mrad_final_xj_unfold_range[irange][niter], color_15mrad, lsize_15mrad, 1);
+	  dlutility::SetMarkerAtt(h_15mrad_final_xj_unfold_range[irange][niter], color_15mrad, msize_15mrad, marker_15mrad);
+
+	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
+
+	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
+
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
+	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
+
+	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
+	  TH1D *h0mrad = (TH1D*) h_0mrad_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_0mrad_%d", irange), &dxj_bins[first_bin]);
+	  TH1D *h15mrad = (TH1D*) h_15mrad_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_15mrad_%d", irange), &dxj_bins[first_bin]);
+	  hu->GetYaxis()->ChangeLabel(1, -1, 0);
+	  hu->Draw("p");
+	  h0mrad->Draw("same p");
+	  h15mrad->Draw("same p");
+	  if (irange == 0)
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.4, 0.8 ,0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.4, 0.7, 0, kBlack, 0.08);
+	    }
+	  else
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.1, 0.8, 0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.1, 0.7, 0, kBlack, 0.08);
+	    }
+
+    
+	  cxj_split->cd(2 + irange*2);
+
+	  TH1D *h_0mrad_compare = (TH1D*) h0mrad->Clone();
+	  h_0mrad_compare->Divide(hu);
+	  h_0mrad_compare->SetTitle(";x_{J}; #frac{Var. - Nom.}{Nom}");
+	  h_0mrad_compare->GetYaxis()->SetTitleOffset(1.1);
+	  dlutility::SetFont(h_0mrad_compare, 42, 0.09);
+	  h_0mrad_compare->GetXaxis()->SetTitleSize(0.11);
+	  dlutility::SetLineAtt(h_0mrad_compare, color_0mrad, 1,1);
+	  dlutility::SetMarkerAtt(h_0mrad_compare, color_0mrad, 1,8);
+
+	  h_0mrad_compare->SetMaximum(0.4);
+	  h_0mrad_compare->SetMinimum(-0.4);
+
+	  TH1D *h_15mrad_compare = (TH1D*) h15mrad->Clone();
+	  h_15mrad_compare->Divide(hu);
+	  dlutility::SetLineAtt(h_15mrad_compare, color_15mrad, 1,1);
+	  dlutility::SetMarkerAtt(h_15mrad_compare, color_15mrad, 1,8);
+
+
+	  for (int ib = 0; ib < h_15mrad_compare->GetNbinsX(); ib++)
+	    {
+
+	      if (h_15mrad_compare->GetBinCenter(ib+1) < 0.3) continue;
+	      h_15mrad_compare->SetBinContent(ib+1, h_15mrad_compare->GetBinContent(ib+1) - 1);
+	      h_0mrad_compare->SetBinContent(ib+1, h_0mrad_compare->GetBinContent(ib+1) - 1);
+	    }
+
+	  h_sys_15mrad[irange][niter] = (TH1D*) h_15mrad_compare->Clone();
+	  h_sys_0mrad[irange][niter] = (TH1D*) h_0mrad_compare->Clone();
+
+	  
+	  h_0mrad_compare->SetFillColorAlpha(color_0mrad, 0.5);
+	  h_15mrad_compare->SetFillColorAlpha(color_15mrad, 0.5);
+	  
+	  h_0mrad_compare->SetLineColor(kBlack);
+	  h_15mrad_compare->SetLineColor(kBlack);
+
+	  h_0mrad_compare->Draw("hist");
+	  h_0mrad_compare->GetYaxis()->SetNdivisions(508);
+	  h_0mrad_compare->GetYaxis()->ChangeLabel(-1, -1, 0);
+	  h_0mrad_compare->GetYaxis()->ChangeLabel(1, -1, 0);
+	  h_15mrad_compare->Draw("hist same");
+
+	  
+	  TLine *line = new TLine(h_15mrad_compare->GetBinLowEdge(1), 0, 1, 0);
+	  line->SetLineStyle(1);
+	  line->SetLineColor(kBlack);
+	  line->SetLineWidth(1);
+	  line->Draw("same");
+
+	}
+      cxj_split->cd(7);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.73, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.65, 0, kBlack, 0.08);
+      dlutility::drawText("|#eta| #leq 0.7", 0.15, 0.57, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.20, 0.4, 0.41);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.08);
+      leg->SetTextFont(42);
+      leg->AddEntry(h_final_xj_unfold_range[0][niter], "Nominal");
+      leg->AddEntry(h_0mrad_final_xj_unfold_range[0][niter], "0 mRad");
+      leg->AddEntry(h_15mrad_final_xj_unfold_range[0][niter], "1.5 mRad");
+      leg->Draw("same");
+
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_CA_xj_unfolded_pp_r%02d_range_all_iter_%d.png",  rb.get_code_location().c_str(), cone_size, niter));
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_CA_xj_unfolded_pp_r%02d_range_all_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, niter));
+    }
+
   int niter_prior = 2;
   TH1D *hprior[3];
   
@@ -1326,7 +2194,7 @@ void drawSysJESJER(const int cone_size = 4)
 
 	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -1423,7 +2291,7 @@ void drawSysJESJER(const int cone_size = 4)
 
 	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.08);
 
-	  h_final_xj_unfold_range[irange][niter]->SetMaximum(4.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
 	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
 	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -1483,6 +2351,197 @@ void drawSysJESJER(const int cone_size = 4)
 
       cxj_split->SaveAs(Form("%s/systematic_plots/h_HERWIG_xj_unfolded_pp_r%02d_range_all_iter_%d.png",  rb.get_code_location().c_str(), cone_size, niter));
       cxj_split->SaveAs(Form("%s/systematic_plots/h_HERWIG_xj_unfolded_pp_r%02d_range_all_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, niter));
+    }
+
+  
+  for (int niter = 0; niter < niterations; niter++)
+    {
+      cxj_split->Clear();
+      
+      dlutility::systematic_split_canvas(cxj_split, 3, 0.55);
+      
+      for (int irange = 0; irange < mbins; irange++)
+	{
+	  std::cout << irange << std::endl;
+	  cxj_split->cd(1 + irange*2);
+
+	  dlutility::SetLineAtt(h_trigeff_final_xj_unfold_range[irange][niter], color_trigger, lsize_trigger, 1);
+	  dlutility::SetMarkerAtt(h_trigeff_final_xj_unfold_range[irange][niter], color_trigger, msize_trigger, marker_trigger);
+
+	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
+
+	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
+
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
+	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
+
+	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
+	  hu->GetYaxis()->ChangeLabel(1, -1, 0);
+	  TH1D *htrigger = (TH1D*) h_trigeff_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_trigger_%d", irange), &dxj_bins[first_bin]);
+	  
+	  hu->Draw("p");
+	  htrigger->Draw("same p");
+	  if (irange == 0)
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.4, 0.8 ,0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.4, 0.7, 0, kBlack, 0.08);
+	    }
+	  else
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.1, 0.8, 0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.1, 0.7, 0, kBlack, 0.08);
+	    }
+
+    
+	  cxj_split->cd(2 + irange*2);
+
+	  TH1D *h_trigeff_compare = (TH1D*) htrigger->Clone();
+	  h_trigeff_compare->Divide(hu);
+	  h_trigeff_compare->SetTitle(";x_{J}; #frac{Var. - Nom.}{Nom}");
+	  dlutility::SetFont(h_trigeff_compare, 42, 0.09);
+	  dlutility::SetLineAtt(h_trigeff_compare, color_trigger, 1,1);
+	  dlutility::SetMarkerAtt(h_trigeff_compare, color_trigger, 1,8);
+	  h_trigeff_compare->GetYaxis()->SetTitleOffset(1.1);
+	  h_trigeff_compare->SetMaximum(0.4);
+	  h_trigeff_compare->SetMinimum(-0.4);
+
+
+	  for (int ib = 0; ib < h_trigeff_compare->GetNbinsX(); ib++)
+	    {
+
+	      if (h_trigeff_compare->GetBinCenter(ib+1) < 0.3) continue;
+	      h_trigeff_compare->SetBinContent(ib+1, h_trigeff_compare->GetBinContent(ib+1) - 1);
+	    }
+
+	  h_sys_trigeff[irange][niter] = (TH1D*) h_trigeff_compare->Clone();
+	  h_trigeff_compare->SetFillColorAlpha(color_trigger, 0.5);
+	  
+	  h_trigeff_compare->SetLineColor(kBlack);
+	  h_trigeff_compare->GetYaxis()->SetNdivisions(508);
+	  h_trigeff_compare->GetYaxis()->ChangeLabel(-1, -1, 0);
+	  h_trigeff_compare->GetYaxis()->ChangeLabel(1, -1, 0);
+
+	  h_trigeff_compare->Draw("hist");
+	  
+	  TLine *line = new TLine(h_trigeff_compare->GetBinLowEdge(1), 0, 1, 0);
+	  line->SetLineStyle(1);
+	  line->SetLineColor(kBlack);
+	  line->SetLineWidth(1);
+	  line->Draw("same");
+
+	}
+      cxj_split->cd(7);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.74, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.59, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.30, 0.4, 0.44);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.07);
+      leg->SetTextFont(42);
+      leg->AddEntry(h_final_xj_unfold_range[0][niter], "Nominal - Emulator");
+      leg->AddEntry(h_trigeff_final_xj_unfold_range[0][niter], "Data-Driven Fit");
+      leg->Draw("same");
+
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_TRIGGER_xj_unfolded_pp_r%02d_range_all_iter_%d.png",  rb.get_code_location().c_str(), cone_size, niter));
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_TRIGGER_xj_unfolded_pp_r%02d_range_all_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, niter));
+    }
+
+  for (int niter = 0; niter < niterations; niter++)
+    {
+      cxj_split->Clear();
+      
+      dlutility::systematic_split_canvas(cxj_split, 3, 0.55);
+      
+      for (int irange = 0; irange < mbins; irange++)
+	{
+	  std::cout << irange << std::endl;
+	  cxj_split->cd(1 + irange*2);
+
+	  dlutility::SetLineAtt(h_emfrac_final_xj_unfold_range[irange][niter], color_emfrac, lsize_emfrac, 1);
+	  dlutility::SetMarkerAtt(h_emfrac_final_xj_unfold_range[irange][niter], color_emfrac, msize_emfrac, marker_emfrac);
+
+	  dlutility::SetLineAtt(h_final_xj_unfold_range[irange][niter], color_unfold, lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(h_final_xj_unfold_range[irange][niter], color_unfold, msize_unfold, marker_unfold);
+
+	  dlutility::SetFont(h_final_xj_unfold_range[irange][niter], 42, 0.10);
+
+	  h_final_xj_unfold_range[irange][niter]->SetMaximum(6.0);
+	  h_final_xj_unfold_range[irange][niter]->SetMinimum(0);
+	  h_final_xj_unfold_range[irange][niter]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
+
+	  TH1D *hu = (TH1D*) h_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
+	  hu->GetYaxis()->ChangeLabel(1, -1, 0);
+	  TH1D *hemfrac = (TH1D*) h_emfrac_final_xj_unfold_range[irange][niter]->Rebin(nbins - first_bin, Form("h_rebin_emfrac_%d", irange), &dxj_bins[first_bin]);
+	  
+	  hu->Draw("p");
+	  hemfrac->Draw("same p");
+	  if (irange == 0)
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.4, 0.8 ,0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.4, 0.7, 0, kBlack, 0.08);
+	    }
+	  else
+	    {
+	      dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.1, 0.8, 0, kBlack, 0.08);
+	      dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.1, 0.7, 0, kBlack, 0.08);
+	    }
+
+    
+	  cxj_split->cd(2 + irange*2);
+
+	  TH1D *h_emfrac_compare = (TH1D*) hemfrac->Clone();
+	  h_emfrac_compare->Divide(hu);
+	  h_emfrac_compare->SetTitle(";x_{J}; #frac{Var. - Nom.}{Nom}");
+	  dlutility::SetFont(h_emfrac_compare, 42, 0.09);
+	  dlutility::SetLineAtt(h_emfrac_compare, color_emfrac, 1,1);
+	  dlutility::SetMarkerAtt(h_emfrac_compare, color_emfrac, 1,8);
+	  h_emfrac_compare->GetYaxis()->SetTitleOffset(1.1);
+	  h_emfrac_compare->SetMaximum(0.4);
+	  h_emfrac_compare->SetMinimum(-0.4);
+
+
+	  for (int ib = 0; ib < h_emfrac_compare->GetNbinsX(); ib++)
+	    {
+
+	      if (h_emfrac_compare->GetBinCenter(ib+1) < 0.3) continue;
+	      h_emfrac_compare->SetBinContent(ib+1, h_emfrac_compare->GetBinContent(ib+1) - 1);
+	    }
+
+	  h_sys_emfrac[irange][niter] = (TH1D*) h_emfrac_compare->Clone();
+	  h_emfrac_compare->SetFillColorAlpha(color_emfrac, 0.5);
+	  
+	  h_emfrac_compare->SetLineColor(kBlack);
+	  h_emfrac_compare->GetYaxis()->SetNdivisions(508);
+	  h_emfrac_compare->GetYaxis()->ChangeLabel(-1, -1, 0);
+	  h_emfrac_compare->GetYaxis()->ChangeLabel(1, -1, 0);
+
+	  h_emfrac_compare->Draw("hist");
+	  
+	  TLine *line = new TLine(h_emfrac_compare->GetBinLowEdge(1), 0, 1, 0);
+	  line->SetLineStyle(1);
+	  line->SetLineColor(kBlack);
+	  line->SetLineWidth(1);
+	  line->Draw("same");
+
+	}
+      cxj_split->cd(7);
+      dlutility::DrawSPHENIXpp(0.15, 0.84, 0.08);
+      dlutility::drawText(Form("anti-k_{t} R = %0.1f", cone_size*0.1), 0.15, 0.74, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.15, 0.59, 0, kBlack, 0.08);
+      dlutility::drawText(Form("N_{iter} = %d", niter + 1), 0.15, 0.49, 0, kBlack, 0.08);
+      TLegend *leg = new TLegend(0.15, 0.30, 0.4, 0.44);
+      leg->SetLineWidth(0);
+      leg->SetTextSize(0.07);
+      leg->SetTextFont(42);
+      leg->AddEntry(h_final_xj_unfold_range[0][niter], "Nominal");
+      leg->AddEntry(h_emfrac_final_xj_unfold_range[0][niter], "EMFRAC Reweight");
+      leg->Draw("same");
+
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_EMFRAC_xj_unfolded_pp_r%02d_range_all_iter_%d.png",  rb.get_code_location().c_str(), cone_size, niter));
+      cxj_split->SaveAs(Form("%s/systematic_plots/h_EMFRAC_xj_unfolded_pp_r%02d_range_all_iter_%d.pdf",  rb.get_code_location().c_str(), cone_size, niter));
     }
 
   TCanvas *cxjsys = new TCanvas("cxjsys","cxjsys", 1500, 400);
@@ -1635,8 +2694,8 @@ void drawSysJESJER(const int cone_size = 4)
 	  dlutility::SetMarkerAtt(h_total_sys_flip, kBlack, 1, 8);
 
 
-	  h_total_sys->SetMinimum(-0.2);
-	  h_total_sys->SetMaximum(0.3);
+	  h_total_sys->SetMinimum(-0.4);
+	  h_total_sys->SetMaximum(0.4);
 
 	  /* if (irange == 0) */
 	  /*   { */
@@ -1706,9 +2765,41 @@ void drawSysJESJER(const int cone_size = 4)
       
     
     }
-  TFile *fsys = new TFile(Form("%s/uncertainties/systematics_pp_r%02d.root",  rb.get_code_location().c_str(), cone_size), "recreate");
+
+
   for (int iter = 0; iter < niterations; iter++)
     {
+      for (int irange = 0; irange < 3; irange++)
+	{
+	  double pos_var = 0;
+	  double neg_var = 0;
+	  double nominal = h_average_xj[iter]->GetBinContent(1+irange, 1);
+	  for (auto b : *variation_average_xj[iter][irange])
+	    {
+	      double diff = b.first - nominal;
+
+	      if (diff >= 0 || b.second == 1)
+		{
+		  pos_var += diff*diff;
+		}
+	      if (diff < 0 || b.second == 1)
+		{
+		  neg_var += diff*diff;
+		}
+	    }
+	  pos_var = sqrt(pos_var);
+	  neg_var = sqrt(neg_var);
+	  h_average_xj[iter]->SetBinContent(1 + irange, 2, pos_var);
+	  h_average_xj[iter]->SetBinContent(1 + irange, 3, neg_var);
+	}
+    }
+  
+  TFile *fsys = new TFile(Form("%s/uncertainties/systematics_pp_r%02d.root",  rb.get_code_location().c_str(), cone_size), "recreate");
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_average_xj[iter]->Write();
+      
       for (int irange = 0; irange < mbins; irange++)
 	{
 	  h_sys_half[irange][iter]->Write();

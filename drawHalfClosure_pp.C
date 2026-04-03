@@ -314,6 +314,12 @@ void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
       h_closure_test[irange][0]->SetMinimum(-0.2);
       h_closure_test[irange][0]->SetMaximum(0.2);
       h_closure_test[irange][0]->Draw("p E1");
+      TLine *lineh = new TLine(h_closure_test[irange][0]->GetBinLowEdge(1), 0, 1, 0);
+      lineh->SetLineStyle(4);
+      lineh->SetLineColor(kBlack);
+      lineh->SetLineWidth(2);
+      lineh->Draw("same");
+
       //h_closure_test[irange][0]->SetTitleOffset(0.9);
       h_closure_test[irange][0]->SetTitle(";x_{J}; Half Truth - Half Unfold / Half Truth");
       h_closure_test[irange][1]->Draw("p E1 same");

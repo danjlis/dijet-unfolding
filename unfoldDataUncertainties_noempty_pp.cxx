@@ -35,6 +35,7 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   read_binning rb(configfile.c_str());
 
   Int_t prior_sys = rb.get_prior_sys();
+  Int_t trigger_sys = rb.get_trigger_sys();
 
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
@@ -47,6 +48,9 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   
   if (prior_sys)
     sys_name = "PRIOR";
+
+  if (trigger_sys)
+    sys_name = "TRIGGER";
 
   if (herwig_sys)
     sys_name = "HERWIG";

@@ -12,6 +12,10 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   read_binning rb(configfile.c_str());
 
   Int_t prior_sys = rb.get_prior_sys();
+  Int_t emfrac_sys = rb.get_emfrac_sys();
+  Int_t ca_sys = rb.get_crossingangle_sys();
+  Int_t trigger_sys = rb.get_trigger_sys();
+  Int_t philoc_sys = rb.get_philoc_sys();
 
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
@@ -24,6 +28,22 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   
   if (prior_sys)
     sys_name = "PRIOR";
+
+  if (emfrac_sys)
+    sys_name = "EMFRAC";
+
+  if (trigger_sys)
+    sys_name = "TRIGGER";
+
+  if (ca_sys)
+    {
+      sys_name = "CA" + std::to_string(ca_sys);
+    }
+  if (philoc_sys)
+    {
+      std::cout << "PHILOC" << std::endl;
+      sys_name = "PHILOC" + std::to_string(philoc_sys);
+    }
   if (herwig_sys)
     sys_name = "HERWIG";
   
@@ -61,10 +81,12 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
     }
 
   std::string sys_name_orig = sys_name;
+
   if (final == 1)
     {
       sys_name = "FINAL_" + sys_name;
     }
+
   std::string fsimname = Form("%s/response_matrices/response_matrix_pp_r%02d_PRIMER1_%s.root", rb.get_code_location().c_str(), cone_size, sys_name_orig.c_str());
 
   if (final == 1)
@@ -77,8 +99,13 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   TH1D *h_mbd_sim = (TH1D*) f_sim->Get("h_mbd_vertex");
   h_mbd_sim->SetName("h_mbd_sim");
   h_mbd_sim->Rebin(5);
+
+  TH2D *h_emfrac_sim = (TH2D*) f_sim->Get("h_lead_pt_v_emfrac");
+  h_emfrac_sim->SetName("h_emfrac_sim");
+
   TH1D *h_njet_sim = (TH1D*) f_sim->Get("h_njets");
   h_njet_sim->SetName("h_njet_sim");
+
   TH2D *h_eta_sim = (TH2D*) f_sim->Get("h_eta_lead_sublead");
   h_eta_sim->SetName("h_eta_sim");
   h_eta_sim->Rebin2D(10, 10);
@@ -94,6 +121,9 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   TH1D *h_mbd_data = (TH1D*) f_data->Get("h_mbd_vertex");
   h_mbd_data->SetName("h_mbd_data");
   h_mbd_data->Rebin(5);
+  TH2D *h_emfrac_data = (TH2D*) f_data->Get("h_lead_pt_v_emfrac");
+  h_emfrac_data->SetName("h_emfrac_data");
+
   TH1D *h_njet_data = (TH1D*) f_data->Get("h_njets");
   h_njet_data->SetName("h_njet_data");
   TH2D *h_eta_data = (TH2D*) f_data->Get("h_eta_lead_sublead");
@@ -102,10 +132,17 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   
   h_mbd_data->Scale(1./h_mbd_data->Integral(),"width");
   h_mbd_sim->Scale(1./h_mbd_sim->Integral(),"width");
+
+  h_emfrac_data->Scale(1./h_emfrac_data->Integral(),"width");
+  h_emfrac_sim->Scale(1./h_emfrac_sim->Integral(),"width");
+
   h_njet_data->Scale(1./h_njet_data->Integral(),"width");
   h_njet_sim->Scale(1./h_njet_sim->Integral(),"width");
   h_eta_data->Scale(1./h_eta_data->Integral(0, -1, 0, -1),"width");
   h_eta_sim->Scale(1./h_eta_sim->Integral(0, -1, 0, -1),"width");
+
+  TH1D *h_emfrac_proj_data = (TH1D*) h_emfrac_data->ProjectionY("h_emfrac_proj_data");
+  TH1D *h_emfrac_proj_sim = (TH1D*) h_emfrac_sim->ProjectionY("h_emfrac_proj_sim");
 
   TH1D *h_eta_lead_data = (TH1D*) h_eta_data->ProjectionX("h_eta_lead_data");
   TH1D *h_eta_lead_sim = (TH1D*) h_eta_sim->ProjectionX("h_eta_lead_sim");
@@ -115,7 +152,11 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   TH2D *h_eta_compare = (TH2D*) h_eta_data->Clone();
   h_eta_compare->SetName("h_eta_reweight");
   h_eta_compare->Divide(h_eta_sim);
-  
+
+  TH2D *h_emfrac_compare = (TH2D*) h_emfrac_data->Clone();
+  h_emfrac_compare->SetName("h_emfrac_reweight");
+  h_emfrac_compare->Divide(h_emfrac_sim);
+
   TCanvas *c5 = new TCanvas("c5","c5", 500, 500);
   dlutility::ratioPanelCanvas(c5, 0.4);
   c5->cd(1);
@@ -315,10 +356,74 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   c5->Print(Form("%s/unfolding_plots/datasim_eta_lead_pp_r%02d_%s.png", rb.get_code_location().c_str(), cone_size, sys_name.c_str()));
   c5->Print(Form("%s/unfolding_plots/datasim_eta_lead_pp_r%02d_%s.pdf", rb.get_code_location().c_str(), cone_size, sys_name.c_str()));
 
+  c5->cd(1);
+  gPad->SetLogy(0);
+  dlutility::SetLineAtt(h_emfrac_proj_sim, color_sim, 1, 1);
+  dlutility::SetLineAtt(h_emfrac_proj_data, color_data, 1, 1);
+  dlutility::SetMarkerAtt(h_emfrac_proj_sim, color_sim, 0.5, 8);
+  dlutility::SetMarkerAtt(h_emfrac_proj_data, color_data, 0.5, 8);
+
+  dlutility::SetFont(h_emfrac_proj_data, 42, 0.05);
+  h_emfrac_proj_data->SetTitle("; EM Frac. ; #frac{1}{N_{pair}}#frac{dN_{pair}}{dEM Frac.} ");
+
+  //h_emfrac_proj_data->SetMaximum(18);
+  h_emfrac_proj_data->Draw("p");
+  h_emfrac_proj_sim->Draw("same p");
+
+  dlutility::DrawSPHENIXppsize(0.22, 0.8, 0.05);
+  dlutility::drawText(Form("anti-k_{T} #it{R} = 0.%d", cone_size), 0.22, 0.68, 0, kBlack, 0.05);
+  dlutility::drawText("Jet 10 GeV", 0.22, 0.62, 0, kBlack, 0.05);
+  dlutility::drawText("|z_{vtx}| < 60", 0.22, 0.56, 0, kBlack, 0.05);
+  leg1 = new TLegend(0.22, 0.40, 0.35, 0.50);
+  leg1->SetLineWidth(0);
+  leg1->SetTextSize(0.04);
+  leg1->SetTextFont(42);
+
+  leg1->AddEntry(h_emfrac_proj_data,"Data");
+  leg1->AddEntry(h_emfrac_proj_sim,"Sim Reco");
+
+  leg1->Draw("same");  
+
+  c5->cd(2);
+  gPad->SetTopMargin(0.05);
+
+  TH1D *h_emfrac_proj_compare = (TH1D*) h_emfrac_proj_data->Clone();
+  h_emfrac_proj_compare->SetName("h_emfrac_reweight");
+  h_emfrac_proj_compare->SetTitle("; EM Frac.; Data/MC");
+  h_emfrac_proj_compare->Divide(h_emfrac_proj_sim);
+
+  dlutility::SetLineAtt(h_emfrac_proj_compare, kBlack, 1, 1);
+  dlutility::SetMarkerAtt(h_emfrac_proj_compare, kBlack, 1, 8);
+
+
+
+  dlutility::SetFont(h_emfrac_proj_compare, 42, 0.07);
+
+  h_emfrac_proj_compare->Draw();
+    
+  linl = new TLine(-0.1, 1, 1.1 ,1);
+  linl->SetLineColor(kBlack);
+  linl->SetLineWidth(2);
+  linl->SetLineStyle(4);
+  linl->Draw("same");
+  /* TLine *linep = new TLine(20, 0.2, 40, 0.2); */
+  /* dlutility::SetLineAtt(linep, kBlack, 3, 4); */
+  /* linep->Draw("same"); */
+  /* TLine *linen = new TLine(20, -0.2, 40, -0.2); */
+  /* dlutility::SetLineAtt(linen, kBlack, 3, 4); */
+  /* linen->Draw("same"); */
+  /* TLine *lin0 = new TLine(20, 0, 40, 0); */
+  /* dlutility::SetLineAtt(lin0, kBlack, 2, 1); */
+  /* lin0->Draw("same"); */
+
+  c5->Print(Form("%s/unfolding_plots/datasim_emfrac_pp_r%02d_%s.png", rb.get_code_location().c_str(), cone_size, sys_name.c_str()));
+  c5->Print(Form("%s/unfolding_plots/datasim_emfrac_pp_r%02d_%s.pdf", rb.get_code_location().c_str(), cone_size, sys_name.c_str()));
+
   
   TFile *fout = new TFile(Form("%s/vertex/vertex_reweight_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sys_name.c_str()),"recreate");
   h_compare->Write();
   h_eta_compare->Write();
+  h_emfrac_compare->Write();
   fout->Write();
   fout->Close();
 

@@ -15,6 +15,7 @@ struct jet
 {
   int id;
   float pt = 0;
+  float e = 0;
   float pt_uncalib = 0;
   float eta = 0;
   float eta_det = 0;
@@ -53,7 +54,8 @@ class dijetfinder
   std::vector<std::pair<struct jet, struct jet>>  match_dijets(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets);
   bool check_dijet_reco(std::vector<struct jet> myrecojets);
   bool check_dijet_truth(std::vector<struct jet> mytruthjets);
-
+  bool passes_time_cut(double calib_lead_time, double calib_delta_time);
+  
   void setTruthCuts(float pt1, float pt2)
   {
     m_truth_leading_cut = pt1;
@@ -64,8 +66,12 @@ class dijetfinder
     m_reco_leading_cut = pt1;
     m_reco_subleading_cut = pt2;
   }
-  
+  void setPhiLocation(int philoc)
+  {
+    m_philoc = philoc;    
+  }
  private:
+  int m_philoc = 0;
   int m_verbosity = 0;
   float m_eta_cut = 0.7;
   int m_cone_size = 4;

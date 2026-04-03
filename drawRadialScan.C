@@ -1,3 +1,4 @@
+
 #include "dlUtility.h"
 #include "read_binning.h"
 #include "histo_opps.h"
@@ -6,8 +7,10 @@ const bool NUCLEAR = true;
 int cone_sizes[7] = {2, 3, 4, 5, 6, 7, 8};
 int color_unfold[7] = {kSpring + 2, kOrange - 2, kBlack, kRed + 2, kViolet + 2, kPink + 3, kAzure - 5};
 int color_fill_unfold[7] = {kSpring + 3, kOrange -  1, kAzure - 4, kRed + 3, kViolet + 3};
+
 const float marker_unfold = 20;
 const float msize_unfold = 0.9;
+const float msize_unfold_all = 1.5;
 const float lsize_unfold = 1.1;
 
 void drawRadialScan()
@@ -25,8 +28,9 @@ void drawRadialScan()
   Double_t dphicut = rb.get_dphicut();
 
   const int nbins = read_nbins;
+  const int nbins_pt = read_nbins+1;
   int first_bin = 0;
-  float ipt_bins[nbins+1];
+  float ipt_bins[nbins_pt+1];
   double  dxj_bins[nbins+1];
 
   float ixj_bins[nbins+1];
@@ -41,7 +45,7 @@ void drawRadialScan()
       if (dxj_bins[i] > 0.3 && first_bin == 0) first_bin = i;
 
     }
-
+  ipt_bins[nbins_pt] = 100;
 
   float truth_leading_cut = rb.get_truth_leading_cut();
   float truth_subleading_cut = rb.get_truth_subleading_cut();
@@ -106,8 +110,10 @@ void drawRadialScan()
   TH1D *h_final_xj_unfold_range[7][mbins][niterations];
   TH1D *h_final_xj_systematics[7][mbins][niterations];
   TGraphAsymmErrors *g_final_xj_systematics[7][mbins][niterations];
+  TH1D *h_final_xj_statistics[7][mbins][niterations];
+  TGraphAsymmErrors *g_final_xj_statistics[7][mbins][niterations];
 
-  for (int ic = 0; ic < 7; ic++)
+  for (int ic = 1; ic < 7; ic++)
     {
       finu[ic] = new TFile(Form("uncertainties/uncertainties_pp_r%02d_nominal.root", cone_sizes[ic]),"r");
       if (!finu[ic])
@@ -140,6 +146,7 @@ void drawRadialScan()
 	       h_total_sys_neg_range[ic][irange][iter] = (TH1D*) fins[ic]->Get(Form("h_total_sys_neg_range_%d_iter_%d", irange, iter));
 	       h_total_sys_range[ic][irange][iter]->SetName(Form("h_total_sys_range_%d_iter_%d_r%02d", irange, iter, cone_sizes[ic]));
 	       h_total_sys_neg_range[ic][irange][iter]->SetName(Form("h_total_sys_neg_range_%d_iter_%d_r%02d", irange, iter, cone_sizes[ic]));
+	       std::cout << ic << " / " << irange << " / " << iter << " : " << h_total_sys_range[ic][irange][iter]->GetBinContent(9) << std::endl;
 	     }
 	 }
 
@@ -159,7 +166,7 @@ void drawRadialScan()
 
        for (int iter = 0; iter < niterations; iter++)
 	 {
-	   h_pt1pt2_unfold[ic][iter] = new TH2D(Form("h_pt1pt2_unfold_iter%d_r%02d", iter, cone_sizes[ic]), ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
+	   h_pt1pt2_unfold[ic][iter] = new TH2D(Form("h_pt1pt2_unfold_iter%d_r%02d", iter, cone_sizes[ic]), ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
 	 }
 
        for (int iter = 0; iter < niterations; iter++)
@@ -192,11 +199,11 @@ void drawRadialScan()
 
        for (int iter = 0; iter < niterations; iter++)
 	 {
-	   histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[ic][iter], h_pt1pt2_unfold[ic][iter], nbins);
+	   histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[ic][iter], h_pt1pt2_unfold[ic][iter], nbins_pt);
 	 }
        for (int iter = 0; iter < niterations; iter++)
 	 {
-	   histo_opps::project_xj(h_pt1pt2_unfold[ic][iter], h_xj_unfold[ic][iter], nbins, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
+	   histo_opps::project_xj(h_pt1pt2_unfold[ic][iter], h_xj_unfold[ic][iter], nbins_pt, measure_leading_bin, nbins - 2, measure_subleading_bin, nbins - 2);
 	 }
   
        for (int iter = 0; iter < niterations; iter++)
@@ -211,6 +218,7 @@ void drawRadialScan()
 	     {
 	       h_final_xj_unfold_range[ic][irange][iter] = new TH1D(Form("h_final_xj_unfold_%d_iter%d_r%02d", irange, iter, cone_sizes[ic]), ";x_{J};",nbins, ixj_bins);
 	       h_final_xj_systematics[ic][irange][iter] = new TH1D(Form("h_final_xj_systematics_%d_%d_r%02d", irange, iter, cone_sizes[ic]), ";x_{J};",nbins, ixj_bins);
+	       h_final_xj_statistics[ic][irange][iter] = new TH1D(Form("h_final_xj_statistics_%d_%d_r%02d", irange, iter, cone_sizes[ic]), ";x_{J};",nbins, ixj_bins);
 	     }
 	 }
 
@@ -218,26 +226,34 @@ void drawRadialScan()
 	 {
 	   for (int iter = 0; iter < niterations; iter++)
 	     {
-	       histo_opps::project_xj(h_pt1pt2_unfold[ic][iter], h_xj_unfold_range[ic][irange][iter], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	       histo_opps::project_xj(h_pt1pt2_unfold[ic][iter], h_xj_unfold_range[ic][irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	     }
 	   
 	   for (int iter = 0; iter < niterations; iter++)
 	     {
 	       histo_opps::finalize_xj(h_xj_unfold_range[ic][irange][iter], h_final_xj_unfold_range[ic][irange][iter], nbins, first_xj);
-	       histo_opps::normalize_histo(h_xj_rms[ic][irange][iter], nbins);
+	       histo_opps::finalize_xj(h_xj_rms[ic][irange][iter], h_final_xj_rms[ic][irange][iter], nbins, first_xj);
 
-	       histo_opps::finalize_xj(h_xj_unfold_range[ic][irange][iter], h_final_xj_unfold_range[ic][irange][iter], nbins, first_xj);
 	       histo_opps::normalize_histo(h_final_xj_unfold_range[ic][irange][iter], nbins);
+	       histo_opps::normalize_histo(h_final_xj_rms[ic][irange][iter], nbins);
 
-	       histo_opps::set_xj_errors(h_final_xj_unfold_range[ic][irange][iter], h_xj_rms[ic][irange][iter], nbins);
+	       histo_opps::set_xj_errors(h_final_xj_unfold_range[ic][irange][iter], h_final_xj_rms[ic][irange][iter], nbins);
 
+	  
 	       h_final_xj_systematics[ic][irange][iter] = (TH1D*) h_final_xj_unfold_range[ic][irange][iter]->Clone();
-	       h_final_xj_systematics[ic][irange][iter]->SetName(Form("h_final_xj_systematics_%d_%d_%d", irange, iter, cone_sizes[ic]));
-	       g_final_xj_systematics[ic][irange][iter] = histo_opps::get_xj_systematics(h_final_xj_systematics[ic][irange][iter], h_total_sys_neg_range[ic][irange][iter], h_total_sys_range[ic][irange][iter], nbins);
-	       /* h_final_xj_statistics[ic][irange][iter] = (TH1D*) h_final_xj_unfold_range[ic][irange][iter]->Clone(); */
-	       /* h_final_xj_statistics[ic][irange][iter]->SetName(Form("h_final_xj_statistics_%d_%d", irange, iter)); */
-	       /* g_final_xj_statistics[ic][irange][iter] = histo_opps::get_xj_statistics(h_final_xj_statistics[ic][irange][iter], nbins); */
+	       h_final_xj_systematics[ic][irange][iter]->SetName(Form("h_final_xj_systematics_%d_%d_r%02d", irange, iter, ic));
 
+	       g_final_xj_systematics[ic][irange][iter] = new TGraphAsymmErrors(h_final_xj_systematics[ic][irange][iter]);
+	  
+	       histo_opps::trim_tgraph(g_final_xj_systematics[ic][irange][iter], nbins, first_xj);
+	  
+	       histo_opps::get_xj_systematics(g_final_xj_systematics[ic][irange][iter], h_total_sys_neg_range[ic][irange][iter], h_total_sys_range[ic][irange][iter], g_final_xj_systematics[ic][irange][iter]->GetN());
+
+	       h_final_xj_statistics[ic][irange][iter] = (TH1D*) h_final_xj_unfold_range[ic][irange][iter]->Clone();
+	       h_final_xj_statistics[ic][irange][iter]->SetName(Form("h_final_xj_statistics_%d_%d_r%02d", irange, iter, ic));
+	       g_final_xj_statistics[ic][irange][iter] = histo_opps::get_xj_statistics(h_final_xj_statistics[ic][irange][iter], nbins);
+
+	       histo_opps::trim_tgraph(g_final_xj_statistics[ic][irange][iter], nbins, first_xj);
 	     }
 	 }
     }
@@ -250,7 +266,7 @@ void drawRadialScan()
   
   for (int irange = 0; irange < mbins; irange++)
     {
-      for (int ic = 0; ic < 7; ic++)
+      for (int ic = 1; ic < 7; ic++)
 	{
 
 	  TH1D *h = (TH1D*) h_final_xj_unfold_range[ic][irange][niter]->Clone();
@@ -260,18 +276,12 @@ void drawRadialScan()
 	  float fix_shift = 0;
 	  float shift_cone = (ic % 2 ? 3. : 4.);
 	  float offset_cone = (ic % 2 ? 1. : 1.5);
-	  
+	  int point = 0;
 	  for (int b=1; b<=h->GetNbinsX(); b++)
 	    {
 	      double x = h->GetBinCenter(b);
 	      if (x < 0.3)
 		{
-		  g_final_shift_xj_unfold_range[ic][irange]->SetPoint(b-1, -9999, -9999); // offset each histogram
-		  g_final_shift_xj_unfold_range[ic][irange]->SetPointError(b-1, 0,0, 0,0);
-
-		  g_final_xj_systematics[ic][irange][niter]->SetPointEXhigh(b-1, 0);
-		  g_final_xj_systematics[ic][irange][niter]->SetPointEXlow(b-1, 0);
-		  g_final_xj_systematics[ic][irange][niter]->SetPointX(b-1, -9999); 
 		  continue;
 		}
 	      double binwidth = h->GetBinWidth(b);
@@ -289,28 +299,29 @@ void drawRadialScan()
 	      double sx= x + ((ic/2)-offset_cone)*fix_shift;
 
 
-	      g_final_shift_xj_unfold_range[ic][irange]->SetPoint(b-1, sx, y); // offset each histogram
-	      g_final_shift_xj_unfold_range[ic][irange]->SetPointError(b-1, 0,0, ey, ey);
-		  
-	      g_final_shift_xj_unfold_range[ic][irange]->SetPoint(b-1, sx, y);
-
-	      g_final_xj_systematics[ic][irange][niter]->SetPointEXhigh(b-1, ex);
-	      g_final_xj_systematics[ic][irange][niter]->SetPointEXlow(b-1, ex);
-	      g_final_xj_systematics[ic][irange][niter]->SetPointX(b-1, sx); 
+	      g_final_xj_statistics[ic][irange][niter]->SetPoint(point, sx, y);
+	      g_final_xj_statistics[ic][irange][niter]->SetPointError(point, 0,0,ey,ey);
+	      
+	      g_final_xj_systematics[ic][irange][niter]->SetPointEXhigh(point, ex);
+	      g_final_xj_systematics[ic][irange][niter]->SetPointEXlow(point, ex);
+	      g_final_xj_systematics[ic][irange][niter]->SetPointX(point, sx);
+	      g_final_xj_systematics[ic][irange][niter]->SetPointY(point, y);
+	      std::cout << "sys: " << ic << " / " << irange << " : " << g_final_xj_systematics[ic][irange][niter]->GetErrorYhigh(point) << std::endl;
+	      point++;
 	    }
 	  
 	}
       
       int marker_range = 20;
-      float msize_range = 0.8;
-      for (int ic = 0; ic < 7; ic++)
+      float msize_range = 1.5;
+      for (int ic = 1; ic < 7; ic++)
 	{
 	  dlutility::SetLineAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
 	  dlutility::SetMarkerAtt(g_final_xj_systematics[ic][irange][niter], color_unfold[ic], msize_range, marker_range);
 	  g_final_xj_systematics[ic][irange][niter]->SetFillColorAlpha(color_unfold[ic], 0.3); 
 	  
-	  dlutility::SetLineAtt(g_final_shift_xj_unfold_range[ic][irange], color_unfold[ic], lsize_unfold, 1);
-	  dlutility::SetMarkerAtt(g_final_shift_xj_unfold_range[ic][irange], color_unfold[ic], msize_range, marker_range);
+	  dlutility::SetLineAtt(g_final_xj_statistics[ic][irange][niter], color_unfold[ic], lsize_unfold, 1);
+	  dlutility::SetMarkerAtt(g_final_xj_statistics[ic][irange][niter], color_unfold[ic], msize_range, marker_range);
 	  
 	}
 	
@@ -322,7 +333,7 @@ void drawRadialScan()
       dlutility::SetFont(hblank1, 42, 0.06, 0.04, 0.05, 0.05);
 
 
-      hblank1->SetMaximum(4.0);
+      hblank1->SetMaximum(6.0);
       hblank1->SetMinimum(0);
       hblank1->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -335,10 +346,10 @@ void drawRadialScan()
       
       hblank1->Draw("p E1");
 
-      for (int ic = 0; ic < 7; ic++)
+      for (int ic = 1; ic < 7; ic++)
 	{
 	  if (ic%2 == 1) continue;
-	  g_final_shift_xj_unfold_range[ic][irange]->Draw("same p E1");
+	  g_final_xj_statistics[ic][irange][niter]->Draw("same p E1");
 	  g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
 	}
 
@@ -357,13 +368,13 @@ void drawRadialScan()
       leg->SetLineWidth(0);
       leg->SetTextSize(0.04);
       leg->SetTextFont(42);
-      leg->AddEntry(g_final_shift_xj_unfold_range[0][irange], "R = 0.2");
-      leg->AddEntry(g_final_shift_xj_unfold_range[1][irange], "R = 0.3");
-      leg->AddEntry(g_final_shift_xj_unfold_range[2][irange], "R = 0.4");
-      leg->AddEntry(g_final_shift_xj_unfold_range[3][irange], "R = 0.5");
-      leg->AddEntry(g_final_shift_xj_unfold_range[4][irange], "R = 0.6");
-      leg->AddEntry(g_final_shift_xj_unfold_range[5][irange], "R = 0.7");
-      leg->AddEntry(g_final_shift_xj_unfold_range[6][irange], "R = 0.8");
+      //leg->AddEntry(g_final_shift_xj_unfold_range[0][irange], "R = 0.2");
+      leg->AddEntry(g_final_xj_statistics[1][irange][niter], "R = 0.3");
+      leg->AddEntry(g_final_xj_statistics[2][irange][niter], "R = 0.4");
+      leg->AddEntry(g_final_xj_statistics[3][irange][niter], "R = 0.5");
+      leg->AddEntry(g_final_xj_statistics[4][irange][niter], "R = 0.6");
+      leg->AddEntry(g_final_xj_statistics[5][irange][niter], "R = 0.7");
+      leg->AddEntry(g_final_xj_statistics[6][irange][niter], "R = 0.8");
       
 
       cxj_money->cd(2);
@@ -374,10 +385,10 @@ void drawRadialScan()
       
       hblank1->Draw("p E1 Y+");
 
-      for (int ic = 0; ic < 7; ic++)
+      for (int ic = 1; ic < 7; ic++)
 	{
 	  if (ic%2 == 0) continue;
-	  g_final_shift_xj_unfold_range[ic][irange]->Draw("same p E1");
+	  g_final_xj_statistics[ic][irange][niter]->Draw("same p E1");
 	  g_final_xj_systematics[ic][irange][niter]->Draw("same p E2");
 	}
 
@@ -386,6 +397,7 @@ void drawRadialScan()
       cxj_money->Print(Form("h_final_xj_unfolded_radial_range_%d.png", irange));
       cxj_money->Print(Form("h_final_xj_unfolded_radial_range_%d.pdf", irange));
     }
+
 
   return;
 }

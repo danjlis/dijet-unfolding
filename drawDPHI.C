@@ -1113,6 +1113,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       /* h_data_dphi_rangemin_sys[irange]->Scale(1./ h_data_dphi_rangemin_sys[irange]->Integral(), "width"); */
 
       h_data_dphi_rangemin[0][irange]->SetMaximum(10);
+      h_data_dphi_rangemin[0][irange]->SetMinimum(0);
       //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_rangemin[0][irange], 42, 0.06);
       dlutility::SetLineAtt(h_truth_match_dphi_rangemin[0][irange], kRed, 3, 1);
@@ -1399,6 +1400,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       c_money->Print(Form("%s/dphi_plots/h_final_data_dphi_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
 
       h_data_dphi_range[0][irange]->SetMaximum(10);
+      h_data_dphi_range[0][irange]->SetMinimum(0);
       //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_range[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);

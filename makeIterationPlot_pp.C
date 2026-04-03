@@ -282,14 +282,16 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
   dlutility::SetMarkerAtt(h_unfold_uncertainties, kGreen, 1, 8);
   dlutility::SetLineAtt(h_unfold_uncertainties, kGreen, 1, 1);
 
-  h_total_uncertainties->SetMaximum(20);
+  h_total_uncertainties->SetMaximum(40);
   h_total_uncertainties->Draw("p hist");
   h_statistical_uncertainties->Draw("same p hist");
   h_unfold_uncertainties->Draw("same p hist");
   h_binbybin_uncertainties->Draw("same p hist");
   h_total_uncertainties->Draw("p hist same");
-  dlutility::DrawSPHENIX(0.22, 0.87);
-  TLegend *leg = new TLegend(0.218, 0.566, 0.397, 0.726);
+  dlutility::DrawSPHENIXpp(0.22, 0.87);
+  dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.77);
+  TLegend *leg = new TLegend(0.218, 0.506, 0.397, 0.726);
+
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
   leg->SetTextSize(0.03);

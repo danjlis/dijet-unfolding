@@ -65,10 +65,13 @@ namespace histo_opps
       {
 	if (g->GetPointX(nbins - 1 - i) < first_xj)
 	  {
-	    g->RemovePoint(nbins - 1 -i);
+	    g->RemovePoint(nbins - 1 - i);
 	  }
       }
-
+    for (int i = 0; i < g->GetN(); i++)
+      {
+	std::cout << "Trimmed : " << i << " / " << g->GetPointX(i) << " / " << g->GetPointY(i) << std::endl;	  
+      }
   }
   void trim_tgraph(TGraph *g, const int nbins, float first_xj)
   {
@@ -298,7 +301,21 @@ namespace histo_opps
 	    }
 	}
   }
-
+  double get_average_xj(TH1D *h_xj)
+  {
+    double mean = 0;
+    double sum = 0;
+    int point = 0;
+    for (int b=0; b < h_xj->GetNbinsX(); b++)
+      {
+	double x = h_xj->GetBinCenter(b+1);
+	double c = h_xj->GetBinContent(b+1);
+	mean += c*x;
+	sum += c;
+      }
+    mean /= sum;
+    return mean;
+  }
 };
 
 #endif

@@ -130,8 +130,8 @@ void drawResponse_pp(const int cone_size = 4, const int primer = 0, const std::s
   cresponseskimzoom->SetLogz();
   
   gPad->SetRightMargin(0.05);
-  h_flat_response_skim->GetXaxis()->SetRangeUser(281, 282+19);
-  h_flat_response_skim->GetYaxis()->SetRangeUser(177, 197);
+  h_flat_response_skim->GetXaxis()->SetRangeUser(280, 281+19);
+  h_flat_response_skim->GetYaxis()->SetRangeUser(183, 203);
   h_flat_response_skim->Draw("col");
   dlutility::DrawSPHENIXpp(0.20, 0.85);
   dlutility::drawText("Response matrix", 0.2, 0.75);
