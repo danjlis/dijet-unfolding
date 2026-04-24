@@ -1,7 +1,7 @@
+#include "histo_opps.h"
 #include "dlUtility.h"
 #include "read_binning.h"
-
-const int color_herwig = kViolet;
+const int color_herwig = kSpring - 1;
 const float msize_herwig = 0.9;
 const float marker_herwig = 20;
 const float lsize_herwig = 1.1;
@@ -23,6 +23,11 @@ const int color_data = kAzure - 6;
 const float marker_data = 24;
 const float msize_data = 0.9;
 const float lsize_data = 1.1;
+
+const int color_raw = kAzure - 6;
+const float marker_raw = 24;
+const float msize_raw = 0.9;
+const float lsize_raw = 1.1;
 
 
 const int colorsys[5] = {kBlack, kMagenta + 2, kGreen - 2, kCyan + 1, kPink + 2};
@@ -103,7 +108,22 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
+  TFile *fintrh = new TFile(Form("%s/truth_hists/herwig_hists_pp_r0%d_HERWIG.root",  rb.get_code_location().c_str(), cone_size),"r");
+  if (!fintrh)
+    {
+      std::cout << "no herwig hists" << std::endl;
+      return;
+    }
 
+  TH3D *h_herwig_pt1pt2dphi = (TH3D*) fintrh->Get("h_herwig_pt1pt2dphi");
+  TH1D *h_herwig_dphi_range[3];
+  for (int i = 0; i < 3; i++)
+    {
+      h_herwig_dphi_range[i] = h_herwig_pt1pt2dphi->ProjectionZ(Form("h_herwig_dphi_range_%d", i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
+      h_herwig_dphi_range[i]->Scale(1./h_herwig_dphi_range[i]->Integral(0, -1, "width"));
+      dlutility::SetLineAtt(h_herwig_dphi_range[i], color_herwig, 3, 1);
+    }
+  
   /* TFile *fher = new TFile("herwig_hist.root","r"); */
   /* TH1D *h_herwig_leading_dphi[3]; */
   /* TH1D *h_herwig_subleading_dphi[3]; */
@@ -150,6 +170,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   TH1D *h_corr_truth_dphi_rangemin[7][3];
   
   TH1D *h_data_dphi_range[7][3];
+  TH1D *h_raw_dphi_range[7][3];
   TH1D *h_truth_dphi_range[5][3];
   TH1D *h_truth_match_dphi_range[5][3];
   TH1D *h_reco_dphi_range[5][3];
@@ -160,11 +181,41 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   TH1D *h_reco_dphi_rangemin[5][3];
 
   TH1D *h_correction_factors_range[5][3];
+  TH1D *h_correction_factors_range_smooth[5][3];
+
   TH1D *h_correction_factors_rangemin[5][3];
 
   TH1D *h_efficiency_factors_range[5][3];
   TH1D *h_efficiency_factors_rangemin[5][3];
 
+  TF1 *p3 = new TF1("p3", "pol3", 3.*TMath::Pi()/4., TMath::Pi());
+  
+  TH1D *h_rms_dphi_truth = new TH1D("h_rms_dphi_truth", "", 3, 0, 3);
+  TH1D *h_rms_dphi_herwig = new TH1D("h_rms_dphi_herwig", "", 3, 0, 3);
+  TH2D *h_rms_dphi = new TH2D("h_rms_dphi", "", 3, 0, 3, 3, 0, 3);
+  std::vector<std::pair<double, int>> *variation_rms_dphi[3];
+  for (int j = 0 ; j < 3; j++)
+    {
+      variation_rms_dphi[j] = new std::vector<std::pair<double, int>>();
+    }
+  TH1D *h_sigma_dphi_truth = new TH1D("h_sigma_dphi_truth", "", 3, 0, 3);
+  TH1D *h_sigma_dphi_herwig = new TH1D("h_sigma_dphi_herwig", "", 3, 0, 3);
+  TH2D *h_sigma_dphi = new TH2D("h_sigma_dphi", "", 3, 0, 3, 3, 0, 3);
+  std::vector<std::pair<double, int>> *variation_sigma_dphi[3];
+  for (int j = 0 ; j < 3; j++)
+    {
+      variation_sigma_dphi[j] = new std::vector<std::pair<double, int>>();
+    }
+
+  TH1D *h_average_dphi_truth = new TH1D("h_average_dphi_truth", "", 3, 0, 3);
+  TH1D *h_average_dphi_herwig = new TH1D("h_average_dphi_herwig", "", 3, 0, 3);
+  TH2D *h_average_dphi = new TH2D("h_average_dphi", "", 3, 0, 3, 3, 0, 3);
+  std::vector<std::pair<double, int>> *variation_average_dphi[3];
+  for (int j = 0 ; j < 3; j++)
+    {
+      variation_average_dphi[j] = new std::vector<std::pair<double, int>>();
+    }
+  
   // Get histograms
   for (int isys = 0; isys < 5; isys++)
     {
@@ -177,7 +228,6 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       h_truth_pt1pt2dphi[isys] = (TH3D*) fin[isys]->Get("h_truth_match_pt1pt2dphi");;
       h_reco_match_pt1pt2dphitruth[isys] = (TH3D*) fin[isys]->Get("h_reco_match_pt1pt2dphitruth");;
 
-      
       h_data_pt1pt2dphi[isys]->SetName(Form("h_data_pt1pt2dphi_%d", isys));
       
       h_reco_match_pt1pt2dphi[isys]->SetName(Form("h_reco_pt1pt2dphi_%d", isys));
@@ -187,6 +237,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       h_truth_pt1pt2dphi[isys]->SetName(Form("h_truth_pt1pt2dphi_%d", isys));
       
       h_reco_match_pt1pt2dphitruth[isys]->SetName(Form("h_reco_pt1pt2dphitruth_%d", isys));
+
       for (int i = 0; i < 3; i++)
 	{
 	  h_all_reco_dphi_range[isys][i] = (TH1D*) fin[isys]->Get(Form("h_all_counts_leading_reco_%d", i));
@@ -232,6 +283,9 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 	        
 	  h_data_dphi_range[isys][i] = h_data_pt1pt2dphi[isys]->ProjectionZ(Form("h_data_dphi_range_%d_%d", isys, i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
 
+	  h_raw_dphi_range[isys][i] = (TH1D*) h_data_dphi_range[isys][i]->Clone();
+	  h_raw_dphi_range[isys][i]->SetName(Form("h_raw_dphi_range_%d_%d", isys, i));
+
 	  h_truth_dphi_range[isys][i] = h_truth_pt1pt2dphi[isys]->ProjectionZ(Form("h_truth_dphi_range_%d_%d", isys, i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
 
 	  h_truth_match_dphi_range[isys][i] = h_truth_match_pt1pt2dphi[isys]->ProjectionZ(Form("h_truth_match_dphi_range_%d_%d", isys, i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
@@ -247,23 +301,30 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 
 	  h_correction_factors_range[isys][i] = (TH1D*) h_truth_match_dphi_range[isys][i]->Clone();
 	  h_correction_factors_range[isys][i]->SetName(Form("h_correction_factors_range_%d_%d", isys, i));
-	  h_correction_factors_range[isys][i]->Divide( h_reco_dphi_range[isys][i] );
 
+	  h_correction_factors_range[isys][i]->Divide( h_reco_dphi_range[isys][i] );
+	  p3->SetParameters(-100, 100, -100, 20);
+
+
+	  
+	  
 	  TH1D *h_corr_norm = (TH1D*) h_truth_norm->Clone();
 	  h_corr_norm->SetName("h_corr_norm");
 	  h_corr_norm->Divide(h_reco_norm);
-	  
-	  for (int ib = 0; ib < h_correction_factors_range[isys][i]->GetNbinsX(); ib++)
-	    {
-	      float cov = h_corr_reco_dphi_range[isys][i]->GetBinContent(ib+1);
-	      float err1 = 0;
-	      err1 += TMath::Power(h_reco_dphi_range[isys][i]->GetBinError(ib+1)/h_reco_dphi_range[isys][i]->GetBinContent(ib+1), 2);
-	      err1 += TMath::Power(h_truth_match_dphi_range[isys][i]->GetBinError(ib+1)/h_truth_match_dphi_range[isys][i]->GetBinContent(ib+1), 2);
-	      err1 -= 2.*cov/(h_reco_dphi_range[isys][i]->GetBinContent(ib+1)*h_truth_match_dphi_range[isys][i]->GetBinContent(ib+1));
-	      float errr = h_correction_factors_range[isys][i]->GetBinContent(ib+1)*err1;
-
-	      h_correction_factors_range[isys][i]->SetBinError(ib+1, errr);
-	    }
+	  h_corr_norm->Fit(p3, "I");//("p E1");
+	  h_correction_factors_range_smooth[isys][i] = (TH1D*) histo_opps::get_correction_smooth(h_corr_norm);//h_correction_factors_range[isys][i]);
+	  h_correction_factors_range_smooth[isys][i]->SetName(Form("h_correction_factors_range_smooth_%d_%d", isys, i));
+	  /* for (int ib = 0; ib < h_correction_factors_range[isys][i]->GetNbinsX(); ib++) */
+	  /*   { */
+	  /*     float cov = h_corr_reco_dphi_range[isys][i]->GetBinContent(ib+1); */
+	  /*     float err1 = 0; */
+	  /*     err1 += TMath::Power(h_reco_dphi_range[isys][i]->GetBinError(ib+1)/h_reco_dphi_range[isys][i]->GetBinContent(ib+1), 2); */
+	  /*     err1 += TMath::Power(h_truth_match_dphi_range[isys][i]->GetBinError(ib+1)/h_truth_match_dphi_range[isys][i]->GetBinContent(ib+1), 2); */
+	  /*     err1 -= 2.*cov/(h_reco_dphi_range[isys][i]->GetBinContent(ib+1)*h_truth_match_dphi_range[isys][i]->GetBinContent(ib+1)); */
+	  /*     float errr = h_correction_factors_range[isys][i]->GetBinContent(ib+1)*err1; */
+	  /*     std::cout <<  " Error check : " << isys << " / " << i << " / " << ib << " : " << h_correction_factors_range[isys][i]->GetBinError(ib+1) << " / " << errr << std::endl; */
+	  /*     //h_correction_factors_range[isys][i]->SetBinError(ib+1, errr); */
+	  /*   } */
 	  
 	  
 	  h_efficiency_factors_range[isys][i] = (TH1D*) h_truth_dphi_range[isys][i]->Clone();
@@ -274,30 +335,36 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 	    {
 	      h_data_dphi_range[5][i] = h_data_pt1pt2dphi[isys]->ProjectionZ(Form("h_data_dphi_range_sys_half_%d_%d", isys, i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
 	      h_data_dphi_range[6][i] = h_data_pt1pt2dphi[isys]->ProjectionZ(Form("h_data_dphi_range_sys_double_%d_%d", isys, i), binranges[i], binranges[i+1], measure_subleading_bin, -1);
+	      std::cout << "Range: " << i << std::endl;
 	    }
 	        
 	  for (int ib = 0; ib < h_truth_dphi_range[isys][i]->GetNbinsX(); ib++)
 	    {
 	      float va = h_data_dphi_range[isys][i]->GetBinContent(ib+1);
-	      float vb = h_correction_factors_range[isys][i]->GetBinContent(ib+1);
+	      float vb = h_correction_factors_range_smooth[isys][i]->GetBinContent(ib+1);
 	      float ea = h_data_dphi_range[isys][i]->GetBinError(ib+1);
-	      float eb = h_correction_factors_range[isys][i]->GetBinError(ib+1);
+	      float eb = h_correction_factors_range_smooth[isys][i]->GetBinError(ib+1);
 	      float vv = va*vb;
 	      float new_err = vv*sqrt( pow(ea/va, 2) + pow(eb/vb, 2));
+	      if (vv == 0)
+		new_err = 0;
+	      
 	      h_data_dphi_range[isys][i]->SetBinContent(ib+1, vv);
 	      h_data_dphi_range[isys][i]->SetBinError(ib+1, new_err);
 
 	      if (isys == 0)
 		{
-		  float half_fac = ( h_corr_norm->GetBinContent(ib+1) - 1)*0.5 + 1;
-		  float double_fac = ( h_corr_norm->GetBinContent(ib+1) - 1)*1.5 + 1;
-		  
-		  std::cout << "corr errs: " << h_correction_factors_range[isys][i]->GetBinContent(ib+1) <<  " / " << h_efficiency_factors_range[isys][i]->GetBinContent(ib+1) << " -- " << half_fac << " / " << double_fac << std::endl;
+		  std::cout << " x: " << h_data_dphi_range[isys][i]->GetBinCenter(ib+1) <<  " : " << vv << " +- " << new_err << std::endl;
+		  float half_fac = ( h_correction_factors_range_smooth[isys][i]->GetBinContent(ib+1) - 1)*0.5 + 1;
+		  float double_fac = ( h_correction_factors_range_smooth[isys][i]->GetBinContent(ib+1) - 1)*1.5 + 1;
+		  //float double_fac = ( h_corr_norm->GetBinContent(ib+1) - 1)*1.5 + 1;
+				       
+		  //std::cout << "corr errs: " << h_correction_factors_range[isys][i]->GetBinContent(ib+1) <<  " / " << h_efficiency_factors_range[isys][i]->GetBinContent(ib+1) << " -- " << half_fac << " / " << double_fac << std::endl;
 		  
 		  float va = h_data_dphi_range[5][i]->GetBinContent(ib+1);
 		  float ea = h_data_dphi_range[5][i]->GetBinError(ib+1);
-		  float eb = (h_correction_factors_range[isys][i]->GetBinError(ib+1)*0.5);
-		  float ec = (h_correction_factors_range[isys][i]->GetBinError(ib+1)*1.5);
+		  float eb = (h_correction_factors_range_smooth[isys][i]->GetBinError(ib+1)*0.5);
+		  float ec = (h_correction_factors_range_smooth[isys][i]->GetBinError(ib+1)*1.5);
 		  float vvh = va*half_fac;
 		  float vvd = va*double_fac;
 		  float new_err_h = vvh*sqrt( pow(ea/va, 2) + pow(eb/half_fac, 2));
@@ -329,7 +396,6 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 
 	  if (i == 1)
 	    {
-	      std::cout << "starting the subleading " << std::endl;
 	      for (int j = 0; j < 3; j++)
 		{
 		        
@@ -443,7 +509,8 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 	  scale_pt1_truth[isys][i] = 1./h_truth_match_dphi_range[isys][i]->Integral(0, -1, "width");
 	  scale_pt1_reco[isys][i] = 1./h_reco_dphi_range[isys][i]->Integral(0, -1, "width");
 
-	  h_data_dphi_range[isys][i]->Scale(1./h_data_dphi_range[isys][i]->Integral(0, -1, "width"));
+	  h_data_dphi_range[isys][i]->Scale(1./h_data_dphi_range[isys][i]->Integral(0, -1, "width"));	 
+
 	  h_truth_dphi_range[isys][i]->Scale(1./h_truth_dphi_range[isys][i]->Integral(0, -1, "width"));
 	  h_truth_match_dphi_range[isys][i]->Scale(1./h_truth_match_dphi_range[isys][i]->Integral(0, -1, "width"));
 	  h_reco_dphi_range[isys][i]->Scale(1./h_reco_dphi_range[isys][i]->Integral(0, -1, "width"));
@@ -453,7 +520,6 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 	      h_data_dphi_range[6][i]->Scale(1./h_data_dphi_range[6][i]->Integral(0, -1, "width"));
 	    }
       
-	  std::cout << isys << " " << i << " Mean  "<< h_data_dphi_range[isys][i]->GetMean() << std::endl;
 
 	  delete h_reco_norm;
 
@@ -476,7 +542,8 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   TH1D *h_corr_sys_rangemin[2][3];
   TH1D *h_all_sys_rangemin[2][3];
   
-
+  TF1 *mygaus = new TF1("mygaus","gaus", 0, 10);
+  mygaus->SetParLimits(1, 3.14, 3.15);
   // make two copies, on with sat and one with sys
   TGraphAsymmErrors *h_data_dphi_range_sys[3];
   TGraphAsymmErrors *h_data_dphi_rangemin_sys[3];
@@ -490,6 +557,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       h_data_dphi_range_sys[i]->SetName(Form("h_data_dphi_range_sys_%d", i));
       h_ratio_dphi_range_sys[i] = new TGraphAsymmErrors(h_data_dphi_range[0][i]);
       h_ratio_dphi_range_sys[i]->SetName(Form("h_ratio_dphi_range_sys_%d", i));
+
 
       h_jer_sys_range[0][i] = (TH1D*) h_data_dphi_range[0][i]->Clone();
       h_jer_sys_range[0][i]->SetName(Form("h_jer_sys_range_pos_%d", i));
@@ -517,6 +585,30 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       h_all_sys_range[1][i] = (TH1D*) h_data_dphi_range[0][i]->Clone();
       h_all_sys_range[1][i]->SetName(Form("h_all_sys_range_neg_%d", i));
       h_all_sys_range[1][i]->Reset();//(Form("h_all_sys_range_neg_%d", i));
+
+      
+      variation_average_dphi[i]->push_back(std::make_pair(h_data_dphi_range[1][i]->GetMean(), 0));
+      
+      variation_average_dphi[i]->push_back(std::make_pair(h_data_dphi_range[2][i]->GetMean(), 0));
+      
+      variation_average_dphi[i]->push_back(std::make_pair(h_data_dphi_range[3][i]->GetMean(), 0));
+      
+      variation_average_dphi[i]->push_back(std::make_pair(h_data_dphi_range[4][i]->GetMean(), 0));
+      
+      variation_average_dphi[i]->push_back(std::make_pair(h_data_dphi_range[5][i]->GetMean(), 0));
+      
+      variation_average_dphi[i]->push_back(std::make_pair(h_data_dphi_range[6][i]->GetMean(), 0));
+
+      for (int iv = 1; iv < 7; iv++)
+	{
+	  std::pair<double, double> pp = histo_opps::get_rms_dphi(h_data_dphi_range[iv][i]);
+	  variation_sigma_dphi[i]->push_back(std::make_pair(pp.first, 0));
+	}
+
+      for (int iv = 1; iv < 7; iv++)
+	{	  
+	  variation_rms_dphi[i]->push_back(std::make_pair(histo_opps::get_slope_dphi(h_data_dphi_range[iv][i]), 0));
+	}
 
       std::cout << "range: " << i << std::endl;
       for (int ib = 0; ib < h_data_dphi_range[0][i]->GetNbinsX(); ib++)
@@ -625,16 +717,12 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 	  h_jer_sys_rangemin[0][i]->SetBinContent(ib+1, jer_pair.first/h_data_dphi_rangemin[0][i]->GetBinContent(ib+1));
 	  h_jer_sys_rangemin[1][i]->SetBinContent(ib+1, -1*jer_pair.second/h_data_dphi_rangemin[0][i]->GetBinContent(ib+1));
 
-	  std::cout << corr_pair.first << " - " <<corr_pair.second << std::endl;
-	  std::cout << jes_pair.first << " - " <<jes_pair.second << std::endl;
-	  std::cout << jer_pair.first << " - " <<jer_pair.second << std::endl;
 	  float sys_pos = sqrt(corr_pair.first*corr_pair.first +
 			       jes_pair.first*jes_pair.first +
 			       jer_pair.first*jer_pair.first);
 	  float sys_neg = sqrt(corr_pair.second*corr_pair.second +
 			       jes_pair.second*jes_pair.second +
 			       jer_pair.second*jer_pair.second);
-	  std::cout << sys_pos << " / " << sys_neg << std::endl;
 
 	  h_all_sys_rangemin[0][i]->SetBinContent(ib+1, sys_pos/h_data_dphi_rangemin[0][i]->GetBinContent(ib+1));
 	  h_all_sys_rangemin[1][i]->SetBinContent(ib+1, -1*sys_neg/h_data_dphi_rangemin[0][i]->GetBinContent(ib+1));
@@ -645,7 +733,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 
 	}
     }
-  std::cout << __LINE__ << std::endl;
+  
   TCanvas *c_sysdiv = new TCanvas("c_sysdiv", "c_sysdiv", 500, 500);
   for (int i = 0; i < 3; i++)
     {
@@ -713,8 +801,6 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       dlutility::SetFont(h_all_sys_rangemin[0][i], 42, 0.06, 0.05, 0.05, 0.05);
       h_all_sys_rangemin[0][i]->GetYaxis()->SetTitleOffset(1.5);
 
-      std::cout << "bin 10: " << h_all_sys_rangemin[0][i]->GetBinContent(10) << std::endl;;//SetMaximum(2.0);;
-      std::cout << "bin 10: " << h_all_sys_rangemin[1][i]->GetBinContent(10) << std::endl;;//SetMaximum(2.0);;
       h_all_sys_rangemin[0][i]->Draw("p");
       h_all_sys_rangemin[1][i]->Draw("p same");
 
@@ -799,13 +885,13 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 
 	    //h_all_truth_dphi_range[0][i]->GetBinContent(ib+1)*h_all_reco_dphi_range[0][i]->GetBinContent(ib+1)/h_corr_reco_dphi_range[0][i]->GetBinContent(ib+1);
 	  float err1 = 0;
-	  std::cout << cov << std::endl;
+
 	  err1 += TMath::Power(h_reco_dphi_range[0][i]->GetBinError(ib+1)/h_reco_dphi_range[0][i]->GetBinContent(ib+1), 2);
 	  err1 += TMath::Power(h_truth_match_dphi_range[0][i]->GetBinError(ib+1)/h_truth_match_dphi_range[0][i]->GetBinContent(ib+1), 2);
 	  err1 -= 2.*cov/(h_reco_dphi_range[0][i]->GetBinContent(ib+1)*h_truth_match_dphi_range[0][i]->GetBinContent(ib+1));
 	  err1 = sqrt(err1);
 	  float errr = hd->GetBinContent(ib+1)*err1;
-	  std::cout << ib << " : " << hd->GetBinContent(ib+1) << "  " << errr << std::endl;
+
 	  hd->SetBinError(ib+1, errr);
 	}
       hd->SetTitle(";#Delta#phi; Truth MC / Reco MC");
@@ -871,13 +957,13 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 
 	    //h_all_truth_dphi_rangemin[0][i]->GetBinContent(ib+1)*h_all_reco_dphi_rangemin[0][i]->GetBinContent(ib+1)/h_corr_reco_dphi_rangemin[0][i]->GetBinContent(ib+1);
 	  float err1 = 0;
-	  std::cout << cov << std::endl;
+
 	  err1 += TMath::Power(h_reco_dphi_rangemin[0][i]->GetBinError(ib+1)/h_reco_dphi_rangemin[0][i]->GetBinContent(ib+1), 2);
 	  err1 += TMath::Power(h_truth_match_dphi_rangemin[0][i]->GetBinError(ib+1)/h_truth_match_dphi_rangemin[0][i]->GetBinContent(ib+1), 2);
 	  err1 -= 2.*cov/(h_reco_dphi_rangemin[0][i]->GetBinContent(ib+1)*h_truth_match_dphi_rangemin[0][i]->GetBinContent(ib+1));
 	  err1 = sqrt(err1);
 	  float errr = hd->GetBinContent(ib+1)*err1;
-	  std::cout << ib << " : " << hd->GetBinContent(ib+1) << "  " << errr << std::endl;
+
 	  hd->SetBinError(ib+1, errr);
 	}
       /* hd->Divide(h_reco_dphi_rangeminmin[0][i]); */
@@ -897,8 +983,6 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       hd->SetTitle(";#Delta#phi; Truth MC / Reco MC");
       dlutility::SetFont(hd, 42, 0.09, 0.08, 0.075, 0.075);
       hd->GetYaxis()->SetTitleOffset(0.8);
-      hd->SetMaximum(2);
-      hd->SetMinimum(0);
 
       hd->Draw("p");
       TLine *li1 = new TLine(TMath::Pi()*3./4., 1, TMath::Pi(), 1);
@@ -925,7 +1009,6 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       dlutility::SetLineAtt(h_data_dphi_range[6][j], colorsys[2], 1, 1);
       dlutility::SetMarkerAtt(h_data_dphi_range[6][j], colorsys[2], 0.5, 8);
 
-      std::cout << h_data_dphi_range[0][j]->GetMean() << std::endl;
       h_data_dphi_range[0][j]->Draw("p");
       h_data_dphi_range[5][j]->Draw("p same");
       h_data_dphi_range[6][j]->Draw("p same");
@@ -948,7 +1031,6 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       dlutility::SetLineAtt(h_data_dphi_rangemin[6][j], colorsys[2], 1, 1);
       dlutility::SetMarkerAtt(h_data_dphi_rangemin[6][j], colorsys[2], 0.5, 8);
 
-      std::cout << h_data_dphi_rangemin[0][j]->GetMean() << std::endl;
       h_data_dphi_rangemin[0][j]->Draw("p");
       h_data_dphi_rangemin[5][j]->Draw("p same");
       h_data_dphi_rangemin[6][j]->Draw("p same");
@@ -960,18 +1042,27 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   
 
   TCanvas *c_sys1 = new TCanvas("c_sys1","c_sys1", 500, 600);
-  dlutility::ratioPanelCanvas(c_sys1, 0.3);
+  dlutility::ratioPanelCanvas(c_sys1, 0.4);
 
   for (int irange = 0; irange < 3; irange++)
     {
       c_sys1->cd(1);
+
+      h_raw_dphi_range[0][irange]->Scale(1./h_raw_dphi_range[0][irange]->Integral(), "width");
       dlutility::SetLineAtt(h_data_dphi_range[0][irange], color_unfold, 1, 1);
       dlutility::SetMarkerAtt(h_data_dphi_range[0][irange], color_unfold, 1, 8);
+
+      dlutility::SetLineAtt(h_raw_dphi_range[0][irange], color_raw, 1, 1);
+      dlutility::SetMarkerAtt(h_raw_dphi_range[0][irange], color_raw, 1, 8);
+      dlutility::SetLineAtt(h_reco_dphi_range[0][irange], color_reco, 1, 1);
+      dlutility::SetMarkerAtt(h_reco_dphi_range[0][irange], color_reco, 1, 8);
+
       dlutility::SetLineAtt(h_data_dphi_range_sys[irange], color_unfold, 1, 1);
       dlutility::SetMarkerAtt(h_data_dphi_range_sys[irange], color_unfold, 1, 8);
 
       h_data_dphi_range_sys[irange]->SetFillColorAlpha(color_unfold_fill, 0.3);
       h_data_dphi_range[0][irange]->SetMaximum(10);
+      h_data_dphi_range[0][irange]->SetMinimum(0);
 
       dlutility::SetFont(h_data_dphi_range[0][irange], 42, 0.06);
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
@@ -998,34 +1089,32 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   
       c_sys1->cd(2);
       TH1D *hratstatpyth = (TH1D*) h_truth_match_dphi_range[0][irange]->Clone();
-      //      TH1D *hratstatherwig = (TH1D*) h_herwig_leading_dphi[irange]->Clone();
-      dlutility::SetFont(hratstatpyth, 42, 0.16, 0.15, 0.14, 0.14);
+      TH1D *hratstatherwig = (TH1D*) h_herwig_dphi_range[irange]->Clone();
+      dlutility::SetFont(hratstatpyth, 42, 0.08, 0.08, 0.08, 0.08);
       hratstatpyth->GetYaxis()->SetTitleOffset(0.5);
       hratstatpyth->GetXaxis()->SetTitleOffset(0.8);
       dlutility::SetLineAtt(hratstatpyth, color_pythia, 1, 1);
-      dlutility::SetMarkerAtt(hratstatpyth, color_pythia, 1, 8);
-      /* dlutility::SetLineAtt(hratstatherwig, color_herwig, 1, 1); */
-      /* dlutility::SetMarkerAtt(hratstatherwig, color_herwig, 1, 8); */
+      dlutility::SetMarkerAtt(hratstatpyth, color_pythia, 1, 20);
+      dlutility::SetLineAtt(hratstatherwig, color_herwig, 1, 1);
+      dlutility::SetMarkerAtt(hratstatherwig, color_herwig, 0.85, 21);
 
       dlutility::SetLineAtt(  h_ratio_dphi_range_sys[irange], kBlack, 1, 1);
       dlutility::SetMarkerAtt(  h_ratio_dphi_range_sys[irange], kBlack, 1, 1);
       h_ratio_dphi_range_sys[irange]->SetFillColorAlpha(kBlack, 0.3);
   
       hratstatpyth->Divide(h_data_dphi_range[0][irange]);
-      //hratstatherwig->Divide(h_data_dphi_range[0][irange]);
+      hratstatherwig->Divide(h_data_dphi_range[0][irange]);
 
       TH1D *hcopy = (TH1D*) hratstatpyth->Clone();
       hcopy->Reset();
       
       dlutility::SetFont(hcopy, 42, 0.16, 0.15, 0.14, 0.14);
-      hcopy->SetMaximum(3);
-      hcopy->SetMinimum(0);
       hcopy->SetTitle(";#Delta#phi; MC/Data");
       hcopy->Draw("p E2");
       h_ratio_dphi_range_sys[irange]->Draw("p E2 same");
       
       //hratstatpyth->Draw("p E1");
-      //hratstatherwig->Draw("same p E1");
+      hratstatherwig->Draw("same p E2");
 
       TLine *li = new TLine(TMath::Pi()*3/4., 1, TMath::Pi(), 1);
       dlutility::SetLineAtt(li, kBlack, 1, 4);
@@ -1037,9 +1126,10 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       c_sys1->cd(1);
 
       h_data_dphi_range[0][irange]->Draw("p E1");
+      h_data_dphi_range_sys[irange]->Draw("E2 p same");
+      h_herwig_dphi_range[irange]->Draw("hist C same");
       h_truth_match_dphi_range[0][irange]->Draw("same hist C");
       h_data_dphi_range[0][irange]->Draw("p E1 same");
-      h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
       dlutility::DrawSPHENIXppsize(0.22, topp, ss);
       dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
@@ -1055,12 +1145,13 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       leg->Draw("same");
   
       c_sys1->cd(2);
-      hratstatpyth->SetMaximum(3.0);
+      hratstatpyth->SetMaximum(2);
       hratstatpyth->SetMinimum(0);
       hratstatpyth->SetTitle(";#Delta#phi; MC/Data");
 
       hratstatpyth->Draw("p E1");
       h_ratio_dphi_range_sys[irange]->Draw("p E2 same");
+      hratstatherwig->Draw("same p E1");
       li->Draw("same");
 
       c_sys1->Print(Form("%s/dphi_plots/dphi_data_pythia_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
@@ -1073,6 +1164,9 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
+      h_raw_dphi_range[0][irange]->Draw("p E1 same");
+      h_reco_dphi_range[0][irange]->Draw("p E1 same");
+
       dlutility::DrawSPHENIXppsize(0.22, topp, ss);
       dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, topp - 2*(ss+0.01), 0, kBlack,ss);
       dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV", ipt_bins[binranges[irange]], ipt_bins[binranges[irange+1]]), 0.22, topp - 3*(ss+0.01),0, kBlack,ss);
@@ -1082,7 +1176,9 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       leg->SetLineWidth(0);
       leg->SetTextSize(0.05);
       leg->SetTextFont(42);
+      leg->AddEntry(h_raw_dphi_range[0][irange], "Raw","lp");
       leg->AddEntry(h_data_dphi_range[0][irange], "Data","lp");
+      leg->AddEntry(h_reco_dphi_range[0][irange], "PYTHIA-8 Reco","lp");
       leg->AddEntry(h_truth_match_dphi_range[0][irange], "PYTHIA-8","l");
       //leg->AddEntry(h_herwig_leading_dphi[irange], "Herwig 7.3","l");
       leg->Draw("same");
@@ -1247,6 +1343,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   TCanvas *c_money = new TCanvas("c_money", "c_money", 500, 500);
   for (int irange = 0; irange < 3; irange++)
     {
+      
       dlutility::SetLineAtt(h_data_dphi_rangemin[0][irange], color_unfold, 1, 1);
       dlutility::SetMarkerAtt(h_data_dphi_rangemin[0][irange], color_unfold, 1, 8);
       dlutility::SetLineAtt(h_data_dphi_rangemin_sys[irange], color_unfold, 1, 1);
@@ -1258,6 +1355,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       /* h_data_dphi_rangemin_sys[irange]->Scale(1./ h_data_dphi_rangemin_sys[irange]->Integral(), "width"); */
 
       h_data_dphi_rangemin[0][irange]->SetMaximum(10);
+      h_data_dphi_rangemin[0][irange]->SetMinimum(0);
       //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_rangemin[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_rangemin[0][irange], kRed, 3, 1);
@@ -1332,6 +1430,8 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
     }
   for (int irange = 0; irange < 3; irange++)
     {
+
+
       dlutility::SetLineAtt(h_data_dphi_range[0][irange], color_unfold, 1, 1);
       dlutility::SetMarkerAtt(h_data_dphi_range[0][irange], color_unfold, 1, 8);
       dlutility::SetLineAtt(h_data_dphi_range_sys[irange], color_unfold, 1, 1);
@@ -1343,13 +1443,14 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       /* h_data_dphi_range_sys[irange]->Scale(1./ h_data_dphi_range_sys[irange]->Integral(), "width"); */
 
       h_data_dphi_range[0][irange]->SetMaximum(10);
-      //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
+      h_data_dphi_range[0][irange]->SetMinimum(0);
+
       dlutility::SetFont(h_data_dphi_range[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
       h_data_dphi_range[0][irange]->SetTitle(";#Delta#phi; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#Delta#phi}");
       h_data_dphi_range[0][irange]->Draw("p E1");
       h_truth_match_dphi_range[0][irange]->Draw("same hist C");
-      //h_herwig_leading_dphi[irange]->Draw("same hist C");
+      h_herwig_dphi_range[irange]->Draw("same hist C");
       h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
@@ -1367,11 +1468,12 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_range[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_range[0][irange], "PYTHIA-8", "l");
-      //leg->AddEntry(h_herwig_subleading_dphi[irange], "Herwig 7.3","l");
+      leg->AddEntry(h_herwig_dphi_range[irange], "Herwig 7.3","l");
       leg->Draw("same");
       c_money->Print(Form("%s/dphi_plots/h_final_dphi_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
       c_money->Print(Form("%s/dphi_plots/h_final_dphi_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
       h_data_dphi_range[0][irange]->SetMaximum(10);
+      h_data_dphi_range[0][irange]->SetMinimum(0);
       //dlutility::SetLineAtt(h_herwig_subleading_dphi[irange], color_herwig, 3, 1);
       dlutility::SetFont(h_data_dphi_range[0][irange], 42, 0.06, 0.04, 0.05, 0.05 );
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
@@ -1406,10 +1508,33 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       dlutility::SetLineAtt(h_truth_match_dphi_range[0][irange], kRed, 3, 1);
       h_data_dphi_range[0][irange]->SetTitle(";#Delta#phi; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#Delta#phi}");
       h_data_dphi_range[0][irange]->Draw("p E1");
-      h_truth_match_dphi_range[0][irange]->Draw("same hist C");
-      h_data_dphi_range[0][irange]->Draw("p E1 same");
       h_data_dphi_range_sys[irange]->Draw("E2 p same");
 
+      h_truth_match_dphi_range[0][irange]->Draw("same hist C");
+      h_herwig_dphi_range[irange]->Draw("same hist C");
+      h_data_dphi_range[0][irange]->Draw("p E1 same");
+
+      float nominal_average = h_data_dphi_range[0][irange]->GetMean();
+      h_average_dphi->SetBinContent(irange+1, 1, nominal_average);
+
+      float nominal_rms = histo_opps::get_slope_dphi(h_data_dphi_range[0][irange]);;
+      h_rms_dphi->SetBinContent(irange+1, 1, nominal_rms);
+      std::pair<double, double> pp1 = histo_opps::get_rms_dphi(h_data_dphi_range[0][irange]);
+      h_sigma_dphi->SetBinContent(irange+1, 1, pp1.first);
+      h_sigma_dphi->SetBinError(irange+1, 1, pp1.second);
+
+      h_sigma_dphi_truth->SetBinContent(irange+1, 1, histo_opps::get_rms_dphi(h_truth_match_dphi_range[0][irange]).first);
+
+      h_sigma_dphi_herwig->SetBinContent(irange+1, 1, histo_opps::get_rms_dphi(h_herwig_dphi_range[irange]).first);
+
+      
+      h_average_dphi_truth->SetBinContent(irange+1, h_truth_match_dphi_range[0][irange]->GetMean());
+      h_average_dphi_herwig->SetBinContent(irange+1, h_herwig_dphi_range[irange]->GetMean());
+
+      h_rms_dphi_truth->SetBinContent(irange+1, histo_opps::get_slope_dphi(h_truth_match_dphi_range[0][irange]));
+      h_rms_dphi_herwig->SetBinContent(irange+1, histo_opps::get_slope_dphi(h_herwig_dphi_range[irange]));
+
+      
       dlutility::DrawSPHENIXpp(0.22, 0.84);
 
       dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.74);
@@ -1424,6 +1549,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
       leg->SetTextFont(42);
       leg->AddEntry(h_data_dphi_range[0][irange], "Data","lp");
       leg->AddEntry(h_truth_match_dphi_range[0][irange], "PYTHIA-8", "l");
+      leg->AddEntry(h_herwig_dphi_range[irange], "Herwig 7.3","l");
       leg->Draw("same");
       c_money->Print(Form("%s/dphi_plots/h_final_data_pythia_dphi_pp_r%02d_range_%d.png", rb.get_code_location().c_str(), cone_size, irange));
       c_money->Print(Form("%s/dphi_plots/h_final_data_pythia_dphi_pp_r%02d_range_%d.pdf", rb.get_code_location().c_str(), cone_size, irange));
@@ -1432,6 +1558,7 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
 
   
   TCanvas *cc = new TCanvas("cc","cc",500, 500);
+
   dlutility::SetLineAtt(h_correction_factors_range[0][0], kBlack, 1, 1);
   dlutility::SetMarkerAtt(h_correction_factors_range[0][0], kBlack, 1, 8);
   dlutility::SetLineAtt(h_correction_factors_range[0][1], kBlue, 1, 1);
@@ -1439,13 +1566,31 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   dlutility::SetLineAtt(h_correction_factors_range[0][2], kRed, 1, 1);
   dlutility::SetMarkerAtt(h_correction_factors_range[0][2], kRed, 1, 8);
 
+  dlutility::SetLineAtt(h_correction_factors_range_smooth[0][0], kBlack, 1, 1);
+  dlutility::SetMarkerAtt(h_correction_factors_range_smooth[0][0], kBlack, 1, 24);
+  dlutility::SetLineAtt(h_correction_factors_range_smooth[0][1], kBlue, 1, 1);
+  dlutility::SetMarkerAtt(h_correction_factors_range_smooth[0][1], kBlue, 1, 24);
+  dlutility::SetLineAtt(h_correction_factors_range_smooth[0][2], kRed, 1, 1);
+  dlutility::SetMarkerAtt(h_correction_factors_range_smooth[0][2], kRed, 1, 24);
 
-  h_correction_factors_range[0][0]->SetMaximum(100);
+  p3->SetParameters(-100, 100, -100, 20);
+  
+  h_correction_factors_range[0][0]->Fit(p3, "I");//("p E1");
+  p3->SetParameters(-100, 100, -100, 20);
+  h_correction_factors_range[0][1]->Fit(p3, "I");//("same p E1");
+  p3->SetParameters(-100, 100, -100, 20);
+  h_correction_factors_range[0][2]->Fit(p3, "I");//("same p E1");
+
   h_correction_factors_range[0][0]->SetMinimum(00);
-  h_correction_factors_range[0][0]->Draw("p");
-  h_correction_factors_range[0][1]->Draw("same p");
-  h_correction_factors_range[0][2]->Draw("same p");
+  h_correction_factors_range[0][0]->Draw("p E1");
+  h_correction_factors_range[0][1]->Draw("same p E1");
+  h_correction_factors_range[0][2]->Draw("same p E1");
 
+  h_correction_factors_range_smooth[0][0]->Draw("same p E1");
+  h_correction_factors_range_smooth[0][1]->Draw("same p E1");
+  h_correction_factors_range_smooth[0][2]->Draw("same p E1");
+  cc->Print(Form("%s/dphi_plots/corrections_dphi_pp_r%02d_range_all.pdf", rb.get_code_location().c_str(), cone_size));
+  
   TCanvas *cc2 = new TCanvas("cc2","cc2",500, 500);
   dlutility::SetLineAtt(h_correction_factors_rangemin[0][0], kBlack, 1, 1);
   dlutility::SetMarkerAtt(h_correction_factors_rangemin[0][0], kBlack, 1, 8);
@@ -1494,7 +1639,94 @@ void drawDPHI(const int cone_size = 4 , const std::string configfile = "binning.
   h_efficiency_factors_rangemin[0][1]->Draw("same p");
   h_efficiency_factors_rangemin[0][2]->Draw("same p");
 
+  for (int irange = 0; irange  < 3; irange++)
+    {
+      double pos_var = 0;
+      double neg_var = 0;
+      double nominal = h_average_dphi->GetBinContent(1+irange, 1);
 
+      for (auto b : *variation_average_dphi[irange])
+	{
+	  double diff = b.first - nominal;
+	  
+	  if (diff >= 0 || b.second == 1)
+	    {
+	      pos_var += diff*diff;
+	    }
+	  if (diff < 0 || b.second == 1)
+	    {
+	      neg_var += diff*diff;
+	    }
+	}
+      pos_var = sqrt(pos_var);
+      neg_var = sqrt(neg_var);
+      h_average_dphi->SetBinContent(1 + irange, 2, pos_var);
+      h_average_dphi->SetBinContent(1 + irange, 3, neg_var);
+
+      pos_var = 0;
+      neg_var = 0;
+      nominal = h_rms_dphi->GetBinContent(1+irange, 1);
+
+      for (auto b : *variation_rms_dphi[irange])
+	{
+	  double diff = b.first - nominal;
+	  
+	  if (diff >= 0 || b.second == 1)
+	    {
+	      pos_var += diff*diff;
+	    }
+	  if (diff < 0 || b.second == 1)
+	    {
+	      neg_var += diff*diff;
+	    }
+	}
+      pos_var = sqrt(pos_var);
+      neg_var = sqrt(neg_var);
+      h_rms_dphi->SetBinContent(1 + irange, 2, pos_var);
+      h_rms_dphi->SetBinContent(1 + irange, 3, neg_var);    
+
+      pos_var = 0;
+      neg_var = 0;
+      nominal = h_sigma_dphi->GetBinContent(1+irange, 1);
+
+      for (auto b : *variation_sigma_dphi[irange])
+	{
+	  double diff = b.first - nominal;
+	  
+	  if (diff >= 0 || b.second == 1)
+	    {
+	      pos_var += diff*diff;
+	    }
+	  if (diff < 0 || b.second == 1)
+	    {
+	      neg_var += diff*diff;
+	    }
+	}
+      pos_var = sqrt(pos_var);
+      neg_var = sqrt(neg_var);
+      h_sigma_dphi->SetBinContent(1 + irange, 2, pos_var);
+      h_sigma_dphi->SetBinContent(1 + irange, 3, neg_var);    
+
+      std::cout << "Range " << irange <<" : " << std::endl;
+      std::cout << " Data : " << h_sigma_dphi->GetBinContent(1 + irange, 1) << " ( + " << h_sigma_dphi->GetBinContent(1 + irange, 2) << " - " << h_sigma_dphi->GetBinContent(1 + irange, 3) << " ) " << std::endl;
+      std::cout << " PYTHIA8 : " << h_sigma_dphi_truth->GetBinContent(1+irange) << std::endl;
+      std::cout << " HERWIG7 : " << h_sigma_dphi_herwig->GetBinContent(1+irange) << std::endl;
+    }
+
+  TFile *fout = new TFile(Form("%s/dphihists/dphi_summary_pp_r0%d.root", rb.get_code_location().c_str(), cone_size),"recreate");
+  h_data_dphi_range[0][1]->Write();
+  h_data_dphi_range_sys[1]->Write();
+  h_rms_dphi->Write();
+  h_rms_dphi_truth->Write();
+  h_rms_dphi_herwig->Write();
+  h_sigma_dphi->Write();
+  h_sigma_dphi_truth->Write();
+  h_sigma_dphi_herwig->Write();
+  h_average_dphi->Write();
+  h_average_dphi_truth->Write();
+  h_average_dphi_herwig->Write();
+  fout->Close();
+  
 }
 
 std::pair<float, float> get_ordered_pair(float e1, float e2)

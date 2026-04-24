@@ -7,6 +7,7 @@
 #include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TH1D.h"
+#include "TProfile.h"
 #include "TH2D.h"
 #include "TPad.h"
 #include "TGraph.h"
@@ -315,6 +316,56 @@ namespace histo_opps
       }
     mean /= sum;
     return mean;
+  }
+  double get_slope_dphi(TH1D *h_xj)
+  {
+    TF1 *fPower = new TF1("fPower", "[0]*pow(TMath::Pi()-x, [1]) - [2]", 0.0, TMath::Pi());
+    fPower->SetParameters(1, -0.1, 1);
+    h_xj->Fit(fPower);
+    double rms = fPower->GetParameter(1);
+    return rms;
+  }
+
+  std::pair<double, double> get_rms_dphi(TH1D *h_xj)
+  {
+    double weight = 0;
+    double mean = TMath::Pi();
+    double sum = 0;
+    double var_sum = 0;
+    int n = h_xj->GetNbinsX();
+    for (int b=0; b < n; b++)
+      {
+	double x = (h_xj->GetBinCenter(b+1) - mean);
+	double c = h_xj->GetBinContent(b+1);
+	double dc = h_xj->GetBinError(b+1);
+	weight += c*x*x;
+	sum += c;
+	var_sum += dc*dc*x*x*x*x;
+      }
+
+    weight /= sum;
+
+    double dd = sqrt(var_sum) / sum;
+    
+    double rms = sqrt(weight);
+    double drms = dd / (2.0 * rms);
+    return std::make_pair(rms, dd);
+  }
+  TH1D *get_correction_smooth(TH1D *h1)
+  {
+    TH1D *h = (TH1D*) h1->Clone(Form("%s_smooth", h1->GetName()));
+
+    TF1 *f = (TF1*) h1->GetFunction("p3");
+
+    for (int ib = 0; ib < h1->GetNbinsX(); ib++)
+      {
+	double a = h1->GetBinLowEdge(ib+1);
+	double w = h1->GetBinWidth(ib+1);;
+	double b = a + w;
+	double v = f->Integral(a, b)/w;
+	h->SetBinContent(ib+1, v);
+      }
+    return h;
   }
 };
 

@@ -333,7 +333,7 @@ void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
       dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.3]{#it{R}} = %0.1f", 0.1*cone_size), 0.02, 0.78, 0, kBlack, 0.08);
       dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.02, 0.73, 0, kBlack, 0.08);
       dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.02,0.68, 0, kBlack, 0.08);
-      dlutility::drawText("#Delta#phi #geq 7#pi/8", 0.02,0.63, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.02,0.63, 0, kBlack, 0.08);
 
       dlutility::drawText("Closure Test", 0.02,0.53, 0, kBlack, 0.08);
 

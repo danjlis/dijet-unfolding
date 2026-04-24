@@ -1,6 +1,7 @@
 #ifndef READ_BINNING_H
 #define READ_BINNING_H
 #include "TEnv.h"
+#include "TF1.h"
 #include "TFile.h"
 #include <fstream>
 #include <iostream>
@@ -77,6 +78,8 @@ public:
   Int_t get_njet_sys(){ return penv->GetValue("NJET", 0); }
   Int_t get_zyam_sys(){ return penv->GetValue("ZYAM", 0); }
   Int_t get_prior_sys(){ return penv->GetValue("PRIOR", 0); }
+  Double_t get_pileup_sys(){ return penv->GetValue("PILEUP", 0.0); }
+  Int_t get_full_sys(){ return penv->GetValue("FULL", 0); }
   Int_t get_emfrac_sys(){ return penv->GetValue("EMFRAC", 0); }
   Int_t get_trigger_sys(){ return penv->GetValue("TRIGEFF", 0); }
   Int_t get_crossingangle_sys(){ return penv->GetValue("CA", 0); }

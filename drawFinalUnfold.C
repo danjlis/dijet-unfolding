@@ -416,8 +416,8 @@ void drawFinalUnfold(const int cone_size = 4)
       dlutility::SetFont(h_data_compare, 42, 0.1, 0.07, 0.07, 0.07);
       dlutility::SetLineAtt(h_data_compare, kBlack, 1,1);
       dlutility::SetMarkerAtt(h_data_compare, kBlack, 1,8);
-      h_data_compare->SetMaximum(2.0);
-      h_data_compare->SetMinimum(0.0);
+      h_data_compare->SetMaximum(1.5);
+      h_data_compare->SetMinimum(0.5);
       TH1D *hd = (TH1D*) h_data_compare->Rebin(nbins - first_bin, "h_rebin_compare", &dxj_bins[first_bin]);
 
       hd->Draw("p");
@@ -439,6 +439,9 @@ void drawFinalUnfold(const int cone_size = 4)
       line->SetLineColor(kRed + 3);
       line->SetLineWidth(2);
       line->Draw("same");
+      hd->Draw("p same");
+
+
       cxj->Print(Form("%s/final_plots/h_xj_unfolded_pp_r%02d_range_%d.png",  rb.get_code_location().c_str(), cone_size, irange));
       cxj->Print(Form("%s/final_plots/h_xj_unfolded_pp_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange));
     }

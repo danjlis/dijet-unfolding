@@ -202,7 +202,7 @@ void drawRadialScan_pp()
       TH1D *hblank1 = new TH1D("hb","", 1, 0.25, 1);
       
       hblank1->GetYaxis()->SetTitleOffset(1.8);
-      dlutility::SetFont(hblank1, 42, 0.06, 0.04, 0.05, 0.05);
+      dlutility::SetFont(hblank1, 42, 0.05, 0.05, 0.05, 0.05);
 
 
       hblank1->SetMaximum(6.0);
@@ -358,9 +358,17 @@ void drawRadialScan_pp()
   g_scale_average_xj[1]->SetFillColorAlpha(kcolor[1], 0.3);
   g_scale_average_xj[2]->SetFillColorAlpha(kcolor[2], 0.3);
 
-  TH1D *h_bb = new TH1D("h_bb", "; Jet Radius (#it{R}); <x_{J}>;", 6, 0.25, 0.85);
+  TH1D *h_bb = new TH1D("h_bb", "; Jet Radius (#it{R}); #LT x_{J} #GT;", 6, 0.25, 0.85);
   h_bb->SetMinimum(0.6);
   h_bb->SetMaximum(1.15);
+  h_bb->GetYaxis()->SetTitleOffset(1.5);
+  dlutility::SetFont(h_bb, 42, 0.05, 0.05, 0.05, 0.05);
+
+  gPad->SetTopMargin(0.05);
+  gPad->SetRightMargin(0.05);
+  gPad->SetLeftMargin(0.17);
+  gPad->SetBottomMargin(0.17);
+
   h_bb->Draw();
 
   g_average_xj_truth[2]->Draw("same l");
@@ -424,16 +432,16 @@ void drawRadialScan_pp()
   g_scale_average_xj[1]->Draw("same p E2");
   g_scale_average_xj[0]->Draw("same p E2");
 
-  dlutility::DrawSPHENIXpp(0.23, 0.85);
+  dlutility::DrawSPHENIXpp(0.2, 0.87);
 
-  dlutility::drawText("anti-#it{k}_{t}", 0.23, 0.85 - 2*0.05);
-  dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.23, 0.85 - 3*0.05);
-  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.23, 0.85 - 4*0.05);
+  dlutility::drawText("anti-#it{k}_{t}", 0.2, 0.87 - 2*0.05);
+  dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.2, 0.87 - 3*0.05);
+  dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.2, 0.87 - 4*0.05);
 
-  legrad = new TLegend(0.56, 0.7, 0.75, 0.9);
+  legrad = new TLegend(0.52, 0.72, 0.71, 0.92);
   legrad->SetHeader("Data");
   legrad->SetLineWidth(0);
-  legrad->SetTextSize(0.025);
+  legrad->SetTextSize(0.03);
   legrad->SetTextFont(42);
   //legrad->AddEntry(g_final_shift_xj_unfold_range[0][irange], "R = 0.2");
   iir = 0;
@@ -444,10 +452,10 @@ void drawRadialScan_pp()
   legrad->AddEntry(g_average_xj[2],Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV #times 1", ipt_bins[measure_bins[iir]], ipt_bins[measure_bins[iir+1]]));
   legrad->Draw("same");
 
-  legrad2 = new TLegend(0.56, 0.58, 0.75, 0.7);
-  legrad2->SetHeader("Simulation");
+  legrad2 = new TLegend(0.52, 0.58, 0.71, 0.72);
+  legrad2->SetHeader("MC");
   legrad2->SetLineWidth(0);
-  legrad2->SetTextSize(0.025);
+  legrad2->SetTextSize(0.03);
   legrad2->SetTextFont(42);
   //legrad2->AddEntry(g_final_shift_xj_unfold_range[0][irange], "R = 0.2");
   legrad2->AddEntry(g_average_xj_truth[0],"PYTHIA-8");

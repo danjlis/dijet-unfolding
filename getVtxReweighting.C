@@ -11,12 +11,13 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   dlutility::SetyjPadStyle();
   read_binning rb(configfile.c_str());
 
+  Int_t full_sys = rb.get_full_sys();
   Int_t prior_sys = rb.get_prior_sys();
   Int_t emfrac_sys = rb.get_emfrac_sys();
   Int_t ca_sys = rb.get_crossingangle_sys();
   Int_t trigger_sys = rb.get_trigger_sys();
   Int_t philoc_sys = rb.get_philoc_sys();
-
+  Double_t pileup_sys = rb.get_pileup_sys();
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
   std::cout << "JES = " << JES_sys << std::endl;
@@ -25,7 +26,17 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   Int_t herwig_sys = rb.get_herwig();
   
   std::string sys_name = "nominal";
-  
+
+  if (pileup_sys > 1)
+    {
+      sys_name = "PILEUP";
+    }
+  else if (pileup_sys > 0)
+    {
+      sys_name = "PILEUPMIX";
+    }
+  if (full_sys)
+    sys_name = "FULL";
   if (prior_sys)
     sys_name = "PRIOR";
 
@@ -291,7 +302,7 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   dlutility::SetFont(h_eta_lead_data, 42, 0.05);
   h_eta_lead_data->SetTitle("; #eta ; #frac{1}{N_{pair}}#frac{dN_{pair}}{d#eta} ");
 
-  h_eta_lead_data->SetMaximum(18);
+  h_eta_lead_data->SetMaximum(25);
   h_eta_lead_data->Draw("p");
   h_eta_lead_sim->Draw("same p");
   h_eta_sublead_data->Draw("same p");
@@ -305,10 +316,10 @@ void getVtxReweighting(const int cone_size = 4, const std::string configfile = "
   leg1->SetTextSize(0.04);
   leg1->SetTextFont(42);
 
-  leg1->AddEntry(h_eta_lead_data,"Data L");
-  leg1->AddEntry(h_eta_lead_sim,"Sim Reco L");
-  leg1->AddEntry(h_eta_sublead_data,"Data S");
-  leg1->AddEntry(h_eta_sublead_sim,"Sim Reco S");
+  leg1->AddEntry(h_eta_lead_data,"Data Leading");
+  leg1->AddEntry(h_eta_lead_sim,"Sim Reco Leading");
+  leg1->AddEntry(h_eta_sublead_data,"Data Subleading");
+  leg1->AddEntry(h_eta_sublead_sim,"Sim Reco Subleading");
 
   leg1->Draw("same");  
 

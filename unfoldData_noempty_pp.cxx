@@ -213,24 +213,33 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
   Int_t trigger_sys = rb.get_trigger_sys();
   Int_t philoc_sys = rb.get_philoc_sys();
   Int_t ca_sys = rb.get_crossingangle_sys();
-  
+  Int_t full_sys = rb.get_full_sys();
+    
   const int nbins = read_nbins;
   const int nbins_pt = read_nbins + 1;
   
   //Int_t njet_sys = rb.get_njet_sys();
   Int_t prior_sys = rb.get_prior_sys();
   Int_t emfrac_sys = rb.get_emfrac_sys();
-
+  Double_t pileup_sys = rb.get_pileup_sys();
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
   
   std::cout << "JES = " << JES_sys << std::endl;
   std::cout << "JER = " << JER_sys << std::endl;
-
   Int_t herwig_sys = rb.get_herwig();
   
-  std::string sys_name = "nominal";
-  
+  std::string sys_name = "nominal"; 
+  if (pileup_sys > 1)
+    {
+      sys_name = "PILEUP";
+    } 
+  else  if (pileup_sys > 0)
+    {
+      sys_name = "PILEUPMIX";
+    } 
+  if (full_sys)
+    sys_name = "FULL";
   if (prior_sys)
     sys_name = "PRIOR";
   if (emfrac_sys)
@@ -1253,22 +1262,29 @@ int unfoldData_noempty_pp(const std::string configfile = "binning.config", const
 
       histo_opps::project_xj(h_pt1pt2_data, h_xj_data, nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 1);
       histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth, nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 1);
+
       if (primer != 1)
 	{
 	  histo_opps::project_xj(h_pt1pt2_truth_primer1, h_xj_truth_primer1, nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 1);
+	  histo_opps::normalize_histo(h_xj_truth_primer1, nbins);
 	}
 
       if (unfold_generator > 0)
 	{
 	  histo_opps::project_xj(h_pt1pt2_data_truth, h_xj_data_truth, nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 1);
+	  histo_opps::normalize_histo(h_xj_data_truth, nbins);
 	}
 
       histo_opps::project_xj(h_pt1pt2_sim, h_xj_sim, nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 1);
+      histo_opps::normalize_histo(h_xj_sim, nbins);
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  h_xj_unfold[iter]->Reset();
 	  histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold[iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 1);
+	  histo_opps::normalize_histo(h_xj_unfold[iter], nbins);
 	}
+      histo_opps::normalize_histo(h_xj_data, nbins);
+      histo_opps::normalize_histo(h_xj_truth, nbins);
 
 
 

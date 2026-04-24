@@ -119,7 +119,7 @@ bool dijetfinder::check_dijet_reco(std::vector<struct jet> myrecojets)
     }
 
   if (!(leading_iter->pt >= m_reco_leading_cut && subleading_iter->pt >= m_reco_subleading_cut && dphir >= m_dphicut)) return false;
-  if (subleading_iter->e/leading_iter->e < 0.3) return false;
+  //if (subleading_iter->e/leading_iter->e < 0.3) return false;
   // double jetdeltatime = 17.6*(leading_iter->t - subleading_iter->t);
   // double jetleadtime = 17.6*(leading_iter->t);
   // bool passleadtime = ( TMath::Abs(jetleadtime +2.0) < 6.0 );

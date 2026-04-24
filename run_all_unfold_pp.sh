@@ -56,7 +56,7 @@ fi
 
 echo "NOMINAL"
 ./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 0 -f ${fakes} -e 0
-./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 1 -f ${fakes} -e 0
+#./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 1 -f ${fakes} -e 0
 
 interaction $interactive
 
@@ -64,6 +64,7 @@ interaction $interactive
 
 interaction $interactive
 
+exit;
 
 if [[ $final -eq 0 ]]; then
     ./unfoldDataUncertainties_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 

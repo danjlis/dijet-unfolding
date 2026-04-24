@@ -33,12 +33,16 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   std::string system_string = "pp";
 
   read_binning rb(configfile.c_str());
-
+  Double_t pileup_sys = rb.get_pileup_sys();
+  
+  
   Int_t prior_sys = rb.get_prior_sys();
+  Int_t full_sys = rb.get_full_sys();
   Int_t trigger_sys = rb.get_trigger_sys();
 
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
+
   std::cout << "JES = " << JES_sys << std::endl;
   std::cout << "JER = " << JER_sys << std::endl;
 
@@ -48,7 +52,15 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   
   if (prior_sys)
     sys_name = "PRIOR";
+  if (full_sys)
+    sys_name = "FULL";
 
+  if (pileup_sys > 1)
+    sys_name = "PILEUP";
+  else if (pileup_sys > 0)
+    sys_name = "PILEUPMIX";
+
+      
   if (trigger_sys)
     sys_name = "TRIGGER";
 

@@ -282,9 +282,9 @@ namespace dlutility{
     Float_t marg21 = b1/(b1 + x1);
     Float_t marg12 = a2/(a2 + x2);
     Float_t marg22 = b2/(b2 + x2);
-
-    Float_t adivs1[ndivs1+1];
-    Float_t adivs2[ndivs2+1];
+    if (ndivs2 > 8 || ndivs1 > 8) return;
+    Float_t adivs1[10];
+    Float_t adivs2[10];
     for (int i =0; i <= ndivs1; i++)
       {
 	adivs1[i] = 0;
@@ -480,12 +480,12 @@ namespace dlutility{
     }
     canv->Clear();
 
-    TPad* pad[columns][rows];
+    TPad* pad[10][10];
 
-    Float_t Xlow[columns];
-    Float_t Xup[columns];
-    Float_t Ylow[rows];
-    Float_t Yup[rows];
+    Float_t Xlow[10];
+    Float_t Xup[10];
+    Float_t Ylow[10];
+    Float_t Yup[10];
     Float_t PadWidth =
       (1.0-leftOffset)/((1.0/(1.0-leftMargin)) +
 			(1.0/(1.0-edge))+(Float_t)columns-2.0);
@@ -1277,6 +1277,38 @@ namespace dlutility{
     h->GetYaxis()->SetLabelSize(size);
     h->GetYaxis()->SetTitleFont(font);
     h->GetYaxis()->SetTitleSize(size);
+  }
+
+  int parseRootColor(const std::string& s) {
+    static const std::unordered_map<std::string, int> baseColors = {
+      {"kWhite", kWhite}, {"kBlack", kBlack}, {"kGray", kGray},
+      {"kRed", kRed}, {"kGreen", kGreen}, {"kBlue", kBlue},
+      {"kYellow", kYellow}, {"kMagenta", kMagenta}, {"kCyan", kCyan},
+      {"kOrange", kOrange}, {"kSpring", kSpring}, {"kTeal", kTeal},
+      {"kAzure", kAzure}, {"kViolet", kViolet}, {"kPink", kPink}
+    };
+
+    // handle kColor+N or kColor-N
+    size_t plus = s.find('+');
+    size_t minus = s.find('-');
+
+    if (plus != std::string::npos) {
+      return parseRootColor(s.substr(0, plus)) + std::stoi(s.substr(plus + 1));
+    }
+    if (minus != std::string::npos) {
+      return parseRootColor(s.substr(0, minus)) - std::stoi(s.substr(minus + 1));
+    }
+
+    // base lookup
+    auto it = baseColors.find(s);
+    if (it != baseColors.end()) return it->second;
+
+    // fallback: allow raw integer
+    try {
+      return std::stoi(s);
+    } catch (...) {
+      throw std::runtime_error("Unknown ROOT color: " + s);
+    }
   }
 };
 
