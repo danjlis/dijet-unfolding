@@ -19,7 +19,7 @@ float dijetfinder::getDR(struct jet j1, struct jet j2)
   double dphi = getDPHI(j1.phi,j2.phi);
 
   double dR = sqrt(TMath::Power(j1.eta - j2.eta, 2) + TMath::Power(dphi, 2));
-  return dR;
+  return dphi;
 }
 
 std::vector<std::pair<struct jet, struct jet>> dijetfinder::match_dijets_smear(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets)
@@ -245,7 +245,10 @@ std::vector<std::pair<struct jet, struct jet>>  dijetfinder::match_dijets(std::v
 	    }	  
 	}
     }
-
+  for (auto mjet : matched_dijets)
+    {
+      h_dR_pt->Fill(mjet.first.pt, mjet.first.dR);
+    }
   return matched_dijets;
 }
 

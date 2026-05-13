@@ -1443,7 +1443,9 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  if (reco_good && truth_good && matched)
 	    {
 	      fill_fake_miss = 0;
-
+	      he_dijet_fake_binned->Fill(1, pt1_reco_bin + nbins_pt*pt2_reco_bin, fake_event_scale);
+	      he_dijet_fake_binned->Fill(1, pt2_reco_bin + nbins_pt*pt1_reco_bin, fake_event_scale);
+	      
 	      he_dijet_miss_binned->Fill(1, e1, e2, event_scale);
 	      he_dijet_miss_binned->Fill(1, e2, e1, event_scale);
 
@@ -1454,6 +1456,10 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 	  if (reco_good && truth_good && !matched)
 	    {
+	      h_reco_fakes->Fill(es1, es2);
+	      h_reco_fakes->Fill(es2, es1);
+	      h_match_fakes->Fill(es1, es2);
+	      h_match_fakes->Fill(es2, es1);
 
 	      fill_fake_miss = 2;	      
 	      
