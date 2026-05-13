@@ -20,11 +20,12 @@ using std::endl;
 #include "TFile.h"
 #include "TH1.h"
 #include "TTree.h"
+
 static int verbosity = 0;
 
 const int separate_efficiency_correction = 0;
 
-int createResponse_noempty_pp(const std::string configfile = "binning.config", const int full_or_half = 0, const int niterations = 10, const int cone_size = 4,  const int primer = 0, const int useFakes = 1, const int useEfficiencies = 1, const int input_generator = 0, const int unfold_generator = 0, const int get_mapping = 0)
+int createResponse_noempty_pp(const std::string configfile = "binning.config", const int full_or_half = 0, const int niterations = 10, const int cone_size = 4,  const int primer = 0, const int useFakes = 1, const int useEfficiencies = 1, const int input_generator = 0, const int unfold_generator = 0, const int get_mapping = 0, const int do_trimming = 1)
 {
   gRandom->SetSeed(0);
   gStyle->SetPalette(kRainBow);  
@@ -33,24 +34,26 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   dlutility::SetyjPadStyle();
 
   // pt boundaries for samples
-  const int nsamples = 6;
+  const int nsamples = 7;
 
   float boundary_r4[nsamples+1];
-  boundary_r4[0] = 14;
-  boundary_r4[1] = 22;
-  boundary_r4[2] = 33;
-  boundary_r4[3] = 42;
-  boundary_r4[4] = 52;
-  boundary_r4[5] = 62;
-  boundary_r4[6] = 100;
+  boundary_r4[0] = 8;
+  boundary_r4[1] = 14;
+  boundary_r4[2] = 22;
+  boundary_r4[3] = 33;
+  boundary_r4[4] = 42;
+  boundary_r4[5] = 52;
+  boundary_r4[6] = 62;
+  boundary_r4[7] = 100;
   float boundary_pileup_r4[nsamples+1];
-  boundary_pileup_r4[0] = 14;
-  boundary_pileup_r4[1] = 22;
-  boundary_pileup_r4[2] = 33;
-  boundary_pileup_r4[3] = 42;
-  boundary_pileup_r4[4] = 52;
-  boundary_pileup_r4[5] = 100;
+  boundary_pileup_r4[0] = 8;
+  boundary_pileup_r4[1] = 14;
+  boundary_pileup_r4[2] = 22;
+  boundary_pileup_r4[3] = 33;
+  boundary_pileup_r4[4] = 42;
+  boundary_pileup_r4[5] = 52;
   boundary_pileup_r4[6] = 100;
+  boundary_pileup_r4[7] = 100;
 
   // read binning from config file
   read_binning rb(configfile.c_str());
@@ -84,7 +87,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 			 
   TH1D *hjersmear = nullptr;
   std::string sim_string = "PYTHIA";
-  if (use_herwig) sim_string = "PYTHIA";
+  if (use_herwig) sim_string = "HERWIG";
   if (pileup_sys > 1) sim_string = "PILEUP";
   else if (pileup_sys > 0) sim_string = "MIX";
 
@@ -162,6 +165,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
   gjer = (TF1*) finjer->Get("jernom");
   hjersmear = (TH1D*) finjer->Get("h_nominal_smear");
+
   float nominal_smear = 0.08;
 
   if (JER_sys != 0)
@@ -183,7 +187,9 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  nominal_smear = 0.15;
 	}
     }
-  
+
+  double smearing = gjer->GetParameter(0);
+  fsmear->SetParameter(2, smearing);
   if (JES_sys != 0)
     {
       if (JES_sys < 0)
@@ -248,53 +254,62 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   int sim_version = (use_herwig? 10 : 11);
 
   int sam = nsamples;
+  int first_sample = 8;
   if (pileup_sys > 1)
     {
       sim_version = 12;
       sam = 2*nsamples;
     }
-  const int nsamples_new = 12;
+
+  const int nsamples_new = 2*nsamples;
   std::string j_file[nsamples_new];
-  j_file[0] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_12_ana509_MDC2-00000028.root";
-  j_file[1] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_20_ana509_MDC2-00000028.root";
-  j_file[2] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_30_ana509_MDC2-00000028.root";
-  j_file[3] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_40_ana509_MDC2-00000028.root";
-  j_file[4] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_50_ana509_MDC2-00000028.root";
-  j_file[5] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_60_ana509_MDC2-00000028.root";
+  j_file[0] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_8_ana509_MDC2-00000028.root";
+  j_file[1] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_12_ana509_MDC2-00000028.root";
+  j_file[2] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_20_ana509_MDC2-00000028.root";
+  j_file[3] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_30_ana509_MDC2-00000028.root";
+  j_file[4] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_40_ana509_MDC2-00000028.root";
+  j_file[5] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_50_ana509_MDC2-00000028.root";
+  j_file[6] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v" + std::to_string(sim_version) + "_60_ana509_MDC2-00000028.root";
+
   if (mixed && pileup_sys > 0)
     {
-      j_file[6] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_12_ana509_MDC2-00000028.root";
-      j_file[7] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_20_ana509_MDC2-00000028.root";
-      j_file[8] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_30_ana509_MDC2-00000028.root";
-      j_file[9] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_40_ana509_MDC2-00000028.root";
-      j_file[10] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_50_ana509_MDC2-00000028.root";
+      j_file[7] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_8_ana509_MDC2-00000028.root";
+      j_file[8] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_12_ana509_MDC2-00000028.root";
+      j_file[9] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_20_ana509_MDC2-00000028.root";
+      j_file[10] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_30_ana509_MDC2-00000028.root";
+      j_file[11] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_40_ana509_MDC2-00000028.root";
+      j_file[12] = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v12_50_ana509_MDC2-00000028.root";
     }
   
   bool use_sample[nsamples_new];
   for (int i = 0; i < nsamples_new; i++) use_sample[i] = 1;
   if (mixed)
-    {
+    {      
       use_sample[nsamples_new - 1] = 0;
     }
   else if (pileup_sys > 1)
     {
-      for (int i = 0; i < 6;i++)
+      use_sample[nsamples_new - 1] = 0;
+      for (int i = 0; i < nsamples;i++)
 	{
-	  use_sample[6+i] = 0;
+	  use_sample[i] = 0;
 	}
       boundary_r4[5] = 100;
     }
   else
     {
-      for (int i = 0; i < 6;i++)
+      for (int i = 0; i < nsamples;i++)
 	{
-	  use_sample[6+i] = 0;
+	  use_sample[nsamples+i] = 0;
 	}
     }
   if (use_herwig)
     {
-      use_sample[5] = 0;
-      boundary_r4[5] = 100;
+      
+      //use_sample[0] = 0;
+      use_sample[6] = 0;
+      boundary_r4[6] = 100;
+      //      boundary_r4[5] = 100;
     }
   
   float n_events[nsamples_new];
@@ -353,35 +368,53 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
     }
 
   
-  float cs_12 = (1.49e6);
-  float cs_20 = (6.26e4);
-  float cs_30 = (2.53e3);
-  float cs_40 = (1.355e2);
-  float cs_50 = (7.311);
+  float cs_8 = (1.3878e7);
+  float cs_12 = (1.4903e6);
+  float cs_20 = (6.2623e4);
+  float cs_30 = (2.5298e3);
+  float cs_40 = (1.3553e2);
+  float cs_50 = (7.3113);
   float cs_60 = (3.3261e-01);
 
-  float csh_10 = 1.5703e-9;
-  float csh_30 = 1.473e-12;
   float scale_factor[nsamples];
-  scale_factor[0] = cs_12/cs_60;
-  scale_factor[1] = cs_20/cs_60;
-  scale_factor[2] = cs_30/cs_60;
-  scale_factor[3] = cs_40/cs_60; 
-  scale_factor[4] = cs_50/cs_60;
-  scale_factor[5] = 1;
-  float cs_h[5] = {6.7108e+05, 5.2613e4, 2.0694e3, 1.0510e2, 5.2089};
-  float nevents_h[5] = {8057000, 10000000., 10000000., 9671056, 3827000}; 
-  float scaless[5] = {1./0.592641, 1, 1, 1, 1};
+  scale_factor[0] = cs_8/cs_60;
+  scale_factor[1] = cs_12/cs_60;
+  scale_factor[2] = cs_20/cs_60;
+  scale_factor[3] = cs_30/cs_60;
+  scale_factor[4] = cs_40/cs_60; 
+  scale_factor[5] = cs_50/cs_60;
+  scale_factor[6] = 1;
+  float cs_h[6] = {1.8437e+08, 6.7108e+05, 5.2613e4, 2.0694e3, 1.0510e2, 5.2089};
+  float nevents_h[6] = {10001000, 10913000, 10000000., 10000000., 9671056, 11559000}; 
+  float scaless[6] = {1./0.592641,1./0.592641, 1, 1, 1, 1};
 
   if (use_herwig)
     {
-      for (int i = 0 ; i < 5; i++)
+      for (int i = 0 ; i < 6; i++)
 	{
-	  scale_factor[i] = scaless[i]*cs_h[i]*nevents_h[4]/(cs_h[4]*nevents_h[i]);
+	  scale_factor[i] = scaless[i]*cs_h[i]*nevents_h[5]/(cs_h[5]*nevents_h[i]);
 	}
       //scale_factor[0]*=2;
     }
   
+
+  TH1D *h_flat_data_over_reco_pt1pt2 = nullptr;
+
+  if (get_mapping == 2)
+    {
+      // Get the pt1pt2 histograms
+      TFile *finunfold = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_PRIMER2_%s.root",  rb.get_code_location().c_str(), cone_size, sys_name_orig.c_str()),"r");
+      if (!finunfold)
+	{
+	  std::cout << " no file " << std::endl;
+	  return 0;
+	}
+
+      h_flat_data_over_reco_pt1pt2 = (TH1D*) finunfold->Get("h_flat_data_over_reco_pt1pt2");
+      h_flat_data_over_reco_pt1pt2->SetDirectory(0);
+      finunfold->Close();
+    }
+
   int prior_iteration = 2;
 
   if (!get_mapping && primer == 0 && !unfold_generator && false)
@@ -392,7 +425,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       TH1D *hunc = (TH1D*) fin_iter->Get("h_total_uncertainties");
       int minimum_iter = 0;
       float mini = hunc->GetBinContent(2);;
-      for (int ib = 3; ib < 10; ib++)
+      for (int ib = 2; ib < 10; ib++)
 	{
 
 	  float temp_min = hunc->GetBinContent(ib);
@@ -418,7 +451,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   std::vector<std::pair<float, float>> vertex_scales;
   TH2D *h_eta_reweight = nullptr;
   TH2D *h_lead_pt_v_emfrac_reweight = nullptr;
-  if (!get_mapping && primer != 1)
+  if (!(get_mapping==1) && primer != 1)
     {
       TFile *fvtx = new TFile(Form("vertex/vertex_reweight_%s_r%02d_%s.root", system_string.c_str(), cone_size, sys_name_orig.c_str()),"r");
       TH1D *h_mbd_reweight = (TH1D*) fvtx->Get("h_mbd_reweight");
@@ -477,7 +510,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   int nbins_pt_reco = nbins_pt*nbins_pt;
   std::map<int, int> mapped_pt_bin_reco;
 
-  if (!get_mapping)
+  if (!(get_mapping==1))
     {
       TString mappingppath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
       
@@ -529,7 +562,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       h_flat_truth_mapping_primer = (TH1D*)fr->Get("h_flat_truth_mapping_all_samples");
       h_flat_reco_mapping_primer = (TH1D*)fr->Get("h_flat_reco_mapping_all_samples");
       
-      for (int i = 0; i < 6; i++)
+      for (int i = 0; i < nsamples; i++)
 	{
 	  h_flat_response_mapping_primer[i] = (TH2D*) fr->Get(Form("h_flat_response_mapping_%d", i));
 	}      
@@ -551,15 +584,15 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TEfficiency *he_dijet = new TEfficiency("he_dijet",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
   TEfficiency *he_dijet_mbd_hit = new TEfficiency("he_dijet_mbd_hit",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
   TEfficiency *he_dijet_reco = new TEfficiency("he_dijet_reco",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
-  TEfficiency *he_dijet_match = new TEfficiency("he_dijet_match",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
-  TEfficiency *he_dijet_match_reco = new TEfficiency("he_dijet_match_reco",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
+  TEfficiency *he_dijet_match = new TEfficiency("he_dijet_match",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100);
+  TEfficiency *he_dijet_match_reco = new TEfficiency("he_dijet_match_reco",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100);
   TEfficiency *he_dijet_fake = new TEfficiency("he_dijet_fake",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
   TEfficiency *he_dijet_trigger = new TEfficiency("he_dijet_trigger",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
   TEfficiency *he_dijet_vertex = new TEfficiency("he_dijet_vertex",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
   TEfficiency *he_dijet_vertex_truth = new TEfficiency("he_dijet_vertex_truth",";Leading #it{p}^{Truth}_{T} [GeV]; Matching Efficiency", 50, 0, 100, 50, 0, 100);
 
   TH1D *h_truth_lead_sample[nsamples];
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < nsamples; i++)
     {
       h_truth_lead_sample[i] = new TH1D(Form("h_truth_lead_%d", i), " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
     }
@@ -568,6 +601,18 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TH1D *h_truth_sublead = new TH1D("h_truth_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
   TH1D *h_reco_lead = new TH1D("h_reco_lead", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100);
   TH1D *h_reco_sublead = new TH1D("h_reco_sublead", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100);
+
+
+  TH2D *h_truth_lead_pt_eta = new TH2D("h_truth_lead_pt_eta", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100, 110, -1.1, 1.1);
+  TH2D *h_truth_sublead_pt_eta = new TH2D("h_truth_sublead_pt_eta", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100, 110, -1.1, 1.1);
+  TH2D *h_reco_lead_pt_eta = new TH2D("h_reco_lead_pt_eta", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100, 110, -1.1, 1.1);
+  TH2D *h_reco_sublead_pt_eta = new TH2D("h_reco_sublead_pt_eta", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100, 110, -1.1, 1.1);
+
+  TH2D *h_truth_lead_pt_phi = new TH2D("h_truth_lead_pt_phi", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100, 128, -1*TMath::Pi(), TMath::Pi());
+  TH2D *h_truth_sublead_pt_phi = new TH2D("h_truth_sublead_pt_phi", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100, 128, -1*TMath::Pi(), TMath::Pi());
+  TH2D *h_reco_lead_pt_phi = new TH2D("h_reco_lead_pt_phi", " ; Leading Jet p_{T} [GeV]; counts", 100, 0, 100, 128, -1*TMath::Pi(), TMath::Pi());
+  TH2D *h_reco_sublead_pt_phi = new TH2D("h_reco_sublead_pt_phi", " ; Subleading Jet p_{T} [GeV]; counts", 100, 0, 100, 128, -1*TMath::Pi(), TMath::Pi());
+
   TH2D *h_eta_lead_sublead = new TH2D("h_eta_lead_sublead","", 220, -1.1, 1.1, 220, -1.1, 1.1);
   TH2D *h_eta_phi_lead = new TH2D("h_eta_phi_lead","", 48, -1.1, 1.1, 128, -TMath::Pi(), TMath::Pi());
 
@@ -598,6 +643,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TH2D *h_e1e2 = new TH2D("h_e1e2",";p_{T,1, smear};p_{T,2, smear}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
 
   TH1D *h_flat_truth_pt1pt2_raw = new TH1D("h_truth_flat_pt1pt2_raw",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt_truth_2, 0, nbins_pt_truth_2);
+  TH1D *h_flat_truth_pt1pt2_scaled_new = new TH1D("h_truth_flat_pt1pt2_scaled_new",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt_truth_2, 0, nbins_pt_truth_2);
   TH1D *h_flat_reco_pt1pt2_raw = new TH1D("h_reco_flat_pt1pt2_raw",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt_reco_2, 0, nbins_pt_reco_2);
   TH1D *h_flat_reco_pt1pt2 = new TH1D("h_reco_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt_2, 0, nbins_pt_2);
 
@@ -613,9 +659,14 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   h_flat_truth_to_response_pt1pt2->Sumw2();
   h_flat_reco_to_response_pt1pt2->Sumw2();
   h_flat_truth_pt1pt2_raw->Sumw2();
+  h_flat_truth_pt1pt2_scaled_new->Sumw2();
   h_flat_reco_pt1pt2_raw->Sumw2();
+  h_flat_reco_pt1pt2->Sumw2();
+  h_flat_reco_all_pt1pt2->Sumw2();
   h_flat_response_pt1pt2->Sumw2();
   
+
+
   TProfile2D *h_pt1pt2_reco_from_pileup = new TProfile2D("h_pt1pt2_reco_from_pileup",";p_{T,1};p_{T,2}; fraction from pileup", nbins_pt, dpt_bins, nbins_pt, dpt_bins);
   TProfile2D *h_pt1pt2_truth_from_pileup = new TProfile2D("h_pt1pt2_truth_from_pileup",";p_{T,1};p_{T,2}; fraction from pileup", nbins_pt, dpt_bins, nbins_pt, dpt_bins);
 						    
@@ -629,7 +680,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TH2D *h_flat_response_pt1pt2_sample[nsamples];// new TH2D("h_flat_response_pt1pt2",";p_{T,1, reco} + p_{T,2, reco};p_{T,1, truth} + p_{T,2, truth}", nbins*nbins, 0, nbins*nbins, nbins*nbins, 0, nbins*nbins);
   TH2D *h_count_flat_response_pt1pt2_sample[nsamples];// new TH2D("h_flat_response_pt1pt2",";p_{T,1, reco} + p_{T,2, reco};p_{T,1, truth} + p_{T,2, truth}", nbins*nbins, 0, nbins*nbins, nbins*nbins, 0, nbins*nbins);
 
-  for (int i = 0 ; i < 6; i++)
+  for (int i = 0 ; i < nsamples; i++)
     {
       h_flat_reco_all_pt1pt2_sample[i] = new TH1D(Form("h_reco_flat_all_pt1pt2_%d", i),";p_{T,1, smear} + p_{T,2, smear}", nbins_pt_reco_2, 0, nbins_pt_reco_2);
 
@@ -650,11 +701,12 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
   
   // For the prior sensitivity
-  TH1D *h_flatreweight_pt1pt2 = new TH1D("h_unfold_flat_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt_truth_2, 0, nbins_pt_truth_2);
-
-
-  if (!prior_sys && !primer)
+  TH1D *h_flatreweight_pt1pt2 = new TH1D("h_flatreweight_pt1pt2",";p_{T,1, smear} + p_{T,2, smear}", nbins_pt_truth_2, 0, nbins_pt_truth_2);
+  TH2D *h2_flatreweight_pt1pt2 = new TH2D("h2_flatreweight_pt1pt2",";p_{T,1}^{truth} [GeV]; p_{T,2}^{truth} [GeV] ; Reweight Factor", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  
+  if (!prior_sys && !primer && !get_mapping)
     {
+
       TFile *fun = new TFile(Form("unfolding_hists/unfolding_hists_%s_r%02d_PRIMER2_%s.root", system_string.c_str(), cone_size, sys_name_orig.c_str()), "r");
       //TH1D *h_unfold_flat = (TH1D*) fun->Get("h_data_flat_pt1pt2");
       TH1D *h_unfold_flat = (TH1D*) fun->Get(Form("h_flat_unfold_pt1pt2_%d", prior_iteration));
@@ -664,7 +716,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       TH1D *h_truth_flat = (TH1D*) ftr->Get("h_truth_flat_pt1pt2");
       h_truth_flat->SetName("h_truth_flat");
       std::cout << "Got histograms" << std::endl;
-      TH2D *h2_flatreweight_pt1pt2 = new TH2D("h2_flatreweight_pt1pt2",";p_{T,1}^{truth} [GeV]; p_{T,2}^{truth} [GeV] ; Reweight Factor", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+      
 
       // of signal region
       
@@ -678,8 +730,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  pt1_truth_bins[i] = 0;
 	}
 
-      h_unfold_flat->Scale(1./h_unfold_flat->Integral(),"width");
-      h_truth_flat->Scale(1./h_truth_flat->Integral(),"width");
+      //h_unfold_flat->Scale(1./h_unfold_flat->Integral(),"width");
+      //h_truth_flat->Scale(1./h_truth_flat->Integral(),"width");
 
       for (int ibin = 0; ibin < nbins_pt_2; ibin++)
 	{
@@ -689,8 +741,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 	  int max_bin = std::max(pt1_bin, pt2_bin);
 	  int min_bin = std::min(pt1_bin, pt2_bin);
-	  if (max_bin < measure_leading_bin) continue;
-	  if (min_bin < measure_subleading_bin) continue;
+	  //if (max_bin < measure_leading_bin) continue;
+	  //if (min_bin < measure_subleading_bin) continue;
 
 	  pt1_unfold_bins[max_bin] += h_unfold_flat->GetBinContent(ibin+1);
 	  pt1_truth_bins[max_bin] += h_truth_flat->GetBinContent(ibin+1);
@@ -709,13 +761,12 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  int min_bin = std::min(pt1_bin, pt2_bin);
 	  if (pt1_unfold_bins[max_bin] == 0 || pt1_truth_bins[max_bin] == 0)
 	    {
-	      h_unfold_flat->SetBinContent(ibin+1, 1);
-	      h_truth_flat->SetBinContent(ibin+1, 1);
+	      continue;
 	    }
 	  else
 	    {
-	      h_unfold_flat->SetBinContent(ibin+1, h_unfold_flat->GetBinContent(ibin+1)/integral_of_signal);//pt1_unfold_bins[max_bin]);
-	      h_truth_flat->SetBinContent(ibin+1, h_truth_flat->GetBinContent(ibin+1)/integral_of_truth);//pt1_truth_bins[max_bin]);
+	      h_unfold_flat->SetBinContent(ibin+1, h_unfold_flat->GetBinContent(ibin+1)/pt1_unfold_bins[max_bin]);
+	      h_truth_flat->SetBinContent(ibin+1, h_truth_flat->GetBinContent(ibin+1)/pt1_truth_bins[max_bin]);
 	    }
 	}
 
@@ -724,28 +775,45 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  float pt1_bin = ibin/nbins_pt;
 	  float pt2_bin = ibin%nbins_pt;
 	  int max_bin = std::max(pt1_bin, pt2_bin);
-	  //double lead_factor = (pt1_unfold_bins[max_bin]/integral_of_signal)/(pt1_truth_bins[max_bin]/integral_of_truth); 
 	  int gbin = h2_flatreweight_pt1pt2->GetBin(pt1_bin+1, pt2_bin+1);
-
 	  
 	  float v = h_unfold_flat->GetBinContent(ibin+1);
 	  float b = h_truth_flat->GetBinContent(ibin+1);
 	  
-	  if (b > 0)
+	  if (b > 0 && v > 0)
 	    {
 	      float vb = (v/b);// * lead_factor;
-	      if (v == 0) vb = 1;
+	      if (vb > 5) vb = 5;
 	      if (vb < 0.1) vb = 0.1;
-	      if (vb >= 5) vb = 5;
 	      h_flatreweight_pt1pt2->SetBinContent(ibin+1, vb);
 	      h2_flatreweight_pt1pt2->SetBinContent(gbin, vb);
 	    }
 	  else
 	    {
-	      h_flatreweight_pt1pt2->SetBinContent(ibin+1, 1);
-	      h2_flatreweight_pt1pt2->SetBinContent(gbin, 1);
+	      continue;//      h_flatreweight_pt1pt2->SetBinContent(ibin+1, 1);
+	      continue;//h2_flatreweight_pt1pt2->SetBinContent(gbin, 1);
 	    }
 
+	}
+      for (int ib = 0; ib < nbins_pt; ib++)
+	{
+	  double last_weight = 0;
+	  for (int id = 0; id <= ib; id++)
+	    {
+	      int idd = ib - id;
+	      int ibb = 1 + ib*nbins_pt + idd;
+	      int ibb1 = 1 + idd*nbins_pt + ib;
+	      double weight = h_flatreweight_pt1pt2->GetBinContent(ibb);
+	      if (weight == 0)
+		{
+		  h_flatreweight_pt1pt2->SetBinContent(ibb, last_weight);
+		  h_flatreweight_pt1pt2->SetBinContent(ibb1, last_weight);
+		}
+	      else
+		{
+		  last_weight = weight;
+		}
+	    }
 	}
 
       TCanvas *cre = new TCanvas("cre","cre", 500, 500);
@@ -764,8 +832,10 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TRandom *rng = new TRandom(0);
 
   std::vector<struct jet> mytruthjets;
+  std::vector<struct jet> mysmearjets;
   std::vector<struct jet> myrecojets;
   std::vector<struct jet> mytruthjets2;
+  std::vector<struct jet> mysmearjets2;
   std::vector<struct jet> myrecojets2;
 
   std::vector<std::pair<struct jet, struct jet>> matched_dijets;
@@ -782,9 +852,10 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
       int starting = 1;
       if (verbosity > 5) entries2 = 100000;
+
       if (iisample != isample)
 	{
-	  entries2 = n_events[iisample] *= mix;
+	  entries2 = n_events[iisample] * mix;
 	}
       
       for (int i = entries0; i < entries2; i++)
@@ -831,11 +902,11 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      maxpttruth = *std::max_element(truth_jet_pt_ref[isample]->begin(), truth_jet_pt_ref[isample]->end());
 	    }
 
-	  if ((isample < 6) && (maxpttruth < boundary_r4[iisample] || maxpttruth >= boundary_r4[iisample+1])) continue;
-	  if ((isample >= 6) && (maxpttruth < boundary_pileup_r4[iisample] || maxpttruth >= boundary_pileup_r4[iisample+1])) continue;
+	  if ((isample < nsamples) && (maxpttruth < boundary_r4[iisample] || maxpttruth >= boundary_r4[iisample+1])) continue;
+	  if ((isample >= nsamples) && (maxpttruth < boundary_pileup_r4[iisample] || maxpttruth >= boundary_pileup_r4[iisample+1])) continue;
 
 	  // vertex reweighting
-	  if (!get_mapping && primer != 1 && has_vertex)
+	  if (!(get_mapping==1) && primer != 1 && has_vertex)
 	    {
 	      for (int ib = 0; ib < vertex_scales.size(); ib++)
 		{
@@ -856,9 +927,11 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  mytruthjets.clear();
 	  // all reco jets
 	  myrecojets.clear();
+	  mysmearjets.clear();
 	  // top two of each
 	  mytruthjets2.clear();
 	  myrecojets2.clear();
+	  mysmearjets2.clear();
 
 	  int ntruthjets = truth_jet_pt[isample]->size();
 	  for (int j = 0; j < ntruthjets;j++)
@@ -895,23 +968,23 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      tempjet.istruth = 0;
 
 	      float temppt = reco_jet_pt[isample]->at(j);
-	      float tempptreco = temppt;
-	      float smear1 = gjer->Eval(temppt);//nominal_smear;//hjersmear->GetBinContent(ib );
-	      float jersmear = 0;
+	      //float tempptreco = temppt;
+	      //float smear1 = gjer->Eval(temppt);//nominal_smear;//hjersmear->GetBinContent(ib );
+	      //float jersmear = 0;
 
-	      if (smear1 > 0)
-		{
-		  fsmear->SetParameter(2, smear1);
-		  jersmear = fsmear->GetRandom();
-		}
+	      // if (smear1 > 0)
+	      // 	{
+	      // 	  fsmear->SetParameter(2, smear1);
+	      // 	  jersmear = fsmear->GetRandom();
+	      // 	}
 	      
-	      tempptreco = temppt*(1 + JES_sys) + jersmear*temppt;// + JES_sys * temppt;
+	      //tempptreco = temppt + jersmear*temppt;// + JES_sys * temppt;
 	
-	      tempjet.pt = tempptreco;
+	      tempjet.pt = temppt;
 	      tempjet.pt_uncalib = reco_jet_pt[isample]->at(j);
 	      tempjet.e = reco_jet_e[isample]->at(j);
 
-	      if (tempjet.pt < reco_subleading_cut) continue;
+	      //if (tempjet.pt < reco_subleading_cut) continue;
 	      
 	      tempjet.emcal = reco_jet_emcal[isample]->at(j);
 	      tempjet.eta = reco_jet_eta[isample]->at(j);
@@ -925,39 +998,96 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 	  std::sort(myrecojets.begin(), myrecojets.end(), [] (auto a, auto b) { return a.pt > b.pt; });
 	  
-
-	  if (verbosity > 5)
+	  // new smearing technique
+	  
+	  matched_dijets = djf.match_dijets_smear(myrecojets, mytruthjets);
+	  for (auto recojet : myrecojets)
 	    {
-	      std::cout << "----- RECO JETS -----" << std::endl;
-	      for (auto rjet : myrecojets)
+	      bool mm = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == recojet.id;}) != matched_dijets.end();
+	      he_dijet_match->Fill(mm, recojet.pt, event_scale);
+	      //	      he_dijet_match_reco->Fill(base_good, mytruthjets2.at(1).pt, mytruthjets2.at(0).pt, event_scale);
+	    }
+
+	  for (auto match :  matched_dijets)
+	    {
+	      auto recojet = match.second;
+	      auto truthjet = match.first;
+	      double smear1 = fsmear->GetRandom();
+	      double temppt = recojet.pt;
+	      recojet.pt = temppt + truthjet.pt*smear1;  
+	      mysmearjets.push_back(recojet);		  
+	      //matched_dijets2.push_back(std::make_pair(truthjet, recojet));
+	    }
+	  //he_dijet_match_reco->Fill(base_good, mytruthjets2.at(0).pt, mytruthjets2.at(1).pt, event_scale);
+	  //he_dijet_match_reco->Fill(base_good, mytruthjets2.at(1).pt, mytruthjets2.at(0).pt, event_scale);
+	  
+ 	  // std::sort(matched_dijets2.begin(), matched_dijets2.end(), [] (auto a, auto b) { return a.first.pt > b.first.pt; });
+	  // if (matched_dijets2.size() > 1)
+	  //   {
+	  //     matched_dijets2 = {matched_dijets2.begin(), matched_dijets2.begin()+2};
+	  //   }
+	  
+	  //matched_dijets = match_dijets_ppg08(myrecojets, mytruthjets);
+	  for (auto recojet : myrecojets)
+	    {
+	      bool mm = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == recojet.id;}) != matched_dijets.end();
+	      if (mm) continue;
+	      //double smear1 = fsmear->GetRandom();
+	      //double temppt = recojet.pt;
+	      //recojet.pt = temppt + recojet.pt*smear1;  
+	      mysmearjets.push_back(recojet);		  	      
+	    }
+
+	  std::sort(mysmearjets.begin(), mysmearjets.end(), [] (auto a, auto b) { return a.pt > b.pt; });
+
+	  matched_dijets2 = djf.match_dijets_response(mysmearjets, mytruthjets);
+	  for (auto recojet : mysmearjets)
+	    {
+	      bool mm = std::find_if(matched_dijets2.begin(), matched_dijets2.end(), [=] (auto a) { return a.second.id == recojet.id;}) != matched_dijets.end();
+	      he_dijet_match_reco->Fill(mm, recojet.pt, event_scale);
+	      //	      he_dijet_match_reco->Fill(base_good, mytruthjets2.at(1).pt, mytruthjets2.at(0).pt, event_scale);
+	    }
+
+	  if (isample == 2 && verbosity >= 5)
+	    {
+	      int imm = 0;
+	      std::cout << "matched: " << std::endl;
+	      for (auto mjet : matched_dijets2)
 		{
-		  rjet.print();
-		}
-	      std::cout << "----- TRUTH JETS -----" << std::endl;
-	      for (auto tjet : mytruthjets)
-		{
-		  tjet.print();
+		  std::cout << "Match : " << imm++ << " : " << mjet.first.pt << " / " << mjet.first.eta << " / " << mjet.first.phi << "     " << mjet.second.pt << " / " << mjet.second.eta << " / " << mjet.second.phi << std::endl;
 		}
 	    }
 
+	  std::sort(matched_dijets2.begin(), matched_dijets2.end(), [] (auto a, auto b) { return a.first.pt > b.first.pt; });
 
+	  if (matched_dijets2.size() > 1)
+	    {
+	      matched_dijets2 = {matched_dijets2.begin(), matched_dijets2.begin()+2};
+	    }
+
+	  
 	  bool truth_good = djf.check_dijet_truth(mytruthjets);
 	  bool truth_good_base = mytruthjets.size() > 1;
+
 
 	  if (full_sys)
 	    {
 	      truth_good &= has_truth_vertex;
 	    }
 
-	  if (!truth_good && !useFakes)
-	    {
-	      continue;
-	    }
-
 	  if (myrecojets.size() > 1)
 	    {
 	      int sizet = myrecojets.size();
 	      myrecojets2 = {myrecojets.begin(), myrecojets.begin()+sizet};
+	      if (verbosity > 5)
+		{
+		  std::cout << "RECO GOOD" << std::endl;
+		}		  
+	    }
+	  if (mysmearjets.size() > 1)
+	    {
+	      int sizet = mysmearjets.size();
+	      mysmearjets2 = {mysmearjets.begin(), mysmearjets.begin()+2};
 	      if (verbosity > 5)
 		{
 		  std::cout << "RECO GOOD" << std::endl;
@@ -972,20 +1102,36 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 		  std::cout << "TRUTH GOOD" << std::endl;
 		}		  
 	    }
-
+	  // matched_dijets = djf.match_dijets(myrecojets, mytruthjets);
 	  // match the truth dijet with all reco jets for dphi then dR matching
-	  
-	  matched_dijets = djf.match_dijets(myrecojets2, mytruthjets2);
+	  	  
 
-	  
-	  std::sort(matched_dijets.begin(), matched_dijets.end(), [] (auto a, auto b) { return a.first.pt > b.first.pt; });
 
-	  bool matched = (matched_dijets.size() > 1);
+	  bool matched = (matched_dijets2.size() > 1);
+	  if (matched)
+	    {
+	      bool found1 = (std::find_if(matched_dijets2.begin(), matched_dijets2.end(), [=] (auto a) { return a.second.id == mysmearjets.at(0).id ; }) != matched_dijets2.end());
+	      bool found2 = (std::find_if(matched_dijets2.begin(), matched_dijets2.end(), [=] (auto a) { return a.second.id == mysmearjets.at(1).id ; }) != matched_dijets2.end());
+	      bool foundt1 = (std::find_if(matched_dijets2.begin(), matched_dijets2.end(), [=] (auto a) { return a.first.id == mytruthjets.at(0).id ; }) != matched_dijets2.end());
+	      bool foundt2 = (std::find_if(matched_dijets2.begin(), matched_dijets2.end(), [=] (auto a) { return a.first.id == mytruthjets.at(1).id ; }) != matched_dijets2.end());
+	      matched &= (foundt1 && foundt2);
+	      matched &= (found1 && found2);
+
+	    }
 
 	  float max_truth = 0;
 	  float max_reco = 0;
 	  float min_truth = 0;
 	  float min_reco = 0;
+
+	  float max_phi_truth = 0;
+	  float max_phi_reco = 0;
+	  float min_phi_truth = 0;
+	  float min_phi_reco = 0;
+	  float max_eta_truth = 0;
+	  float max_eta_reco = 0;
+	  float min_eta_truth = 0;
+	  float min_eta_reco = 0;
 
 	  /* this variable determines how things are filled */
 
@@ -996,61 +1142,85 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 	  int fill_fake_miss = -1;
 
-	  bool reco_good = djf.check_dijet_reco(myrecojets2);
-	  bool base_good = reco_good;	  
-	  bool njet_pass = (myrecojets.size() < njet_cut);
+	  bool reco_good = djf.check_dijet_reco(mysmearjets);
 
-	  reco_good &= triggered;
+	  bool base_good = reco_good;	  
+	  // passes njet cut
+	  bool njet_pass = (mysmearjets.size() < njet_cut);
 	  reco_good &= njet_pass;
+	  // passes trigger cut
+	  reco_good &= triggered;
 	  
 	  if (full_sys)
 	    {
+	      // passes full cut
 	      reco_good &= has_vertex;
 	      reco_good &= has_mbd_hit;
 	    }
 
+	  // passes in range
 	  bool in_range = false;
-	  if (myrecojets2.size() > 0)
+	  if (mysmearjets2.size() > 0)
 	    {
-	      in_range = (myrecojets2.at(0).pt < ipt_bins[max_reco_bin]);
+	      in_range = (mysmearjets2.at(0).pt < ipt_bins[max_reco_bin]);
 	      reco_good &= in_range;
 	    }
-	  
+
+	  // if truth good in its base, just 2 jets to get reweighting
 	  if (truth_good_base)
 	    {
 	      max_truth = mytruthjets.at(0).pt;
 	      min_truth = mytruthjets.at(1).pt;
+	      max_phi_truth = mytruthjets.at(0).phi;
+	      min_phi_truth = mytruthjets.at(1).phi;
+	      max_eta_truth = mytruthjets.at(0).eta;
+	      min_eta_truth = mytruthjets.at(1).eta;
 	    }
 	  
 	  if (reco_good)
 	    {
-	      max_reco = myrecojets2.at(0).pt;
-	      min_reco = myrecojets2.at(1).pt;
+	      max_reco = mysmearjets.at(0).pt;
+	      min_reco = mysmearjets.at(1).pt;
+	      max_phi_reco = mysmearjets.at(0).phi;
+	      min_phi_reco = mysmearjets.at(1).phi;
+	      max_eta_reco = mysmearjets.at(0).eta;
+	      min_eta_reco = mysmearjets.at(1).eta;
 	    }
 
-	  if (!get_mapping && primer != 1 && reco_good && false)
+	  if (!(get_mapping==1) && primer != 1 && reco_good && false)
 	    {
-	      int eta1 = floor((myrecojets2.at(0).eta + 1.1)/0.1) + 1;
-	      int eta2 = floor((myrecojets2.at(1).eta + 1.1)/0.1) + 1;
+	      int eta1 = floor((mysmearjets2.at(0).eta + 1.1)/0.1) + 1;
+	      int eta2 = floor((mysmearjets2.at(1).eta + 1.1)/0.1) + 1;
 	      int gbinn = h_eta_reweight->GetBin(eta1, eta2);
 	      event_scale *= h_eta_reweight->GetBinContent(gbinn);
 	    }
 
-	  if (!get_mapping && primer != 1 && reco_good && emfrac_sys)
+	  
+	  if (!(get_mapping==1) && primer != 1 && reco_good && emfrac_sys)
 	    {
-	      int ptembin = h_lead_pt_v_emfrac_reweight->FindBin(myrecojets.at(0).pt, myrecojets.at(0).emcal);
+	      int ptembin = h_lead_pt_v_emfrac_reweight->FindBin(mysmearjets.at(0).pt, mysmearjets.at(0).emcal);
 	      event_scale *= h_lead_pt_v_emfrac_reweight->GetBinContent(ptembin);
 	    }
 
 	  
-	  if (matched && truth_good_base && reco_good)
+	  if (matched && truth_good && reco_good)
 	    {
-	      max_truth = matched_dijets.at(0).first.pt;
-	      min_truth = matched_dijets.at(1).first.pt;
-	      max_reco = matched_dijets.at(0).second.pt;
-	      min_reco = matched_dijets.at(1).second.pt;
-	    }
+	      max_truth = matched_dijets2.at(0).first.pt;
+	      min_truth = matched_dijets2.at(1).first.pt;
 
+	      max_reco = matched_dijets2.at(0).second.pt;
+	      min_reco = matched_dijets2.at(1).second.pt;
+
+	      max_phi_truth = matched_dijets2.at(0).first.phi;
+	      min_phi_truth = matched_dijets2.at(1).first.phi;
+	      max_eta_truth = matched_dijets2.at(0).first.eta;
+	      min_eta_truth = matched_dijets2.at(1).first.eta;
+
+	      max_phi_reco = matched_dijets2.at(0).second.phi;
+	      min_phi_reco = matched_dijets2.at(1).second.phi;
+	      max_eta_reco = matched_dijets2.at(0).second.eta;
+	      min_eta_reco = matched_dijets2.at(1).second.eta;
+	    }
 
 	  float pt1_truth_bin = nbins_pt;
 	  float pt2_truth_bin = nbins_pt;
@@ -1061,13 +1231,36 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  float e2 = min_truth;
 	  float es1 = max_reco;
 	  float es2 = min_reco;
-	  	  
-	  float maxi = std::max(es1, es2);
-	  float mini = std::min(es1, es2);
 
+	  float p1 = max_phi_truth;
+	  float p2 = min_phi_truth;
+	  float ps1 = max_phi_reco;
+	  float ps2 = min_phi_reco;
+
+	  float eta1 = max_eta_truth;
+	  float eta2 = min_eta_truth;
+	  float etas1 = max_eta_reco;
+	  float etas2 = min_eta_reco;
+
+	  float maxi = es1;
+	  float mini = es2;
+	  if (mini > maxi);
+	  {
+	    mini = es1;
+	    maxi = es2;
+	    float tempp = ps1;
+	    ps1 = ps2;
+	    ps2 = tempp;
+	    tempp = etas1;
+	    etas1 = etas2;
+	    etas2 = tempp;
+
+	  }
 	  float maxit = std::max(e1, e2);
 	  float minit = std::min(e1, e2);
 
+
+	  // get bins
 	  for (int ib = 0; ib < nbins_pt; ib++)
 	    {
 	      if ( e1 < ipt_bins[ib+1] && e1 >= ipt_bins[ib])
@@ -1105,50 +1298,41 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  int total_bin_reco_1 = pt1_reco_bin + nbins_pt*pt2_reco_bin;
 	  int total_bin_reco_2 = pt2_reco_bin + nbins_pt*pt1_reco_bin;
 
-	  if (!prior_sys && !get_mapping && !primer && truth_good_base)// && reco_good && matched)
+	  // reweight all truth jet pairs the same since there can't be any monojets
+
+	  double event_scale_fake = event_scale;
+	  if (!prior_sys && !get_mapping && !primer)// && reco_good && matched)
 	    {
 	      int recorrectbin = pt1_truth_bin + nbins_pt*pt2_truth_bin;	      
 	      event_scale *= h_flatreweight_pt1pt2->GetBinContent(recorrectbin);
+	      //event_scale_fake *= h_flatreweight_pt1pt2->GetBinContent(recorrectbin);
+	    }
+	  double event_scale_new = event_scale;
+	  if (!prior_sys && get_mapping==2)// && !primer)// && reco_good && matched)
+	    {
+	      event_scale_new *= h_flat_data_over_reco_pt1pt2->GetBinContent(total_bin_reco_1);
 	    }
 
+	  // trigger efficiency
 	  if (base_good && njet_pass)
 	    {
-	      he_dijet_trigger_binned->Fill(triggered, myrecojets2.at(0).pt, myrecojets2.at(1).pt, event_scale);
-	      he_dijet_trigger_binned->Fill(triggered, myrecojets2.at(1).pt, myrecojets2.at(0).pt, event_scale);
+	      he_dijet_trigger_binned->Fill(triggered, mysmearjets2.at(0).pt, mysmearjets2.at(1).pt, event_scale);
+	      he_dijet_trigger_binned->Fill(triggered, mysmearjets2.at(1).pt, mysmearjets2.at(0).pt, event_scale);
 	    }
-	  
-	  double fake_event_scale = event_scale;
 
+	  // Fill efficiencies
+	  
 	  // check if leading truth jet is matched
 	  if (mytruthjets2.size() > 1)
 	    {
-	      if (std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == mytruthjets2.at(0).id;}) != matched_dijets.end())
+	      if (std::find_if(matched_dijets2.begin(), matched_dijets2.end(), [=] (auto a) { return a.first.id == mytruthjets2.at(0).id;}) != matched_dijets2.end())
 		{
 		  
-		  bool subleading_matched = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == mytruthjets2.at(1).id;}) != matched_dijets.end();
+		  bool subleading_matched = std::find_if(matched_dijets2.begin(), matched_dijets2.end(), [=] (auto a) { return a.first.id == mytruthjets2.at(1).id;}) != matched_dijets2.end();
 		  
 		  he_dijet_match_binned->Fill(subleading_matched, mytruthjets2.at(0).pt, mytruthjets2.at(1).pt, event_scale);
 		  he_dijet_match_binned->Fill(subleading_matched, mytruthjets2.at(1).pt, mytruthjets2.at(0).pt, event_scale);
 
-		  // if (mytruthjets.at(0).pt > 47 && mytruthjets.at(0).pt < 53 && mytruthjets.at(1).pt < 28)
-		  //   {
-		  //     std::cout << (subleading_matched?"MATCHED":"FAKE") << std::endl;
-		  //     for (auto tjet: mytruthjets)
-		  // 	{
-		  // 	  tjet.print();
-		  // 	}
-		  //     for (auto rjet : myrecojets)
-		  // 	{
-		  // 	  rjet.print();
-		  // 	}
-		  //     std::cout << "vector: " << std::endl;
-		  //     for (auto mjet : matched_dijets)
-		  // 	{
-		  // 	  mjet.first.print();
-		  // 	  mjet.second.print();
-		  // 	}
-
-		  //   }
 		  if (fabs(mytruthjets2.at(0).eta) < 0.7)
 		    {
 		      bool sub_in = fabs(mytruthjets2.at(1).eta) < 0.7;
@@ -1174,23 +1358,11 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      
 	  if (base_good)
 	    {
-	      he_dijet_reco->Fill(truth_good, myrecojets2.at(0).pt, myrecojets2.at(1).pt, event_scale);
-	      he_dijet_reco->Fill(truth_good, myrecojets2.at(1).pt, myrecojets2.at(0).pt, event_scale);
+	      he_dijet_reco->Fill(truth_good, mysmearjets2.at(0).pt, mysmearjets2.at(1).pt, event_scale);
+	      he_dijet_reco->Fill(truth_good, mysmearjets2.at(1).pt, mysmearjets2.at(0).pt, event_scale);
 	    }
 	  if (truth_good)
 	    {
-	      if (matched)
-		{
-		  he_dijet_match_reco->Fill(base_good, mytruthjets2.at(0).pt, mytruthjets2.at(1).pt, event_scale);
-		  he_dijet_match_reco->Fill(base_good, mytruthjets2.at(1).pt, mytruthjets2.at(0).pt, event_scale);
-		}
-	      if(base_good)
-		{
-	      
-		  he_dijet_match->Fill(matched, myrecojets2.at(0).pt, myrecojets2.at(1).pt, event_scale);
-		  he_dijet_match->Fill(matched, myrecojets2.at(1).pt, myrecojets2.at(0).pt, event_scale);
-	
-		}
 
 	      he_dijet_vertex->Fill(has_vertex, mytruthjets2.at(0).pt, mytruthjets2.at(1).pt, event_scale);
 	      he_dijet_vertex->Fill(has_vertex, mytruthjets2.at(1).pt, mytruthjets2.at(0).pt, event_scale);
@@ -1206,10 +1378,10 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      
 	    }
 
-	  if (!has_vertex || !has_mbd_hit) continue;	  
+	  //if (!has_vertex || !has_mbd_hit) continue;	  
 
-
-	  if (!get_mapping)
+	  // Get mapping	  
+	  if (!(get_mapping==1))
 	    {
 	      
 	      if (mapped_pt_bin_truth[pt1_truth_bin*nbins_pt + pt2_truth_bin] == -1)
@@ -1231,7 +1403,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 		  total_bin_reco_1 = mapped_pt_bin_reco[total_bin_reco_1];
 		  total_bin_reco_2 = mapped_pt_bin_reco[total_bin_reco_2];
 		}
-
+	  
 	      if (matched && reco_good && truth_good)
 		{
 		  int binn = h_flat_response_mapping_primer[iisample]->GetBin(1 + pt1_reco_bin*nbins_pt + pt2_reco_bin, 1 + pt1_truth_bin*nbins_pt + pt2_truth_bin);
@@ -1244,11 +1416,26 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  if (total_bin_reco_1 <= 0 && reco_good)
 	    {
 	      std::cout << "BAD" << std::endl;
-	    }
-	  if (!prior_sys && !get_mapping && !primer && truth_good_base)// && reco_good && matched)
-	    {
-	      int recorrectbin = pt1_truth_bin + nbins_pt*pt2_truth_bin;	      
-	      event_scale *= h_flatreweight_pt1pt2->GetBinContent(recorrectbin);
+	      std::cout << "TOTAL: " << total_bin_reco_1 << std::endl;
+	      std::cout << "pt1_reco_bin: " << pt1_reco_bin << std::endl;
+	      std::cout << "pt2_reco_bin: " << pt2_reco_bin << std::endl;
+	      std::cout << "RECO" << std::endl;
+	      for (auto recojet : myrecojets)
+		{
+		  recojet.print();
+		}
+	      std::cout << "TRUTH" << std::endl;
+	      for (auto truthjet : mytruthjets)
+		{
+		  truthjet.print();
+		}
+	      std::cout << "SMEAR" << std::endl;
+	      for (auto smearjet : mysmearjets)
+		{
+		  smearjet.print();
+		}
+
+	      
 	    }
 
 	  if (!reco_good && !truth_good) continue;
@@ -1269,21 +1456,21 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	    {
 
 	      fill_fake_miss = 2;	      
-
-	      he_dijet_fake_binned->Fill(0, es1, es2, event_scale);
-	      he_dijet_fake_binned->Fill(0, es2, es1, event_scale);
+	      
+	      he_dijet_fake_binned->Fill(0, es1, es2, event_scale_fake);
+	      he_dijet_fake_binned->Fill(0, es2, es1, event_scale_fake);
 
 	      he_dijet_miss_binned->Fill(0, e1, e2, event_scale);
 	      he_dijet_miss_binned->Fill(0, e2, e1, event_scale);
-
 	    }
+	  
 	  if (reco_good && !truth_good)
 	    {
 	      fill_fake_miss = 3;
 
-	      he_dijet_fake_binned->Fill(0, es1, es2, event_scale);
-	      he_dijet_fake_binned->Fill(0, es2, es1, event_scale);
-
+	      he_dijet_fake_binned->Fill(0, es1, es2, event_scale_fake);
+	      he_dijet_fake_binned->Fill(0, es2, es1, event_scale_fake);
+	      //if (!useFakes) continue;
 	    }
 	  if (truth_good && !reco_good)
 	    {
@@ -1291,22 +1478,35 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      he_dijet_miss_binned->Fill(0, e1, e2, event_scale);
 	      he_dijet_miss_binned->Fill(0, e2, e1, event_scale);
 	    }
+	  
 	  if (truth_good)
 	    {
 	      h_truth_lead->Fill(e1, event_scale);
+	      h_truth_sublead->Fill(e2, event_scale);
+
+	      h_truth_lead_pt_eta->Fill(e1,eta1, event_scale);
+	      h_truth_sublead_pt_eta->Fill(e2,eta2, event_scale);
+	      h_truth_lead_pt_phi->Fill(e1,p1, event_scale);
+	      h_truth_sublead_pt_phi->Fill(e2,p2, event_scale);
+
 	      h_truth_lead_sample[iisample]->Fill(e1, event_scale);
 	    }
-	  if (minit >  truth_subleading_cut) h_truth_sublead->Fill(e2, event_scale);
 
 	  if (reco_good)
 	    {
-
-	      if (maxi >  reco_leading_cut && mini >  reco_subleading_cut)
-		{
-		  h_reco_lead->Fill(maxi, event_scale);
-		  h_reco_sublead->Fill(mini, event_scale);
-		  h_eta_phi_lead->Fill(myrecojets.at(0).eta, myrecojets.at(0).phi, event_scale);
-		}
+	      h_reco_lead->Fill(maxi, event_scale);
+	      h_reco_sublead->Fill(mini, event_scale);
+	      h_reco_lead_pt_eta->Fill(maxi,etas1, event_scale);
+	      h_reco_sublead_pt_eta->Fill(mini,etas2, event_scale);
+	      h_reco_lead_pt_phi->Fill(maxi,ps1, event_scale);
+	      h_reco_sublead_pt_phi->Fill(mini,ps2, event_scale);
+	      
+	      
+	      h_eta_phi_lead->Fill(mysmearjets.at(0).eta, mysmearjets.at(0).phi, event_scale);
+	    }
+	  if (verbosity > 5)
+	    {
+	      std::cout << "FILL FAKE MISS = " << fill_fake_miss << std::endl;
 	    }
 	  
 	  // miss
@@ -1327,8 +1527,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 		  h_count_flat_truth_pt1pt2->Fill(total_bin_truth_1);
 		  h_count_flat_truth_pt1pt2->Fill(total_bin_truth_2);
-		  h_pt1pt2_truth_from_pileup->Fill(e1, e2, (isample > 5 ? 1 : 0), event_scale);
-		  h_pt1pt2_truth_from_pileup->Fill(e2, e1, (isample > 5 ? 1 : 0), event_scale);
+		  h_pt1pt2_truth_from_pileup->Fill(e1, e2, (isample != iisample ? 1 : 0), event_scale);
+		  h_pt1pt2_truth_from_pileup->Fill(e2, e1, (isample != iisample ? 1 : 0), event_scale);
 		  rooResponse.Miss(total_bin_truth_1, event_scale);
 		  rooResponse.Miss(total_bin_truth_2, event_scale);
 
@@ -1350,6 +1550,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 		      h_linear_truth_xj->Fill(minit/maxit, event_scale);
 		    }
 
+		  h_flat_truth_pt1pt2_scaled_new->Fill(total_bin_truth_1, event_scale_new);
+		  h_flat_truth_pt1pt2_scaled_new->Fill(total_bin_truth_2, event_scale_new);
 		  h_flat_truth_pt1pt2_raw->Fill(total_bin_truth_1, event_scale);
 		  h_flat_truth_pt1pt2_raw->Fill(total_bin_truth_2, event_scale);
 
@@ -1372,11 +1574,6 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      	      
 	      if (fill_response)
 		{
-		  h_pt1pt2_reco_from_pileup->Fill(maxi, mini, (isample > 5 ? 1 : 0), event_scale);
-		  h_pt1pt2_reco_from_pileup->Fill(mini, maxi, (isample > 5 ? 1 : 0), event_scale);
-
-		  h_pt1pt2_truth_from_pileup->Fill(e1, e2, (isample > 5 ? 1 : 0), event_scale);
-		  h_pt1pt2_truth_from_pileup->Fill(e2, e1, (isample > 5 ? 1 : 0), event_scale);
 
 		  h_flat_reco_to_response_pt1pt2_sample[iisample]->Fill(total_bin_reco_1, event_scale);
 		  h_flat_reco_to_response_pt1pt2_sample[iisample]->Fill(total_bin_reco_2, event_scale);
@@ -1396,6 +1593,9 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_1);
 		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_2);	      
 
+		  h_pt1pt2_reco_from_pileup->Fill(maxi, mini, (isample != iisample ? 1 : 0), event_scale);
+		  h_pt1pt2_reco_from_pileup->Fill(mini, maxi, (isample != iisample ? 1 : 0), event_scale);
+
 		  h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_1, event_scale);
 		  h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_2, event_scale);
 
@@ -1404,15 +1604,13 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 		  h_flat_reco_no_fakes_pt1pt2->Fill(total_bin_reco_1, event_scale);
 		  h_flat_reco_no_fakes_pt1pt2->Fill(total_bin_reco_2, event_scale);
-
 		  
+		  h_pt1pt2_truth_from_pileup->Fill(e1, e2, (isample != iisample ? 1 : 0), event_scale);
+		  h_pt1pt2_truth_from_pileup->Fill(e2, e1, (isample != iisample ? 1 : 0), event_scale);
+
 		  h_flat_truth_to_response_pt1pt2->Fill(total_bin_truth_1, event_scale);
 		  h_flat_truth_to_response_pt1pt2->Fill(total_bin_truth_2, event_scale);
 
-		  if (!reco_good)
-		    {
-		      std::cout << "BAD" << std::endl;
-		    }
 		  h_flat_response_pt1pt2->Fill(total_bin_reco_1, total_bin_truth_1, event_scale);
 		  h_flat_response_pt1pt2->Fill(total_bin_reco_2, total_bin_truth_2, event_scale);
 
@@ -1464,6 +1662,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 		  h_e1e2->Fill(e1, e2, event_scale);
 		  h_e1e2->Fill(e2, e1, event_scale);
 
+		  h_flat_truth_pt1pt2_scaled_new->Fill(total_bin_truth_1, event_scale_new);
+		  h_flat_truth_pt1pt2_scaled_new->Fill(total_bin_truth_2, event_scale_new);
 		  h_flat_truth_pt1pt2_raw->Fill(total_bin_truth_1, event_scale);
 		  h_flat_truth_pt1pt2_raw->Fill(total_bin_truth_2, event_scale);
 		  
@@ -1480,8 +1680,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 	      if (reco_good)
 		{
-		  h_eta_lead_sublead->Fill(myrecojets2.at(0).eta, myrecojets2.at(1).eta, event_scale);
-		  h_lead_pt_v_emfrac->Fill(myrecojets.at(0).pt, myrecojets.at(0).emcal, event_scale); 	  
+		  h_eta_lead_sublead->Fill(mysmearjets2.at(0).eta, mysmearjets2.at(1).eta, event_scale);
+		  h_lead_pt_v_emfrac->Fill(mysmearjets.at(0).pt, mysmearjets.at(0).emcal, event_scale); 	  
 		  h_mbd_vertex->Fill(mbd_vertex_z[isample], event_scale);
 		  h_njets->Fill(nnrecojets, event_scale);	      
 		}
@@ -1494,38 +1694,41 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      
 	      if (fill_response)
 		{
-		  h_pt1pt2_reco_from_pileup->Fill(maxi, mini, (isample > 5 ? 1 : 0), event_scale);
-		  h_pt1pt2_reco_from_pileup->Fill(mini, maxi, (isample > 5 ? 1 : 0), event_scale);
+		  if(useFakes)
+		    {
+		      rooResponse.Fake(total_bin_reco_1, event_scale_fake);
+		      rooResponse.Fake(total_bin_reco_2, event_scale_fake);
+		      h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_1, event_scale_fake);
+		      h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_2, event_scale_fake);
+		    }
 
-		  h_pt1pt2_truth_from_pileup->Fill(e1, e2, (isample > 5 ? 1 : 0), event_scale);
-		  h_pt1pt2_truth_from_pileup->Fill(e2, e1, (isample > 5 ? 1 : 0), event_scale);
+		  h_pt1pt2_reco_from_pileup->Fill(maxi, mini, (isample != iisample ? 1 : 0), event_scale_fake);
+		  h_pt1pt2_reco_from_pileup->Fill(mini, maxi, (isample != iisample ? 1 : 0), event_scale_fake);
+		  
+		  h_count_flat_reco_pt1pt2->Fill(total_bin_reco_1);
+		  h_count_flat_reco_pt1pt2->Fill(total_bin_reco_2);
+		  
+		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_1, event_scale_fake);
+		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_2, event_scale_fake);
+		  
+		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_1);
+		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_2);
+		  
+		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_1, event_scale_fake);
+		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_2, event_scale_fake);		 		
 
-		  h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_2, event_scale);
+		  h_pt1pt2_truth_from_pileup->Fill(e1, e2, (isample != iisample ? 1 : 0), event_scale);
+		  h_pt1pt2_truth_from_pileup->Fill(e2, e1, (isample != iisample ? 1 : 0), event_scale);
 
-		  rooResponse.Fake(total_bin_reco_1, event_scale);
-		  rooResponse.Fake(total_bin_reco_2, event_scale);
 
 		  rooResponse.Miss(total_bin_truth_1, event_scale);
 		  rooResponse.Miss(total_bin_truth_2, event_scale);
 		  
-		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_1);
-		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_2);
-
-		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_2, event_scale);
-
 		  h_flat_truth_to_response_pt1pt2_sample[iisample]->Fill(total_bin_truth_1, event_scale);
 		  h_flat_truth_to_response_pt1pt2_sample[iisample]->Fill(total_bin_truth_2, event_scale);
 
 		  h_count_flat_truth_pt1pt2_sample[iisample]->Fill(total_bin_truth_1);
 		  h_count_flat_truth_pt1pt2_sample[iisample]->Fill(total_bin_truth_2);
-
-		  h_count_flat_reco_pt1pt2->Fill(total_bin_reco_1);
-		  h_count_flat_reco_pt1pt2->Fill(total_bin_reco_2);
-
-		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_2, event_scale);
 
 		  h_flat_truth_to_response_pt1pt2->Fill(total_bin_truth_1, event_scale);
 		  h_flat_truth_to_response_pt1pt2->Fill(total_bin_truth_2, event_scale);
@@ -1556,19 +1759,19 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 		  h_e1e2->Fill(e1, e2, event_scale);
 		  h_e1e2->Fill(e2, e1, event_scale);
 
+		  h_flat_truth_pt1pt2_scaled_new->Fill(total_bin_truth_1, event_scale_new);
+		  h_flat_truth_pt1pt2_scaled_new->Fill(total_bin_truth_2, event_scale_new);
 		  h_flat_truth_pt1pt2_raw->Fill(total_bin_truth_1, event_scale);
 		  h_flat_truth_pt1pt2_raw->Fill(total_bin_truth_2, event_scale);
-
-		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_2, event_scale);
-
+		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_1, event_scale_fake);
+		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_2, event_scale_fake);		  
 		}
 	      if (reco_good)
 		{
-		  h_eta_lead_sublead->Fill(myrecojets2.at(0).eta, myrecojets2.at(1).eta, event_scale);
-		  h_lead_pt_v_emfrac->Fill(myrecojets.at(0).pt, myrecojets.at(0).emcal, event_scale); 
-		  h_mbd_vertex->Fill(mbd_vertex_z[isample], event_scale);
-		  h_njets->Fill(nnrecojets, event_scale);	      
+		  h_eta_lead_sublead->Fill(mysmearjets2.at(0).eta, mysmearjets2.at(1).eta, event_scale_fake);
+		  h_lead_pt_v_emfrac->Fill(mysmearjets.at(0).pt, mysmearjets.at(0).emcal, event_scale_fake); 
+		  h_mbd_vertex->Fill(mbd_vertex_z[isample], event_scale_fake);
+		  h_njets->Fill(nnrecojets, event_scale_fake);	      
 		}
 	      continue;
 	    }
@@ -1578,46 +1781,47 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	      
 	      if (fill_response)
 		{
-		  h_pt1pt2_reco_from_pileup->Fill(maxi, mini, (isample > 5 ? 1 : 0), event_scale);
-		  h_pt1pt2_reco_from_pileup->Fill(mini, maxi, (isample > 5 ? 1 : 0), event_scale);
+		  h_pt1pt2_reco_from_pileup->Fill(maxi, mini, (isample != iisample ? 1 : 0), event_scale_fake);
+		  h_pt1pt2_reco_from_pileup->Fill(mini, maxi, (isample != iisample ? 1 : 0), event_scale_fake);
 
-		  h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_2, event_scale);
-
-		  rooResponse.Fake(total_bin_reco_1, event_scale);
-		  rooResponse.Fake(total_bin_reco_2, event_scale);
-
+		  if (useFakes)
+		    {
+		      rooResponse.Fake(total_bin_reco_1, event_scale_fake);
+		      rooResponse.Fake(total_bin_reco_2, event_scale_fake);
+		      h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_1, event_scale_fake);
+		      h_flat_reco_to_response_pt1pt2->Fill(total_bin_reco_2, event_scale_fake);
+		    }
 		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_1);
 		  h_count_flat_reco_pt1pt2_sample[iisample]->Fill(total_bin_reco_2);	      
 
-		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_2, event_scale);
+		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_1, event_scale_fake);
+		  h_flat_reco_all_pt1pt2_sample[iisample]->Fill(total_bin_reco_2, event_scale_fake);
 
 		  h_count_flat_reco_pt1pt2->Fill(total_bin_reco_1);
 		  h_count_flat_reco_pt1pt2->Fill(total_bin_reco_2);	      
 
-		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_2, event_scale);
+		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_1, event_scale_fake);
+		  h_flat_reco_all_pt1pt2->Fill(total_bin_reco_2, event_scale_fake);
 
 		}
 	      if (fill_unfold)
 		{
 
-		  h_pt1pt2->Fill(es1, es2, event_scale);
-		  h_pt1pt2->Fill(es2, es1, event_scale);
+		  h_pt1pt2->Fill(es1, es2, event_scale_fake);
+		  h_pt1pt2->Fill(es2, es1, event_scale_fake);
 
-		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_1, event_scale);
-		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_2, event_scale);
+		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_1, event_scale_fake);
+		  h_flat_reco_pt1pt2_raw->Fill(total_bin_reco_2, event_scale_fake);
 
 		}
 
 
 	      if (reco_good)
 		{
-		  h_eta_lead_sublead->Fill(myrecojets2.at(0).eta, myrecojets2.at(1).eta, event_scale);
-		  h_lead_pt_v_emfrac->Fill(myrecojets.at(0).pt, myrecojets.at(0).emcal, event_scale); 
-		  h_mbd_vertex->Fill(mbd_vertex_z[isample], event_scale);
-		  h_njets->Fill(nnrecojets, event_scale);	      
+		  h_eta_lead_sublead->Fill(mysmearjets2.at(0).eta, mysmearjets2.at(1).eta, event_scale_fake);
+		  h_lead_pt_v_emfrac->Fill(mysmearjets2.at(0).pt, mysmearjets2.at(0).emcal, event_scale_fake); 
+		  h_mbd_vertex->Fill(mbd_vertex_z[isample], event_scale_fake);
+		  h_njets->Fill(nnrecojets, event_scale_fake);	      
 		}
 	      continue;
 	    } 
@@ -1626,7 +1830,37 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
     }
 
 
-  if (get_mapping)
+  
+  if (get_mapping == 2)
+    {
+      // now i need to add samples up and make sure that there are 100 dijets total in all samples
+
+      TH1D *h_reweight_denom = (TH1D*) h_flat_truth_pt1pt2_raw->Clone("h_reweight_denom");
+      TH1D *h_reweight_numer = (TH1D*) h_flat_truth_pt1pt2_scaled_new->Clone("h_reweight_numer");
+      h_reweight_denom->Scale(1./h_reweight_denom->Integral());
+      h_reweight_numer->Scale(1./h_reweight_numer->Integral());
+      TH1D *h_reweight_truth_pt1pt2 = (TH1D*) h_reweight_numer->Clone("h_reweight_truth_pt1pt2");
+      h_reweight_truth_pt1pt2->Divide(h_reweight_denom);
+      
+      TString mappingpath = "response_matrices/response_matrix_" + system_string + "_r0" + std::to_string(cone_size);
+      
+      mappingpath += "_REWEIGHT";
+    
+      mappingpath += "_" + sys_name;
+      
+      mappingpath += ".root";
+
+      TFile *fr = new TFile(mappingpath.Data(),"recreate");
+
+      h_reweight_truth_pt1pt2->Write();
+      h_flat_truth_pt1pt2_raw->Write();
+      h_flat_truth_pt1pt2_scaled_new->Write();
+      fr->Close();
+
+      return 0;
+      
+    }
+  if (get_mapping == 1)
     {
       // go through and make a mapping of where in my samples we fill to make a response matrix
       // we need a histogram of truth and reco that are trimmed
@@ -1653,7 +1887,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       TH2D *h_flat_response_mapping[nsamples];
 
 
-      for (int i = 0; i < 6;i++)
+      for (int i = 0; i < nsamples;i++)
 	{
 	  double count_response_full = 0;
 	  double count_response_keep = 0;
@@ -1677,7 +1911,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 		  
 		  float content = h_count_flat_response_pt1pt2_sample[i]->GetBinContent(ibr+1, ibt+1);
 		  count_response_full += content;
-		  if (content < 6)
+		  if (content < 5 && do_trimming)
 		    {
 		      h_count_flat_reco_pt1pt2_sample[i]->SetBinContent(ibr+1, h_count_flat_reco_pt1pt2_sample[i]->GetBinContent(ibr+1) - content);
 		      h_count_flat_truth_pt1pt2_sample[i]->SetBinContent(ibt+1, h_count_flat_truth_pt1pt2_sample[i]->GetBinContent(ibt+1) - content);
@@ -1724,9 +1958,12 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	  float content_reco = h_flat_reco_count_all_samples->GetBinContent(ib+1);
 	  //float purity = he_dijet_fake_binned->GetEfficiency(ib+1);
 
-	  bool use_truth = (content_truth < minentries);
+	  bool use_truth = false;//(content_truth < minentries);
 	  bool use_reco = false;//(content_reco < minentries);		
-
+	  if (do_trimming)
+	    {
+	      use_truth = (content_truth < minentries);
+	    }
 	  float ut = 0;
 	  float ur = 0;
 	  float bt = 0;
@@ -1772,10 +2009,14 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
       tn_mapping->Write();
       h_flat_truth_mapping_all_samples->Write();
       h_flat_reco_mapping_all_samples->Write();
-      
-      for (int i = 0; i < 6; i++)
+      h_count_flat_truth_pt1pt2->Write();
+      h_count_flat_reco_pt1pt2->Write();
+
+      for (int i = 0; i < nsamples; i++)
 	{
 	  h_flat_response_mapping[i]->Write();
+	  h_count_flat_truth_pt1pt2_sample[i]->Write();
+	  h_count_flat_reco_pt1pt2_sample[i]->Write();
 	}
       fr->Write();
       fr->Close();
@@ -1786,7 +2027,17 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
   h_flat_reco_pt1pt2_raw->Scale(.5);
   h_flat_truth_pt1pt2_raw->Scale(.5);
+
+  TH1D *h_dijet_fake_rate = (TH1D*) h_flat_reco_to_response_pt1pt2->Clone();
+  h_dijet_fake_rate->SetName("h_dijet_fake_rate");
+  h_dijet_fake_rate->Divide(h_flat_reco_all_pt1pt2);
   
+  TH1D *h_flat_reco_pt1pt2_corr = (TH1D*) h_flat_reco_pt1pt2_raw->Clone("h_flat_reco_pt1pt2_corr");
+  if (!useFakes)
+    {
+      h_flat_reco_pt1pt2_corr->Multiply(h_dijet_fake_rate);
+    }
+
   TH1D *h_flat_truth_pt1pt2 = (TH1D*) h_flat_reco_pt1pt2->Clone();
   h_flat_truth_pt1pt2->Reset();
   h_flat_truth_pt1pt2->SetName("h_truth_flat_pt1pt2");
@@ -1818,13 +2069,28 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 
 
   h_flat_truth_fold_pt1pt2 = (TH1D*) rooResponse.ApplyToTruth(h_flat_truth_pt1pt2_raw, "hTruth_Folded");
-
   h_flat_truth_fold_pt1pt2->SetName("h_flat_truth_fold_pt1pt2");
-
+  if (useFakes)
+    {
+      h_flat_truth_fold_pt1pt2->Add(rooResponse.Hfakes());
+    }
+  else
+    {
+      // for (int ib = 0; ib < nbins_pt; ib++)
+      // 	{
+      // 	  for (int ib2 = 0; ib2 < nbins_pt; ib2++)
+      // 	    {
+      // 	      int ibbf = 1 + ib*nbins_pt + ib2;
+      // 	      int ibb = he_dijet_fake_binned->GetGlobalBin(ib+1, ib2+1);
+      // 	      double value = he_dijet_fake_binned->GetEfficiency(ibb);
+      // 	      h_flat_truth_fold_pt1pt2->SetBinContent(ibbf, h_flat_truth_fold_pt1pt2->GetBinContent(ibbf)/value);
+      // 	    }
+      // 	}
+    }
   for (int iter = 0; iter < niterations; iter++ )
     {
       
-      RooUnfoldBayes   unfold (&rooResponse, h_flat_reco_pt1pt2_raw, iter + 1, false, true);    // OR
+      RooUnfoldBayes   unfold (&rooResponse, h_flat_reco_pt1pt2_corr, iter + 1, false, useFakes);    // OR
 
       h_flat_unfold_skim[iter] = (TH1D*) unfold.Hunfold();
       std::cout <<" Nbins skim reco = "<<h_flat_unfold_skim[iter]->GetNbinsX()<<std::endl;
@@ -1842,8 +2108,26 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
 	}
 
       h_flat_refold_pt1pt2[iter] = (TH1D*) rooResponse.ApplyToTruth(h_flat_unfold_skim[iter], "hRefolded");
-
+      h_flat_refold_pt1pt2[iter]->SetName(Form("h_flat_refold_pt1pt2_iter%d", iter));
+      if (useFakes)
+	{
+	  h_flat_refold_pt1pt2[iter]->Add(rooResponse.Hfakes());
+	}
+      else
+	{
+	  // for (int ib = 0; ib < nbins_pt; ib++)
+	  //   {
+	  //     for (int ib2 = 0; ib2 < nbins_pt; ib2++)
+	  // 	{
+	  // 	  int ibbf = 1 + ib*nbins_pt + ib2;
+	  // 	  int ibb = he_dijet_fake_binned->GetGlobalBin(ib+1, ib2+1);
+	  // 	  double value = he_dijet_fake_binned->GetEfficiency(ibb);
+	  // 	  h_flat_refold_pt1pt2[iter]->SetBinContent(ibbf, h_flat_refold_pt1pt2[iter]->GetBinContent(ibbf)/value);
+	  // 	}
+	  //   }
+	}
     }
+  
   TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";p_{T1};p_{T2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
   TH2D *h_pt1pt2_truth_fold = new TH2D("h_pt1pt2_truth_fold", ";p_{T1};p_{T2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
   TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";p_{T1};p_{T2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
@@ -1998,6 +2282,8 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   dlutility::SetMarkerAtt(h_truth_lead_sample[4], kViolet, 1, 20);
   dlutility::SetLineAtt(h_truth_lead_sample[5], kPink, 1, 1);
   dlutility::SetMarkerAtt(h_truth_lead_sample[5], kPink, 1, 20);
+  dlutility::SetLineAtt(h_truth_lead_sample[6], kGreen+1, 1, 1);
+  dlutility::SetMarkerAtt(h_truth_lead_sample[6], kGreen+1, 1, 20);
 
   h_truth_lead->SetTitle(";Leading Jet p_{T} [GeV];counts * lumiscale");
   h_truth_lead->SetMinimum(1);
@@ -2008,6 +2294,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   h_truth_lead_sample[3]->Draw("same p");
   h_truth_lead_sample[4]->Draw("same p");
   h_truth_lead_sample[5]->Draw("same p");
+  h_truth_lead_sample[6]->Draw("same p");
   h_truth_lead->Draw("p same");
 
 
@@ -2028,12 +2315,13 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   TLegend *leg3 = new TLegend(0.01, 0.16, 0.7, 0.63);
   leg3->SetLineWidth(0);
   leg3->AddEntry(h_truth_lead, "Combined Sample");
-  leg3->AddEntry(h_truth_lead_sample[0], "12 GeV Sample");
-  leg3->AddEntry(h_truth_lead_sample[1], "20 GeV Sample");
-  leg3->AddEntry(h_truth_lead_sample[2], "30 GeV Sample");
-  leg3->AddEntry(h_truth_lead_sample[3], "40 GeV Sample");
-  leg3->AddEntry(h_truth_lead_sample[4], "50 GeV Sample");
-  leg3->AddEntry(h_truth_lead_sample[5], "60 GeV Sample");
+  leg3->AddEntry(h_truth_lead_sample[0], "8 GeV Sample");
+  leg3->AddEntry(h_truth_lead_sample[1], "12 GeV Sample");
+  leg3->AddEntry(h_truth_lead_sample[2], "20 GeV Sample");
+  leg3->AddEntry(h_truth_lead_sample[3], "30 GeV Sample");
+  leg3->AddEntry(h_truth_lead_sample[4], "40 GeV Sample");
+  leg3->AddEntry(h_truth_lead_sample[5], "50 GeV Sample");
+  leg3->AddEntry(h_truth_lead_sample[6], "60 GeV Sample");
   leg3->SetTextSize(0.08);
   leg3->Draw("same");
 
@@ -2052,9 +2340,17 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   responsepath += ".root";
   TFile *fr = new TFile(responsepath.Data(),"recreate");
   rooResponse.Write();
+  h_dijet_fake_rate->Write();
   h_count_flat_truth_pt1pt2->Write();
   h_count_flat_reco_pt1pt2->Write();
-
+  if (h2_flatreweight_pt1pt2)
+    {
+      h2_flatreweight_pt1pt2->Write();
+    }
+  if (h2_flatreweight_pt1pt2)
+    {
+      h2_flatreweight_pt1pt2->Write();
+    }
   for (int i = 0; i < 6; i++)
     {
       h_count_flat_truth_pt1pt2_sample[i]->Write();
@@ -2075,6 +2371,7 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   h_eta_phi_lead->Write();
   h_flat_reco_pt1pt2_raw->Write();
   h_flat_reco_pt1pt2->Write();
+  h_flat_reco_to_response_pt1pt2->Write();
   h_flat_reco_all_pt1pt2->Write();
   h_flat_reco_no_fakes_pt1pt2->Write();
   h_flat_truth_pt1pt2_raw->Write();
@@ -2121,6 +2418,17 @@ int createResponse_noempty_pp(const std::string configfile = "binning.config", c
   h_truth_sublead->Write();
   h_reco_lead->Write();
   h_reco_sublead->Write();
+
+  h_truth_lead_pt_phi->Write();
+  h_truth_sublead_pt_phi->Write();
+  h_reco_lead_pt_phi->Write();
+  h_reco_sublead_pt_phi->Write();
+
+  h_truth_lead_pt_eta->Write();
+  h_truth_sublead_pt_eta->Write();
+  h_reco_lead_pt_eta->Write();
+  h_reco_sublead_pt_eta->Write();
+
   h_xj_reco->Write();
 	      
   fr->Close();
@@ -2143,6 +2451,7 @@ int main(int argc, char *argv[])
   int input_generator = 0;
   int unfold_generator = 0;
   int get_mapping = 0;
+  int do_trimming = 1;
   for (int i = 1; i < argc; ++i)
     {
       std::string arg = argv[i];
@@ -2196,6 +2505,10 @@ int main(int argc, char *argv[])
 	{
 	  get_mapping = std::stoi(argv[++i]);  // Convert next argument to double
 	}
+      else if (arg == "-t" && i+1 < argc)
+	{
+	  do_trimming = std::stoi(argv[++i]);  // Convert next argument to double
+	}
       else
 	{
 	  std::cerr << "Unknown or incomplete argument: " << arg << "\n";
@@ -2206,10 +2519,10 @@ int main(int argc, char *argv[])
     {
       std::cout << "Not enough settings: " << std::endl;
       std::cout << "[usage] : " << std::endl;
-      std::cout << "    ./createResponse_noempty_pp -c binning.config -r 4 -n 10 -p 1 -h 0 -f 0 -e 0 -ig 0 -ug 0" << std::endl;
+      std::cout << "    ./createResponse_noempty_pp -c binning.config -r 4 -n 10 -p 1 -h 0 -f 0 -e 0 -t 1 -ig 0 -ug 0" << std::endl;
       return 1;
     }
   
-  return createResponse_noempty_pp(config, full_or_half, niterations, cone_size, primer, useFakes, useEfficiencies, input_generator, unfold_generator, get_mapping);
+  return createResponse_noempty_pp(config, full_or_half, niterations, cone_size, primer, useFakes, useEfficiencies, input_generator, unfold_generator, get_mapping, do_trimming);
   
 }

@@ -93,6 +93,7 @@ void drawRadialScan_pp()
   TH2D *h_average_xj[7][niterations];
   for (int ic = 1; ic < 7; ic++)
     {
+      std::cout << "ic: " << ic << std::endl;
       int cone_size = ic+2;
 
       finalsys[ic] = new TFile(Form("%s/uncertainties/systematics_pp_r0%d.root",   rb.get_code_location().c_str(), cone_size),"r");
@@ -100,11 +101,6 @@ void drawRadialScan_pp()
       if (!finalsys[ic])
 	{
 	  std::cout << "no file " << ic+2 << std::endl;
-	}
-      for (int iter = 0; iter < niterations; iter++)
-	{
-	  h_average_xj[ic][iter] = (TH2D*) finalsys[ic]->Get(Form("h_average_xj_%d", iter));
-	  h_average_xj[ic][iter]->SetName(Form("h_average_xj_r%02d_%d", cone_size, iter));
 	}
     }
   
@@ -122,7 +118,7 @@ void drawRadialScan_pp()
   for (int ic = 1; ic < 7; ic++)
     {
       int cone_size = ic+2;
-
+      std::cout << "ic: " << ic << std::endl;
       finalout[ic] = new TFile(Form("%s/final_plots/final_plots_pp_r0%d.root",   rb.get_code_location().c_str(), cone_size),"r");
 
       if (!finalout[ic])
@@ -133,6 +129,11 @@ void drawRadialScan_pp()
       h_average_xj_truth[ic]->SetName(Form("h_average_xj_truth_r%02d", cone_size));
       h_average_xj_herwig[ic] = (TH1D*) finalout[ic]->Get("h_average_xj_herwig");
       h_average_xj_herwig[ic]->SetName(Form("h_average_xj_herwig_r%02d", cone_size));
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_average_xj[ic][iter] = (TH2D*) finalout[ic]->Get(Form("h_average_xj_%d", iter));
+	  h_average_xj[ic][iter]->SetName(Form("h_average_xj_r%02d_%d", cone_size, iter));
+	}
       
       for (int irange = 0; irange < mbins; irange++)
 	{
@@ -307,15 +308,16 @@ void drawRadialScan_pp()
       
       for (int j = 0; j < 6; j++)
 	{
+	  double v = h_average_xj[j+1][niter]->GetBinContent(1+i, 1);
 	  g_average_xj_truth[i]->SetPoint(j, 0.3 + 0.1*j, h_average_xj_truth[j+1]->GetBinContent(i+1));
 	  g_average_xj_herwig[i]->SetPoint(j, 0.3 + 0.1*j, h_average_xj_herwig[j+1]->GetBinContent(i+1));
 	  g_average_xj[i]->SetPoint(j, 0.3 + 0.1*(j), h_average_xj[j+1][niter]->GetBinContent(1+i, 1));
-	  g_average_xj[i]->SetPointError(j, 0.05, 0.05, h_average_xj[j+1][niter]->GetBinContent(1+i, 3), h_average_xj[j+1][niter]->GetBinContent(1+i, 2));	  
+	  g_average_xj[i]->SetPointError(j, 0.05, 0.05, v*h_average_xj[j+1][niter]->GetBinContent(1+i, 3), v*h_average_xj[j+1][niter]->GetBinContent(1+i, 2));	  
 
 	  g_scale_average_xj_truth[i]->SetPoint(j, 0.3 + 0.1*j, h_average_xj_truth[j+1]->GetBinContent(i+1)*scale);
 	  g_scale_average_xj_herwig[i]->SetPoint(j, 0.3 + 0.1*j, h_average_xj_herwig[j+1]->GetBinContent(i+1)*scale);
 	  g_scale_average_xj[i]->SetPoint(j, 0.3 + 0.1*(j), h_average_xj[j+1][niter]->GetBinContent(1+i, 1)*scale);
-	  g_scale_average_xj[i]->SetPointError(j, 0.05, 0.05, h_average_xj[j+1][niter]->GetBinContent(1+i, 3)*scale, h_average_xj[j+1][niter]->GetBinContent(1+i, 2)*scale);	  
+	  g_scale_average_xj[i]->SetPointError(j, 0.05, 0.05, v*h_average_xj[j+1][niter]->GetBinContent(1+i, 3)*scale, v*h_average_xj[j+1][niter]->GetBinContent(1+i, 2)*scale);	  
 
 	}
     }

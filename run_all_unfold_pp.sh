@@ -15,13 +15,13 @@ interaction () {
 
 
 if [[ $final -eq 0 ]]; then
-    ./createResponse_noempty_pp -r ${conesize} -c "binning.config" -n 10 -p 1 -h 0 -f ${fakes} -e 0 -v 2 -m 1
+    ./createResponse_noempty_pp -r ${conesize} -c "binning.config" -n 10 -p 1 -h 0 -f ${fakes} -e 0 -v 2 -m 1 -t 0
 
     ./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 1 -h 0 -f ${fakes} -e 0
 
     interaction $interactive
 
-    ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 1 
+    ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 1 -f ${fakes}
 
     interaction $interactive
 
@@ -37,10 +37,10 @@ if [[ $final -eq 0 ]]; then
 
     interaction $interactive
 
-    ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 2
+    ./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 2 -f ${fakes}
 
     interaction $interactive
-
+    #./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 0 -f ${fakes} -e 0 -m 2
     ./unfoldDataUncertainties_noempty_pp -c binning.config -r ${conesize} -n 10 -p 2
 
     interaction $interactive
@@ -56,11 +56,12 @@ fi
 
 echo "NOMINAL"
 ./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 0 -f ${fakes} -e 0
-#./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 1 -f ${fakes} -e 0
+
+./createResponse_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -h 1 -f ${fakes} -e 0
 
 interaction $interactive
 
-./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0
+./unfoldData_noempty_pp -c binning.config -r ${conesize} -n 10 -p 0 -f ${fakes}
 
 interaction $interactive
 
@@ -90,7 +91,8 @@ if [[ $final -eq 0 ]]; then
 	bash run_all_sys_pp.sh ${conesize} binning_vertical.config ${fakes} ${final}
 	bash run_all_sys_pp.sh ${conesize} binning_0.config ${fakes} ${final}
 	bash run_all_sys_pp.sh ${conesize} binning_1.5.config ${fakes} ${final}
-	root -l -b -q "drawSysJESJER.C(${conesize})"
+
+	root -l -b -q "drawSys.C(${conesize})"
 	root -l -b -q "drawFinalUnfold.C(${conesize})"
     fi
 fi

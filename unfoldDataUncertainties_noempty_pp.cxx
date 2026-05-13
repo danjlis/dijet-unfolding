@@ -23,7 +23,7 @@ using std::endl;
 
 static int verbosity = 0;
 
-int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.config", const int niterations = 20, const int cone_size = 4, const int primer = 0)
+int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.config", const int niterations = 20, const int cone_size = 4, const int primer = 0, const int useFakes = 0)
 {
 
   
@@ -95,7 +95,7 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
 
   const int nbins = read_nbins;
   const int nbins_pt = read_nbins + 1;
-
+  int nbins_pt_2 = nbins_pt*nbins_pt;
   Double_t ipt_bins[nbins_pt+1];
   Double_t ixj_bins[nbins+1];
 
@@ -167,36 +167,6 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
 
   
-  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_5_ana533_2025p007_v001_gl10-all.root";
-  
-  ULong64_t gl1_scaled;
-  float mbd_vertex_z;
-  
-  std::vector<float> *reco_jet_pt = 0;
-  std::vector<float> *reco_jet_emcal = 0;
-  std::vector<float> *reco_jet_e = 0;
-  std::vector<float> *reco_jet_eta = 0;
-  std::vector<float> *reco_jet_eta_det = 0;
-  std::vector<float> *reco_jet_phi = 0;
-
-  TFile *fin = new TFile(data_file.c_str(), "r");
-  TTree *ttree  = (TTree*) fin->Get("ttree");;
-
-  if (!ttree)
-    {
-      std::cout << " no data "<< std::endl;
-    }
-
-  ttree->SetBranchAddress(Form("jet_pt_calib_%d", cone_size), &reco_jet_pt);
-  ttree->SetBranchAddress(Form("jet_emcal_%d", cone_size), &reco_jet_emcal);
-  ttree->SetBranchAddress(Form("jet_e_%d", cone_size), &reco_jet_e);
-  ttree->SetBranchAddress(Form("jet_eta_%d", cone_size), &reco_jet_eta);
-  ttree->SetBranchAddress(Form("jet_eta_det_%d", cone_size), &reco_jet_eta_det);
-  ttree->SetBranchAddress(Form("jet_phi_%d", cone_size), &reco_jet_phi);
-  ttree->SetBranchAddress("mbd_vertex_z", &mbd_vertex_z);
-  ttree->SetBranchAddress("gl1_scaled", &gl1_scaled);
-
-
   TH1D *h_flat_truth_mapping_primer = nullptr;
   TH1D *h_flat_reco_mapping_primer = nullptr;
   TH2D *h_flat_response_mapping_primer[5] = {0};
@@ -215,7 +185,12 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
   mappingppath += ".root";
 
   TFile *fr = new TFile(mappingppath.Data(),"r");
-
+  if (!fr)
+    {
+      std::cout << " no file : " << mappingppath << std::endl;
+      return 1;;
+    }
+   
   TNtuple *tn_map = (TNtuple*) fr->Get("tn_mapping");
 
   float ptbin;
@@ -305,6 +280,12 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
       return 1;
     }
 
+  TEfficiency *he_dijet_fake_binned = (TEfficiency*) fresponse->Get("he_dijet_fake_binned");
+  if (!he_dijet_fake_binned)
+    {
+      std::cout << " no purity" << std::endl;
+      return 0;
+    }
 
 
   TString unfoldpath = rb.get_code_location() + "/unfolding_hists/unfolding_hists_" + system_string + "_r0" + std::to_string(cone_size);
@@ -320,6 +301,27 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
       std::cout << " no h_flat_data_pt1pt2 " << std::endl;
       
     }
+  TH1D *h_flat_data_pt1pt2_corr = (TH1D*) funin->Get("h_data_flat_pt1pt2_corr");
+  if (!h_flat_data_pt1pt2_corr)
+    {
+      std::cout << " no h_flat_data_pt1pt2 " << std::endl;
+      
+    }
+
+  // TH1D *h_flat_data_pt1pt2_corr = (TH1D*) h_flat_data_pt1pt2->Clone("h_flat_data_pt1pt2_corr");
+  // if (!useFakes)
+  //   {
+  //     for (int ib = 0; ib < nbins_pt; ib++)
+  // 	{
+  // 	  for (int ib2 = 0; ib2 < nbins_pt; ib2++)
+  // 	    {
+  // 	      int ibbf = 1 + ib*nbins_pt + ib2;
+  // 	      int ibb = he_dijet_fake_binned->GetGlobalBin(ib+1, ib2+1);
+  // 	      double value = he_dijet_fake_binned->GetEfficiency(ibb);
+  // 	      h_flat_data_pt1pt2_corr->SetBinContent(ibbf, h_flat_data_pt1pt2->GetBinContent(ibbf)*value);
+  // 	    }
+  // 	}
+  //   }
 
   TH1D *h_flat_unfold_pt1pt2[niterations];
   
@@ -373,12 +375,14 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
 	}
     }
 
-  
+  TH1D *h_flat_truth_pt1pt2_old = (TH1D*) h_flat_response_pt1pt2->ProjectionY("h_flat_truth_pt1pt2_old");      
+
   for (int itoy = 0; itoy < ntoys; ++itoy)
     {
       std::cout << "Toy: " << itoy << std::endl;
 
       TH2D *h_flat_response_clone = (TH2D*) h_flat_response_pt1pt2->Clone();
+
       for (int ibin = 0; ibin < h_flat_response_clone->GetXaxis()->GetNbins(); ++ibin)
 	{
 	  for (int jbin = 0; jbin < h_flat_response_clone->GetYaxis()->GetNbins(); ++jbin)
@@ -391,17 +395,32 @@ int unfoldDataUncertainties_noempty_pp(const std::string configfile = "binning.c
 	      h_flat_response_clone->SetBinContent(ijbin, newvalue);
 	    }
 	}
+      TH1D *h_flat_truth_pt1pt2_new = (TH1D*) h_flat_response_clone->ProjectionY("h_flat_truth_pt1pt2_new");      
+      TH1D *h_flat_truth_pt1pt2_corr = (TH1D*) h_flat_truth_pt1pt2_raw->Clone("h_flat_truth_pt1pt2_corr");
+      h_flat_truth_pt1pt2_new->Divide(h_flat_truth_pt1pt2_old);
+      h_flat_truth_pt1pt2_corr->Multiply(h_flat_truth_pt1pt2_new);
       
-      RooUnfoldResponse rooResponse(h_flat_reco_pt1pt2, h_flat_truth_pt1pt2_raw, h_flat_response_clone);
+      RooUnfoldResponse rooResponse(h_flat_reco_pt1pt2, h_flat_truth_pt1pt2_corr, h_flat_response_clone);
+
       for (int iter = 0; iter < niterations; iter++ )
 	{
-	  RooUnfoldBayes   unfold (&rooResponse, h_flat_data_pt1pt2, iter + 1, false, true);    // OR
+	  RooUnfoldBayes   unfold (&rooResponse, h_flat_data_pt1pt2, iter + 1, false, useFakes);    // OR
 	  TH1D *h_flat_unfold_skim = (TH1D*) unfold.Hunfold();
 	  h_flat_unfold_pt1pt2[iter] = (TH1D*) h_flat_truth_pt1pt2->Clone();
 	  h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_pt1pt2_%d", iter));
 	  h_flat_unfold_pt1pt2[iter]->Reset();
 	  
-	  histo_opps::fill_up_histo(h_flat_unfold_skim, h_flat_unfold_pt1pt2[iter], h_flat_truth_mapping_primer);
+	  //	  histo_opps::fill_up_histo(h_flat_unfold_skim, h_flat_unfold_pt1pt2[iter], h_flat_truth_mapping_primer);
+
+	  for (int ib = 0; ib < nbins_pt_2; ib++)
+	    {
+	      int bin = mapped_pt_bin_truth[ib];
+	      if (bin >= 0)
+		{
+		  h_flat_unfold_pt1pt2[iter]->SetBinContent(ib+1, h_flat_unfold_skim->GetBinContent(bin+1));
+		  h_flat_unfold_pt1pt2[iter]->SetBinError(ib+1, h_flat_unfold_skim->GetBinError(bin+1));
+		}	  
+	    }      
 
 
 	}
@@ -501,6 +520,7 @@ int main(int argc, char *argv[])
   int niterations = 10;
   int cone_size = 4;
   int primer = 0;
+  int useFakes = 0;
   int set=0;
   for (int i = 1; i < argc; ++i)
     {
@@ -526,6 +546,10 @@ int main(int argc, char *argv[])
 	  set++;
 	  primer = std::stoi(argv[++i]);  // Convert next argument to double
 	}
+      else if (arg == "-f" && i + 1 < argc)
+	{
+	  useFakes = std::stoi(argv[++i]);  // Convert next argument to double
+	}
       else if (arg == "-v" && i+1 < argc)
 	{
 	  verbosity = std::stoi(argv[++i]);  // Convert next argument to double
@@ -540,10 +564,10 @@ int main(int argc, char *argv[])
     {
       std::cout << "Not enough settings: " << std::endl;
       std::cout << "[usage] : " << std::endl;
-      std::cout << "    ./unfoldDataUncertainties_noempty_pp -c binning.config -r 4 -n 10 -p 1 " << std::endl;
+      std::cout << "    ./unfoldDataUncertainties_noempty_pp -c binning.config -r 4 -n 10 -p 1 -f 0" << std::endl;
       return 1;
     }
   
-  return unfoldDataUncertainties_noempty_pp(config, niterations, cone_size, primer);
+  return unfoldDataUncertainties_noempty_pp(config, niterations, cone_size, primer, useFakes);
   
 }

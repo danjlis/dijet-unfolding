@@ -9,22 +9,24 @@ final=$4
 
 #root -l -q -b "unfoldDataUncertainties_noempty.cxx(\"binning.config\"${conesize})"
 if [[ $final -eq 0 ]]; then
-    ./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 1 -h 0 -f ${usefakes} -e 0 -m 1
+    ./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 1 -h 0 -f ${usefakes} -e 0 -m 1 -t 0
 
     ./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 1 -h 0 -f ${usefakes} -e 0
     
-    ./unfoldData_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 1
+    ./unfoldData_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 1 -f ${usefakes}
     
     root -l -q -b "getVtxReweighting.C(${conesize}, \"${sysconfig}\")"
     
     ./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 2 -h 0 -f ${usefakes} -e 0
     ./unfoldData_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 2
-
+    #./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0 -h 0 -f ${fakes} -e 0 -m 2
     ./unfoldDataUncertainties_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 2
     root -l -b -q "makeIterationPlot_pp.C(4, 2, \"${sysconfig}\")"
 fi
-./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0 -h 0 -f ${usefakes} -e 0
-./unfoldData_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0
 
-./unfoldDataUncertainties_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0
-root -l -b -q "makeIterationPlot_pp.C(4, 0, \"${sysconfig}\")"
+./createResponse_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0 -h 0 -f ${usefakes} -e 0
+
+./unfoldData_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0 -f ${usefakes}
+
+#./unfoldDataUncertainties_noempty_pp -c ${sysconfig} -r ${conesize} -n 10 -p 0
+#root -l -b -q "makeIterationPlot_pp.C(4, 0, \"${sysconfig}\")"

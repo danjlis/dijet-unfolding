@@ -22,6 +22,189 @@ float dijetfinder::getDR(struct jet j1, struct jet j2)
   return dR;
 }
 
+std::vector<std::pair<struct jet, struct jet>> dijetfinder::match_dijets_smear(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets)
+{
+  std::vector<std::pair<struct jet, struct jet>> matched_dijets = {};
+  for (auto tjet : mytruthjets)
+    {
+      auto truth_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == tjet.id;});
+      float truth_closest_jet = 1.0;
+      bool already_matched = false;
+
+      if (truth_iter != matched_dijets.end())
+	{
+	  already_matched = true;
+	  truth_closest_jet = truth_iter->first.dR;
+	}
+
+      
+      for (auto jet : myrecojets)
+	{
+	  auto reco_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == jet.id;});
+	  float reco_closest_jet = 1.0;
+	  bool reco_already_matched = false;
+
+	  if (reco_iter != matched_dijets.end())
+	    {
+	      reco_already_matched = true;
+	      reco_closest_jet = truth_iter->first.dR;
+	    }
+	  
+	  float dR = fabs(getDR(jet, tjet));
+	  //float dphi = fabs(getDPHI(jet.phi, tjet.phi));
+	  if (dR < m_wide_dR_cut && (reco_closest_jet > dR || truth_closest_jet > dR))
+	    {
+	      if (already_matched)
+		{
+		  auto truth_iter2 = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == tjet.id;});
+		  matched_dijets.erase(truth_iter2);
+		}
+	      if (reco_already_matched)
+		{
+		  auto reco_iter2 = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == jet.id;});
+		  matched_dijets.erase(reco_iter2);
+		}
+
+	      tjet.matched = 1;
+	      tjet.dR = dR;
+	      jet.matched = 1;
+	      jet.dR = dR;
+	      already_matched = true;
+	      truth_closest_jet = dR;
+	      matched_dijets.push_back(std::make_pair(tjet, jet));	
+	      break;
+	    }	  
+	}
+    }
+
+  // collect the rest
+  for (auto tjet : mytruthjets)
+    {
+      auto truth_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto b) { return b.first.id == tjet.id;});
+
+      if (truth_iter != matched_dijets.end())
+	{
+	  continue;
+	}
+
+      
+      for (auto jet : myrecojets)
+	{
+	  auto reco_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto b) { return b.second.id == jet.id;});
+
+	  if (reco_iter != matched_dijets.end())
+	    {
+	      continue;
+	    }
+	  
+	  float dR = fabs(getDR(jet, tjet));
+	  //float dphi = fabs(getDPHI(jet.phi, tjet.phi));
+	  if (dR < m_wide_dR_cut)
+	    {
+	      tjet.matched = 1;
+	      tjet.dR = dR;
+	      jet.matched = 1;
+	      jet.dR = dR;
+	      matched_dijets.push_back(std::make_pair(tjet, jet));	
+	      break;
+	    }	  
+	}
+    }
+
+  return matched_dijets;
+}
+std::vector<std::pair<struct jet, struct jet>> dijetfinder::match_dijets_response(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets)
+{
+  std::vector<std::pair<struct jet, struct jet>> matched_dijets = {};
+  for (auto tjet : mytruthjets)
+    {
+      auto truth_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == tjet.id;});
+      float truth_closest_jet = 1.0;
+      bool already_matched = false;
+
+      if (truth_iter != matched_dijets.end())
+	{
+	  already_matched = true;
+	  truth_closest_jet = truth_iter->first.dR;
+	}
+
+      
+      for (auto jet : myrecojets)
+	{
+	  auto reco_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == jet.id;});
+	  float reco_closest_jet = 1.0;
+	  bool reco_already_matched = false;
+
+	  if (reco_iter != matched_dijets.end())
+	    {
+	      reco_already_matched = true;
+	      reco_closest_jet = truth_iter->first.dR;
+	    }
+	  
+	  float dR = fabs(getDR(jet, tjet));
+	  float dphi = fabs(getDPHI(jet.phi, tjet.phi));
+	  if (dR < m_dR_cut && (reco_closest_jet > dR || truth_closest_jet > dR))
+	    {
+	      if (already_matched)
+		{
+		  auto truth_iter2 = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.first.id == tjet.id;});
+		  matched_dijets.erase(truth_iter2);
+		}
+	      if (reco_already_matched)
+		{
+		  auto reco_iter2 = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto a) { return a.second.id == jet.id;});
+		  matched_dijets.erase(reco_iter2);
+		}
+
+	      tjet.matched = 1;
+	      tjet.dR = dR;
+	      jet.matched = 1;
+	      jet.dR = dR;
+	      already_matched = true;
+	      truth_closest_jet = dR;
+	      matched_dijets.push_back(std::make_pair(tjet, jet));	
+	      break;
+	    }	  
+	}
+    }
+
+  // collect the rest
+  for (auto tjet : mytruthjets)
+    {
+      auto truth_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto b) { return b.first.id == tjet.id;});
+
+      if (truth_iter != matched_dijets.end())
+	{
+	  continue;
+	}
+
+      
+      for (auto jet : myrecojets)
+	{
+	  auto reco_iter = std::find_if(matched_dijets.begin(), matched_dijets.end(), [=] (auto b) { return b.second.id == jet.id;});
+
+	  if (reco_iter != matched_dijets.end())
+	    {
+	      continue;
+	    }
+	  
+	  float dR = fabs(getDR(jet, tjet));
+	  float dphi = fabs(getDPHI(jet.phi, tjet.phi));
+	  if (dR < m_dR_cut)
+	    {
+	      tjet.matched = 1;
+	      tjet.dR = dR;
+	      jet.matched = 1;
+	      jet.dR = dR;
+	      matched_dijets.push_back(std::make_pair(tjet, jet));	
+	      break;
+	    }	  
+	}
+    }
+
+  return matched_dijets;
+}
+
 std::vector<std::pair<struct jet, struct jet>>  dijetfinder::match_dijets(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets)
 {
   std::vector<std::pair<struct jet, struct jet>> matched_dijets = {};

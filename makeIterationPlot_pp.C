@@ -258,14 +258,14 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
 	      prev_cont = h_flat_unfold_pt1pt2[iter - 1]->GetBinContent(ibin+1);
 	    }
 	  
-	  float err1 = fabs((prev_cont - bin_cont)/bin_cont);
+	  float err1 = (prev_cont - bin_cont);///bin_cont);
 	  if (bin_cont == 0) continue;
 	  binbybin_unc += TMath::Power(err1,2);	  	  
 	  if (h_pt1pt2_profile_unfold[iter]->GetBinContent(ibin+1) > 0)
 	    {
-	      stat_unc+= TMath::Power(h_pt1pt2_profile_unfold[iter]->GetBinError(ibin + 1)/h_pt1pt2_profile_unfold[iter]->GetBinContent(ibin + 1), 2);
+	      stat_unc+= TMath::Power(h_pt1pt2_profile_unfold[iter]->GetBinError(ibin + 1), 2);
 	    }
-	  unfold_unc+= TMath::Power(h_flat_unfold_pt1pt2[iter]->GetBinError(ibin + 1)/h_flat_unfold_pt1pt2[iter]->GetBinContent(ibin + 1), 2);
+	  unfold_unc+= TMath::Power(h_flat_unfold_pt1pt2[iter]->GetBinError(ibin + 1), 2);
 	}
 
       std::cout << stat_unc << " + " << unfold_unc <<" + " << binbybin_unc << " = " <<  sqrt(stat_unc + unfold_unc + binbybin_unc) << std::endl;
@@ -297,7 +297,7 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
   dlutility::SetLineAtt(h_unfold_uncertainties, kGreen, 1, 1);
 
   h_total_uncertainties->SetMinimum(0.1);
-  h_total_uncertainties->SetMaximum(10000);
+  //h_total_uncertainties->SetMaximum(10000);
   h_total_uncertainties->Draw("p hist");
   h_statistical_uncertainties->Draw("same p hist");
   h_unfold_uncertainties->Draw("same p hist");

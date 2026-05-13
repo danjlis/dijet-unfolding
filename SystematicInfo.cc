@@ -215,7 +215,6 @@ void SystematicInfo::gethistos()
 	{
 	  histo_opps::finalize_xj(h_xj_unfold_range[irange][iter], h_final_xj_unfold_range[irange][iter], m_nbins, m_first_xj);
 	}
-	
       histo_opps::normalize_histo(h_final_xj_reco_range[irange], m_nbins);
       histo_opps::normalize_histo(h_final_xj_truth_range[irange], m_nbins);
       histo_opps::normalize_histo(h_final_xj_data_range[irange], m_nbins);

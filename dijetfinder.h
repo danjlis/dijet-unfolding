@@ -43,6 +43,7 @@ class dijetfinder
       m_cone_size = cone_size;
       m_eta_cut = 1.1 - ( ((float) cone_size ) * 0.1 );
       m_dR_cut = 0.75 * ( ((float) cone_size ) * 0.1 );
+      m_wide_dR_cut = 1.0;
     }
   
   ~dijetfinder(){}
@@ -52,6 +53,8 @@ class dijetfinder
   float getDPHI(float phi1, float phi2);
   float getDR(struct jet j1, struct jet j2);
   std::vector<std::pair<struct jet, struct jet>>  match_dijets(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets);
+  std::vector<std::pair<struct jet, struct jet>>  match_dijets_smear(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets);
+  std::vector<std::pair<struct jet, struct jet>>  match_dijets_response(std::vector<struct jet> myrecojets, std::vector<struct jet> mytruthjets);
   bool check_dijet_reco(std::vector<struct jet> myrecojets);
   bool check_dijet_truth(std::vector<struct jet> mytruthjets);
   bool passes_time_cut(double calib_lead_time, double calib_delta_time);
@@ -76,6 +79,7 @@ class dijetfinder
   float m_eta_cut = 0.7;
   int m_cone_size = 4;
   float m_dR_cut = 3.;
+  float m_wide_dR_cut = 1.0;
   float m_dphicut = 3*TMath::Pi()/4.;
   float m_truth_leading_cut = 10;
   float m_truth_subleading_cut = 5;

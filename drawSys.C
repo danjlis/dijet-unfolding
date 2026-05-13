@@ -207,12 +207,20 @@ void drawSys(const int cone_size = 4)
 
   TH1D *h_final;
   SystematicInfo fsys = sys_list["nominal"];
-  
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  h_final = fsys.get_xj(irange, iter);
+	  TH1D *hu = (TH1D*) h_final->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
+	  double nominal = histo_opps::get_average_xj(hu);
+	  h_average_xj[iter]->SetBinContent(irange + 1, 1, nominal);
+	}
+    }
   for (auto sys_group : sys_draw)
     {
-      std::cout << sys_group.first.c_str() << std::endl;
+      
       if (strcmp(sys_group.first.c_str(), "HALF") == 0) continue;
-      std::cout << sys_group.first.c_str() << std::endl;
       for (int niter = 0; niter < niterations; niter++)
 	{
 	  cxj_split->Clear();
@@ -221,19 +229,27 @@ void drawSys(const int cone_size = 4)
       
 	  for (int irange = 0; irange < mbins; irange++)
 	    {
-	      std::cout << irange << std::endl;
+
 	      cxj_split->cd(1 + irange*2);
 	      for (int isys = 0; isys < sys_group.second.size(); isys++)
 		{
 		  std::string sys_name = sys_group.second.at(isys);
+
 		  SystematicInfo ssys = sys_list[sys_name.c_str()];
 		  h[isys] = ssys.get_xj(irange, niter);
 		  dlutility::SetLineAtt(h[isys], ssys.getColor(), ssys.getLineSize(), 1);
 		  dlutility::SetMarkerAtt(h[isys], ssys.getColor(), ssys.getMarkerSize(), ssys.getMarker());
 		  hf[isys] = (TH1D*) h[isys]->Rebin(nbins - first_bin, Form("h_rebin_%s_%d", ssys.get_name().c_str(), irange), &dxj_bins[first_bin]);
+
+		  int rev = ssys.get_reverse();
+		  if (rev >= 0)
+		    {
+		      variation_average_xj[niter][irange]->push_back(std::make_pair(histo_opps::get_average_xj(hf[isys]), rev));
+		    }
 		}
 
 	      h_final = fsys.get_xj(irange, niter);
+	      //TH1D *hu = (TH1D*) h_final->Rebin(nbins - first_bin, Form("h_rebin_unf_%d", irange), &dxj_bins[first_bin]);
 	      dlutility::SetLineAtt(h_final, fsys.getColor(), fsys.getLineSize(), 1);
 	      dlutility::SetMarkerAtt(h_final, fsys.getColor(), fsys.getMarkerSize(), fsys.getMarker());
 
@@ -272,7 +288,7 @@ void drawSys(const int cone_size = 4)
 
 		  h_compare[isys] = (TH1D*) hf[isys]->Clone();
 		  h_compare[isys]->Divide(hu);
-		  dlutility::SetLineAtt(h_compare[isys], ssys.getColor(), 1,1);
+		  dlutility::SetLineAtt(h_compare[isys], ssys.getColor(), 1, 1);
 		  dlutility::SetMarkerAtt(h_compare[isys], ssys.getColor(), 1,8);
 	      
 		  for (int ib = 0; ib < h_compare[isys]->GetNbinsX(); ib++)
@@ -388,21 +404,27 @@ void drawSys(const int cone_size = 4)
 		      h[isys] = h_sys[sys_name.c_str()][iter][irange];
 		    }
 		}
+	      if (!use_group) continue;
 
 	      for (int i = 0; i < h[isys]->GetNbinsX(); i++)
 		{
+
 		  double min_v = 0;
 		  double max_v = 0;
 		  double drev = 0;
 		  for (int isys = 0; isys < sys_group.second.size(); isys++)
 		    {
 		      double c = h[isys]->GetBinContent(i+1);
+		      std::string sys_name = sys_group.second.at(isys);
+		      
+		      //std::cout << sys_group.first << " : " << sys_list[sys_name.c_str()].get_name() << " : " << c << std::endl;
 		      drev = c;
 		      if (c < min_v) min_v = c;
 		      if (c > max_v) max_v = c;
 		    }
 		  if (reverse)
 		    {
+		      
 		      positive_systematics[i][irange][iter] += drev*drev;
 		      negative_systematics[i][irange][iter] += drev*drev;
 		    }
@@ -433,14 +455,14 @@ void drawSys(const int cone_size = 4)
   for (int iter = 0; iter < niterations; iter++)
     {
       dlutility::systematic_split_canvas(cxjsys, 3, 0);
-      TLegend *leg4 = new TLegend(0.02, 0.30, 0.9, 0.58);
+      TLegend *leg4 = new TLegend(0.02, 0.20, 0.9, 0.58);
       leg4->SetTextSize(0.08);
       leg4->SetTextFont(42);
       leg4->SetLineWidth(0);
 
       for (int irange = 0; irange < mbins; irange++)
 	{
-	  std::cout << irange << std::endl;
+	  //std::cout << irange << std::endl;
 	  cxjsys->cd(irange+1);
 
 	  h_total_sys_range[irange][iter]->SetMinimum(-0.5);
@@ -449,7 +471,10 @@ void drawSys(const int cone_size = 4)
 	  h_total_sys_range[irange][iter]->GetXaxis()->SetRangeUser(dxj_bins[first_bin], dxj_bins[nbins]);
 	  h_total_sys_range[irange][iter]->Draw("p");
 	  h_total_sys_neg_range[irange][iter]->Draw("p same");
-
+	  if (irange == 0)
+	    {
+	      leg4->AddEntry(h_total_sys_range[irange][iter], "Total Systematics","p");
+	    }
 	  for (auto sys : sys_list)
 	    {
 	      bool use_group = true;
@@ -460,14 +485,16 @@ void drawSys(const int cone_size = 4)
 		{
 		  continue;
 		}
+	      dlutility::SetLineAtt(h_sys[sys_name.c_str()][iter][irange], sys.second.getColor(), sys.second.getLineSize(), 1);
 	      h_sys[sys_name.c_str()][iter][irange]->Draw("same hist");
 	      if (rev == 1)
 		{
+		  dlutility::SetLineAtt(h_sys_neg[sys_name.c_str()][iter][irange], sys.second.getColor(), sys.second.getLineSize(), 1);
 		  h_sys_neg[sys_name.c_str()][iter][irange]->Draw("same hist");
 		}
 	      if (irange == 0)
 		{
-		  leg4->AddEntry(h_sys[sys_name.c_str()][iter][irange], sys_titles[sys_name.c_str()].c_str());
+		  leg4->AddEntry(h_sys[sys_name.c_str()][iter][irange], sys_titles[sys_name.c_str()].c_str(),"l");
 		}
 	    }
 
@@ -518,21 +545,48 @@ void drawSys(const int cone_size = 4)
   /* 	  h_average_xj[iter]->SetBinContent(1 + irange, 3, neg_var); */
   /* 	} */
   /*   } */
-  
-  /* TFile *fsys = new TFile(Form("%s/uncertainties/systematics_pp_r%02d.root",  rb.get_code_location().c_str(), cone_size), "recreate"); */
 
-  /* for (int iter = 0; iter < niterations; iter++) */
-  /*   { */
-  /*     h_average_xj[iter]->Write(); */
+    for (int iter = 0; iter < niterations; iter++)
+    {
+      for (int irange = 0; irange < mbins; irange++)
+	{
+	  double pos_var = 0;
+	  double neg_var = 0;
+	  double nominal = h_average_xj[iter]->GetBinContent(1+irange, 1);
+	  for (auto b : *variation_average_xj[iter][irange])
+	    {
+	      double diff = (b.first - nominal)/nominal;
+
+	      if (diff >= 0 || b.second == 1)
+		{
+		  pos_var += diff*diff;
+		}
+	      if (diff < 0 || b.second == 1)
+		{
+		  neg_var += diff*diff;
+		}
+	    }
+	  pos_var = sqrt(pos_var);
+	  neg_var = sqrt(neg_var);
+	  h_average_xj[iter]->SetBinContent(1 + irange, 2, pos_var);
+	  h_average_xj[iter]->SetBinContent(1 + irange, 3, neg_var);
+	}
+    }
+
+  TFile *filesys = new TFile(Form("%s/uncertainties/systematics_pp_r%02d.root",  rb.get_code_location().c_str(), cone_size), "recreate");
+
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_average_xj[iter]->Write();
       
-  /*     for (int irange = 0; irange < mbins; irange++) */
-  /* 	{ */
-  /* 	  h_sys_half[irange][iter]->Write(); */
-  /* 	  h_total_sys_range[irange][iter]->Write(); */
-  /* 	  h_total_sys_neg_range[irange][iter]->Write(); */
-  /* 	} */
-  /*   } */
-  /* fsys->Close(); */
+      for (int irange = 0; irange < mbins; irange++)
+	{
+	  //h_sys_half[irange][iter]->Write();
+	  h_total_sys_range[irange][iter]->Write();
+	  h_total_sys_neg_range[irange][iter]->Write();
+	}
+    }
+  filesys->Close();
 
   
   return;

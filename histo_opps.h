@@ -26,6 +26,29 @@ namespace histo_opps
       }
 
   }
+
+  void get_xj_systematics_add(TGraphAsymmErrors *h1, TH1D *hsn,TH1D *hsp, TH1D *hsh, const int nbins)
+  {
+    for (int i = 0; i < nbins; i++)
+      {
+	double o_neg_err = hsn->GetBinContent(i+1);
+	double o_pos_err = hsp->GetBinContent(i+1);
+	double sys_add = (hsh->GetBinContent(i+1));
+	std::cout << "err: " << o_pos_err << " / " << o_neg_err <<  " / " << sys_add << std::endl;
+
+	double neg_err = sqrt(o_neg_err*o_neg_err + sys_add * sys_add);
+	double pos_err = sqrt(o_pos_err*o_pos_err + sys_add * sys_add);
+
+	if (!(neg_err > 0))
+	  neg_err = 0;
+	if (!(pos_err > 0))
+	  pos_err = 0;
+	std::cout << "err total : " <<  neg_err << " / " << pos_err << std::endl;	
+	h1->SetPointError(i, hsn->GetBinWidth(i+1)/2.,hsn->GetBinWidth(i+1)/2., neg_err*h1->GetPointY(i), pos_err*h1->GetPointY(i));
+      }
+
+  }
+
   TGraphAsymmErrors *get_xj_statistics(TH1D *h1, const int nbins)
   {
     TGraphAsymmErrors *gg = new TGraphAsymmErrors();
@@ -225,6 +248,42 @@ namespace histo_opps
 
     return;
   }
+  
+  TH1D *project_pt1(TH2D* h_pt1pt2,  const int nbins)
+  {
+
+    TH2D *h_asym_pt1pt2 = (TH2D*) h_pt1pt2->Clone();
+    h_asym_pt1pt2->Reset();
+    for (int ix = 0; ix < nbins; ix++)
+      {
+	for (int iy = 0; iy < nbins; iy++)
+	  {
+	    int bin = h_asym_pt1pt2->GetBin(ix+1, iy+1);
+
+	    if (ix == iy)
+	      {
+		h_asym_pt1pt2->SetBinContent(bin, h_pt1pt2->GetBinContent(bin));
+		h_asym_pt1pt2->SetBinError(bin, h_pt1pt2->GetBinError(bin));
+	      }
+	    else if (ix > iy)
+	      {
+		h_asym_pt1pt2->SetBinContent(bin, h_pt1pt2->GetBinContent(bin)*2.);
+		h_asym_pt1pt2->SetBinError(bin, h_pt1pt2->GetBinError(bin)*2);
+	      }
+
+	    else if (ix < iy)
+	      {
+		h_asym_pt1pt2->SetBinContent(bin, 0);
+		h_asym_pt1pt2->SetBinError(bin, 0);
+	      }
+		      
+	  }
+      }
+
+    TH1D *h_pt1 = (TH1D*) h_asym_pt1pt2->ProjectionX();
+    
+    return h_pt1;;
+  }
 
   void make_sym_pt1pt2(TH1D *hflat, TH2D* hpt1pt2, const int nbins)
   {
@@ -317,11 +376,27 @@ namespace histo_opps
     mean /= sum;
     return mean;
   }
+  double get_average_xj(TGraphAsymmErrors *h_xj)
+  {
+    double mean = 0;
+    double sum = 0;
+    int point = 0;
+    for (int b=0; b < h_xj->GetN(); b++)
+      {
+	double x = h_xj->GetPointX(b);
+	double c = h_xj->GetPointY(b);
+	mean += c*x;
+	sum += c;
+      }
+    mean /= sum;
+    return mean;
+  }
+
   double get_slope_dphi(TH1D *h_xj)
   {
     TF1 *fPower = new TF1("fPower", "[0]*pow(TMath::Pi()-x, [1]) - [2]", 0.0, TMath::Pi());
     fPower->SetParameters(1, -0.1, 1);
-    h_xj->Fit(fPower);
+    h_xj->Fit(fPower, "NI");
     double rms = fPower->GetParameter(1);
     return rms;
   }
@@ -366,6 +441,25 @@ namespace histo_opps
 	h->SetBinContent(ib+1, v);
       }
     return h;
+  }
+
+  TH1D *average_results(TH1D *h_final, TH1D *h_add, const std::string new_name = "h_sys_add")
+  {
+    TH1D *h_orig = (TH1D*) h_final->Clone("h_orig");
+    TH1D *h_sys = (TH1D*) h_final->Clone(new_name.c_str());
+
+    for (int ibin = 0; ibin < h_final->GetNbinsX(); ibin++)
+      {
+	double og = h_orig->GetBinContent(ibin+1);
+	double v = (h_orig->GetBinContent(ibin+1) + h_add->GetBinContent(ibin+1))/2.;
+	double vd = (h_orig->GetBinContent(ibin+1) - h_add->GetBinContent(ibin+1))/(2.*v);
+	double ve = (h_orig->GetBinError(ibin+1))*v/og;
+
+	h_final->SetBinContent(ibin+1, v);
+	h_final->SetBinError(ibin+1, ve);
+	h_sys->SetBinContent(ibin+1, vd);
+      }
+    return h_sys;
   }
 };
 
