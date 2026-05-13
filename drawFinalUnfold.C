@@ -3,30 +3,33 @@
 #include "histo_opps.h"
 
 const bool NUCLEAR = true;
-const int color_unfold_fill = kAzure - 4;
-const int color_unfold = kAzure - 5;
+const int color_unfold_fill = kAzure - 8;
+const int color_unfold = kAzure - 7;
 const float marker_unfold = 20;
-const float msize_unfold = 1.1;
-const float lsize_unfold = 1.1;
+const float msize_unfold = 0.8;
+const float lsize_unfold = 1.5;
 
 const int color_pythia = kRed + 1;
-const float msize_pythia = 1.1;
+const float msize_pythia = 0.75;
 const float marker_pythia = 21;
-const float lsize_pythia = 3;
+const float lsize_pythia = 1.5;
+const float lsize_pythia2 = 3;
 
 const int color_herwig = kSpring - 1;
 const float msize_herwig = 1.3;
 const float marker_herwig = 22;
 const float lsize_herwig = 3;
 
-const int color_reco = kRed;
-const float marker_reco = 21;
-const float msize_reco = 0.9;
-const float lsize_reco = 1.1;
-const int color_data = kAzure - 6;
+const int color_reco = kRed+1;
+const float marker_reco = 25;
+const float msize_reco = 0.75;
+const float lsize_reco = 1.5;
+
+const int color_data = kAzure - 7;
 const float marker_data = 24;
-const float msize_data = 0.9;
-const float lsize_data = 1.1;
+const float msize_data = 0.8;
+const float lsize_data = 1.5;
+
 void drawFinalUnfold(const int cone_size = 4)
 {
   gStyle->SetCanvasPreferGL(0);
@@ -38,12 +41,13 @@ void drawFinalUnfold(const int cone_size = 4)
   Double_t first_xj = rb.get_first_xj();
   
   Int_t read_nbins = rb.get_nbins();
-
+  const Int_t nbins_pt = read_nbins + 1;
+  
   Double_t dphicut = rb.get_dphicut();
 
   const int nbins = read_nbins;
   int first_bin = 0;
-  float ipt_bins[nbins+1];
+  float ipt_bins[nbins_pt+1];
   double  dxj_bins[nbins+1];
 
   float ixj_bins[nbins+1];
@@ -57,6 +61,7 @@ void drawFinalUnfold(const int cone_size = 4)
       if (dxj_bins[i] > 0.3 && first_bin == 0) first_bin = i-1;
 
     }
+  ipt_bins[nbins_pt] = 100;
   ixj_bins[nbins] = 1;
 
   float truth_leading_cut = rb.get_truth_leading_cut();
@@ -100,10 +105,21 @@ void drawFinalUnfold(const int cone_size = 4)
   std::cout << "Reco 2: " <<  reco_subleading_cut << std::endl;
   std::cout << "Meas 2: " <<  measure_subleading_cut << std::endl;
   
-
+  TH1D *h_average_xj_truth = new TH1D("h_average_xj_truth", "", 3, 0, 3);
+  TH1D *h_average_xj_herwig = new TH1D("h_average_xj_herwig", "", 3, 0, 3);
   // Get truth histograms without any reweighting
 
-  TFile *fintrh = new TFile(Form("%s/response_matrices/response_matrix_pp_r%02d_PRIMER1_HERWIG.root",  rb.get_code_location().c_str(), cone_size),"r");
+  /* TFile *fintrh = new TFile(Form("%s/response_matrices/response_matrix_pp_r%02d_PRIMER1_HERWIG.root",  rb.get_code_location().c_str(), cone_size),"r"); */
+  /* if (!fintrh) */
+  /*   { */
+  /*     std::cout << "no herwig hists" << std::endl; */
+  /*     return; */
+  /*   } */
+  /* TH1D *h_flat_herwig_pt1pt2 = (TH1D*) fintrh->Get("h_truth_flat_pt1pt2"); */
+  /* h_flat_herwig_pt1pt2->SetName("h_flat_herwig_pt1pt2"); */
+  
+
+  TFile *fintrh = new TFile(Form("%s/truth_hists/herwig_hists_pp_r0%d_HERWIG.root",  rb.get_code_location().c_str(), cone_size),"r");
   if (!fintrh)
     {
       std::cout << "no herwig hists" << std::endl;
@@ -149,9 +165,11 @@ void drawFinalUnfold(const int cone_size = 4)
     }
   TH1D *h_total_sys_range[mbins][niterations];
   TH1D *h_total_sys_neg_range[mbins][niterations];
-  for (int irange = 0; irange < mbins; irange++)
+  TH2D *h_average_xj_data[niterations];
+  for (int iter = 0; iter < niterations; ++iter)
     {
-      for (int iter = 0; iter < niterations; ++iter)
+      h_average_xj_data[iter] = (TH2D*) fins->Get(Form("h_average_xj_%d", iter));
+      for (int irange = 0; irange < mbins; irange++)
 	{
 	  h_total_sys_range[irange][iter] = (TH1D*) fins->Get(Form("h_total_sys_range_%d_iter_%d", irange, iter));
 	  h_total_sys_neg_range[irange][iter] = (TH1D*) fins->Get(Form("h_total_sys_neg_range_%d_iter_%d", irange, iter));
@@ -174,18 +192,36 @@ void drawFinalUnfold(const int cone_size = 4)
   for (int iter = 0; iter < niterations; iter++)
     {
       h_flat_unfold_pt1pt2[iter] = (TH1D*) fin->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_flat_unfold_pt1pt2[iter]->SetName(Form("h_flat_unfold_nominal_pt1pt2_%d", iter));
     }
 
-  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
-  TH2D *h_pt1pt2_herwig = new TH2D("h_pt1pt2_herwig", ";#it{p}_{T,1};#it{p}_{T,2}", nbins, ipt_bins, nbins, ipt_bins);
+  TFile *finher = new TFile(Form("%s/unfolding_hists/unfolding_hists_pp_r%02d_HERWIG.root",  rb.get_code_location().c_str(), cone_size),"r");
+  if (!finher)
+    {
+      std::cout << " no file " << std::endl;
+      return;
+    }
+  
+  TH1D *h_flat_unfold_herwig_pt1pt2[niterations];
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_flat_unfold_herwig_pt1pt2[iter] = (TH1D*) finher->Get(Form("h_flat_unfold_pt1pt2_%d", iter));
+      h_flat_unfold_herwig_pt1pt2[iter]->SetName(Form("h_flat_unfold_herwig_pt1pt2_%d", iter));
+    }
+
+  TH2D *h_pt1pt2_data = new TH2D("h_pt1pt2_data", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_pt1pt2_reco = new TH2D("h_pt1pt2_reco", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_pt1pt2_truth = new TH2D("h_pt1pt2_truth", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+  TH2D *h_pt1pt2_herwig = new TH2D("h_pt1pt2_herwig", ";#it{p}_{T,1};#it{p}_{T,2}", nbins_pt, ipt_bins, nbins_pt, ipt_bins);
   TH2D *h_pt1pt2_unfold[niterations];
+  TH2D *h_pt1pt2_unfold_herwig[niterations];
 
   for (int iter = 0; iter < niterations; iter++)
     {
-      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins, ipt_bins, nbins, ipt_bins);
+      h_pt1pt2_unfold[iter] = new TH2D("h_pt1pt2_unfold", ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
       h_pt1pt2_unfold[iter]->SetName(Form("h_pt1pt2_unfold_iter%d", iter));
+      h_pt1pt2_unfold_herwig[iter] = new TH2D(Form("h_pt1pt2_unfold_herwig_iter%d", iter), ";#it{p}_{T,1};#it{p}_{T,2}",nbins_pt, ipt_bins, nbins_pt, ipt_bins);
+
     }
 
 
@@ -194,6 +230,7 @@ void drawFinalUnfold(const int cone_size = 4)
   TH1D *h_xj_truth_range[mbins];
   TH1D *h_xj_herwig_range[mbins];
   TH1D *h_xj_unfold_range[mbins][niterations];
+  TH1D *h_xj_unfold_herwig_range[mbins][niterations];
   for (int irange = 0; irange < mbins; irange++)
     {
       h_xj_data_range[irange] = new TH1D(Form("h_xj_data_range_%d", irange), ";x_{J};", nbins, ixj_bins);
@@ -203,6 +240,7 @@ void drawFinalUnfold(const int cone_size = 4)
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  h_xj_unfold_range[irange][iter] = new TH1D(Form("h_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	  h_xj_unfold_herwig_range[irange][iter] = new TH1D(Form("h_xj_unfold_herwig_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
     }
 
@@ -223,13 +261,14 @@ void drawFinalUnfold(const int cone_size = 4)
 	}
     }
   
-  histo_opps::make_sym_pt1pt2(h_flat_truth_pt1pt2, h_pt1pt2_truth, nbins);
-  histo_opps::make_sym_pt1pt2(h_flat_herwig_pt1pt2, h_pt1pt2_herwig, nbins);  
-  histo_opps::make_sym_pt1pt2(h_flat_data_pt1pt2, h_pt1pt2_data, nbins);
-  histo_opps::make_sym_pt1pt2(h_flat_reco_pt1pt2, h_pt1pt2_reco, nbins);
+  histo_opps::make_sym_pt1pt2(h_flat_truth_pt1pt2, h_pt1pt2_truth, nbins_pt);
+  histo_opps::make_sym_pt1pt2(h_flat_herwig_pt1pt2, h_pt1pt2_herwig, nbins_pt);  
+  histo_opps::make_sym_pt1pt2(h_flat_data_pt1pt2, h_pt1pt2_data, nbins_pt);
+  histo_opps::make_sym_pt1pt2(h_flat_reco_pt1pt2, h_pt1pt2_reco, nbins_pt);
   for (int iter = 0; iter < niterations; iter++)
     {
-      histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins);
+      histo_opps::make_sym_pt1pt2(h_flat_unfold_pt1pt2[iter], h_pt1pt2_unfold[iter], nbins_pt);
+      histo_opps::make_sym_pt1pt2(h_flat_unfold_herwig_pt1pt2[iter], h_pt1pt2_unfold_herwig[iter], nbins_pt);
     }
 
 
@@ -238,6 +277,7 @@ void drawFinalUnfold(const int cone_size = 4)
   TH1D *h_final_xj_truth_range[mbins];
   TH1D *h_final_xj_herwig_range[mbins];
   TH1D *h_final_xj_unfold_range[mbins][niterations];
+  TH1D *h_final_xj_unfold_herwig_range[mbins][niterations];
 
   TH1D *h_final_xj_rms[mbins][niterations];
   TH1D *h_final_xj_systematics[mbins][niterations];
@@ -259,6 +299,7 @@ void drawFinalUnfold(const int cone_size = 4)
 	{
 	  h_final_xj_rms[irange][iter] = new TH1D(Form("h_final_xj_rms_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	  h_final_xj_unfold_range[irange][iter] = new TH1D(Form("h_final_xj_unfold_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
+	  h_final_xj_unfold_herwig_range[irange][iter] = new TH1D(Form("h_final_xj_unfold_herwig_%d_iter%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	  h_final_xj_systematics[irange][iter] = new TH1D(Form("h_final_xj_systematics_%d_%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	  h_final_xj_statistics[irange][iter] = new TH1D(Form("h_final_xj_statistics_%d_%d", irange, iter), ";x_{J};",nbins, ixj_bins);
 	}
@@ -268,14 +309,15 @@ void drawFinalUnfold(const int cone_size = 4)
 
   for (int irange = 0; irange < mbins; irange++)
     {
-      histo_opps::project_xj(h_pt1pt2_data, h_xj_data_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
-      histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
-      histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
-      histo_opps::project_xj(h_pt1pt2_herwig, h_xj_herwig_range[irange], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      histo_opps::project_xj(h_pt1pt2_data, h_xj_data_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      histo_opps::project_xj(h_pt1pt2_reco, h_xj_reco_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      histo_opps::project_xj(h_pt1pt2_truth, h_xj_truth_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+      histo_opps::project_xj(h_pt1pt2_herwig, h_xj_herwig_range[irange], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
       
       for (int iter = 0; iter < niterations; iter++)
 	{
-	  histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold_range[irange][iter], nbins, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_unfold[iter], h_xj_unfold_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
+	  histo_opps::project_xj(h_pt1pt2_unfold_herwig[iter], h_xj_unfold_herwig_range[irange][iter], nbins_pt, measure_bins[irange], measure_bins[irange+1], measure_subleading_bin, nbins - 2);
 	}
 
 
@@ -289,37 +331,62 @@ void drawFinalUnfold(const int cone_size = 4)
       histo_opps::normalize_histo(h_final_xj_data_range[irange], nbins);
       histo_opps::normalize_histo(h_final_xj_reco_range[irange], nbins);
 
+      h_average_xj_truth->SetBinContent(irange+1, histo_opps::get_average_xj(h_final_xj_truth_range[irange]));
+      h_average_xj_herwig->SetBinContent(irange+1, histo_opps::get_average_xj(h_final_xj_herwig_range[irange]));
       g_final_xj_truth[irange] = new TGraph(h_final_xj_truth_range[irange]);
       g_final_xj_herwig[irange] = new TGraph(h_final_xj_herwig_range[irange]);
-
+      g_final_xj_truth[irange]->SetName(Form("g_final_xj_truth_%d", irange));
+      g_final_xj_herwig[irange]->SetName(Form("g_final_xj_herwig_%d", irange));
       histo_opps::trim_tgraph(g_final_xj_truth[irange], nbins, first_xj);
       histo_opps::trim_tgraph(g_final_xj_herwig[irange], nbins, first_xj);
 
       for (int iter = 0; iter < niterations; iter++)
 	{
 	  histo_opps::finalize_xj(h_xj_unfold_range[irange][iter], h_final_xj_unfold_range[irange][iter], nbins, first_xj);
+	  histo_opps::finalize_xj(h_xj_unfold_herwig_range[irange][iter], h_final_xj_unfold_herwig_range[irange][iter], nbins, first_xj);
 	  histo_opps::finalize_xj(h_xj_rms[irange][iter], h_final_xj_rms[irange][iter], nbins, first_xj);
 
 	  histo_opps::normalize_histo(h_final_xj_unfold_range[irange][iter], nbins);
+	  histo_opps::normalize_histo(h_final_xj_unfold_herwig_range[irange][iter], nbins);
 	  histo_opps::normalize_histo(h_final_xj_rms[irange][iter], nbins);
 
 	  histo_opps::set_xj_errors(h_final_xj_unfold_range[irange][iter], h_final_xj_rms[irange][iter], nbins);
+
+	  TH1D *h_sys_herwig = (TH1D*) histo_opps::average_results(h_final_xj_unfold_range[irange][iter], h_final_xj_unfold_herwig_range[irange][iter], Form("new_sys_%d_%d", irange, iter));
+
+	  TH1D *hu = (TH1D*) h_sys_herwig->Rebin(nbins - first_bin, Form("h_rebin_herwig_%d", irange), &dxj_bins[first_bin]);
 
 	  
 	  h_final_xj_systematics[irange][iter] = (TH1D*) h_final_xj_unfold_range[irange][iter]->Clone();
 	  h_final_xj_systematics[irange][iter]->SetName(Form("h_final_xj_systematics_%d_%d", irange, iter));
 
 	  g_final_xj_systematics[irange][iter] = new TGraphAsymmErrors(h_final_xj_systematics[irange][iter]);
-	  
+	  g_final_xj_systematics[irange][iter]->SetName(Form("g_final_xj_systematics_%d_%d", irange, iter));
+						       	  
+
 	  histo_opps::trim_tgraph(g_final_xj_systematics[irange][iter], nbins, first_xj);
 	  
-	  histo_opps::get_xj_systematics(g_final_xj_systematics[irange][iter], h_total_sys_neg_range[irange][iter], h_total_sys_range[irange][iter], nbins);
+	  histo_opps::get_xj_systematics_add(g_final_xj_systematics[irange][iter], h_total_sys_neg_range[irange][iter], h_total_sys_range[irange][iter], hu,  nbins);	  
 
+	  double nominal = histo_opps::get_average_xj(g_final_xj_systematics[irange][iter]);
+	  double original = h_average_xj_data[iter]->GetBinContent(irange + 1, 1);
+	  h_average_xj_data[iter]->SetBinContent(irange + 1, 1, nominal);
+	  double pos_err = h_average_xj_data[iter]->GetBinContent(irange + 1, 2);
+	  double neg_err = h_average_xj_data[iter]->GetBinContent(irange + 1, 3);
+	  double new_err = (nominal - original)/(2.*nominal);
+	  double new_pos_err = sqrt(pos_err*pos_err + new_err*new_err);
+	  double new_neg_err = sqrt(neg_err*neg_err + new_err*new_err);
+	  h_average_xj_data[iter]->SetBinContent(irange + 1, 2, new_pos_err);
+	  h_average_xj_data[iter]->SetBinContent(irange + 1, 3, new_neg_err);
+	  std::cout << "iter " << iter << " range " << irange << " : " <<  original << " / " << pos_err << " / " << neg_err << std::endl;
+	  std::cout << "iter " << iter << " range " << irange << " : " <<  nominal << " / " << new_pos_err << " / " << new_neg_err << std::endl;
 	  h_final_xj_statistics[irange][iter] = (TH1D*) h_final_xj_unfold_range[irange][iter]->Clone();
 	  h_final_xj_statistics[irange][iter]->SetName(Form("h_final_xj_statistics_%d_%d", irange, iter));
 	  g_final_xj_statistics[irange][iter] = histo_opps::get_xj_statistics(h_final_xj_statistics[irange][iter], nbins);
+	  g_final_xj_statistics[irange][iter]->SetName(Form("g_final_xj_statistics_%d_%d", irange, iter));
 
 	  histo_opps::trim_tgraph(g_final_xj_statistics[irange][iter], nbins, first_xj);
+
 	}
 
     }
@@ -349,7 +416,7 @@ void drawFinalUnfold(const int cone_size = 4)
       dlutility::SetMarkerAtt(h_final_xj_reco_range[irange], color_reco, msize_reco, marker_reco);
 
       dlutility::SetFont(h_final_xj_truth_range[irange], 42, 0.05);
-      h_final_xj_truth_range[irange]->SetMaximum(5);
+      h_final_xj_truth_range[irange]->SetMaximum(h_final_xj_truth_range[2]->GetBinContent(h_final_xj_truth_range[2]->GetMaximumBin())*1.1);
       h_final_xj_truth_range[irange]->SetMinimum(0);
       h_final_xj_truth_range[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -368,9 +435,10 @@ void drawFinalUnfold(const int cone_size = 4)
       dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = %0.1f", cone_size*0.1), 0.22, 0.74);
       dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, 0.69);
       dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
-      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.59);
+      dlutility::drawText(Form("|#eta| < %0.1f", 1.1 - cone_size*0.1), 0.22, 0.59);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, 0.54);
 
-      TLegend *leg = new TLegend(0.2, 0.4, 0.4, 0.56);
+      TLegend *leg = new TLegend(0.2, 0.35, 0.4, 0.51);
       leg->SetLineWidth(0);
       leg->SetTextSize(0.04);
       leg->SetTextFont(42);
@@ -381,19 +449,27 @@ void drawFinalUnfold(const int cone_size = 4)
       leg->Draw("same");
    
       cxj->cd(2);
-
+      TGraphAsymmErrors *gu = (TGraphAsymmErrors*) g_final_xj_systematics[irange][niter]->Clone();
+      dlutility::SetLineAtt(gu, kBlue, 0, 1);
+      dlutility::SetMarkerAtt(gu, kBlue, 0, 1);
+      for (int ij = 0; ij < gu->GetN(); ij++)
+	{
+	  gu->SetPointEYhigh(ij, gu->GetErrorYhigh(ij)/gu->GetPointY(ij));
+	  gu->SetPointEYlow(ij, gu->GetErrorYlow(ij)/gu->GetPointY(ij));
+	  gu->SetPointY(ij, 1);
+	}
       TH1D *h_data_compare = (TH1D*) h_final_xj_truth_range[irange]->Clone();
       h_data_compare->Divide(h_final_xj_unfold_range[irange][niter]);
       h_data_compare->SetTitle(";x_{J}; PYTHIA-8 / Unfold");
       dlutility::SetFont(h_data_compare, 42, 0.1, 0.07, 0.07, 0.07);
       dlutility::SetLineAtt(h_data_compare, kBlack, 1,1);
       dlutility::SetMarkerAtt(h_data_compare, kBlack, 1,8);
-      h_data_compare->SetMaximum(2.3);
-      h_data_compare->SetMinimum(0.0);
+      h_data_compare->SetMaximum(1.5);
+      h_data_compare->SetMinimum(0.5);
       TH1D *hd = (TH1D*) h_data_compare->Rebin(nbins - first_bin, "h_rebin_compare", &dxj_bins[first_bin]);
 
       hd->Draw("p");
-
+      gu->Draw("same p E2");
       // no the systematics
 
       TGraphAsymmErrors *g_compare = new TGraphAsymmErrors(h_data_compare);
@@ -411,6 +487,9 @@ void drawFinalUnfold(const int cone_size = 4)
       line->SetLineColor(kRed + 3);
       line->SetLineWidth(2);
       line->Draw("same");
+      hd->Draw("p same");
+
+
       cxj->Print(Form("%s/final_plots/h_xj_unfolded_pp_r%02d_range_%d.png",  rb.get_code_location().c_str(), cone_size, irange));
       cxj->Print(Form("%s/final_plots/h_xj_unfolded_pp_r%02d_range_%d.pdf",  rb.get_code_location().c_str(), cone_size, irange));
     }
@@ -430,7 +509,7 @@ void drawFinalUnfold(const int cone_size = 4)
       dlutility::SetLineAtt(g_final_xj_statistics[irange][niter], color_unfold, lsize_unfold, 1);
       dlutility::SetMarkerAtt(g_final_xj_statistics[irange][niter], color_unfold, msize_unfold, marker_unfold);
 
-      dlutility::SetLineAtt(g_final_xj_truth[irange], color_pythia, lsize_pythia, 1);
+      dlutility::SetLineAtt(g_final_xj_truth[irange], color_pythia, lsize_pythia2, 1);
       dlutility::SetMarkerAtt(g_final_xj_truth[irange], color_pythia, msize_pythia, marker_pythia);
       g_final_xj_truth[irange]->SetFillStyle(0);
       
@@ -443,6 +522,9 @@ void drawFinalUnfold(const int cone_size = 4)
       dlutility::SetLineAtt(h_final_xj_reco_range[irange], color_reco, lsize_reco, 1);
       dlutility::SetMarkerAtt(h_final_xj_reco_range[irange], color_reco, msize_reco, marker_reco);
 
+      dlutility::SetLineAtt(h_final_xj_truth_range[irange], color_pythia, lsize_pythia2, 1);
+      dlutility::SetMarkerAtt(h_final_xj_truth_range[irange], color_pythia, msize_pythia, marker_pythia);
+
       gPad->SetTopMargin(0.05);
       gPad->SetRightMargin(0.05);
       gPad->SetLeftMargin(0.17);
@@ -451,13 +533,13 @@ void drawFinalUnfold(const int cone_size = 4)
       
       hblank->GetYaxis()->SetTitleOffset(1.8);
       dlutility::SetFont(hblank, 42, 0.06, 0.04, 0.05, 0.05);
-      hblank->SetMaximum(5);
+      hblank->SetMaximum(6);
       hblank->SetMinimum(0);
 
       hblank->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
       hblank->Draw();
       g_final_xj_truth[irange]->Draw("l");
-      g_final_xj_herwig[irange]->Draw("l");
+      g_final_xj_herwig[irange]->Draw("l same");
 
       g_final_xj_systematics[irange][niter]->Draw("same p E2");
       g_final_xj_statistics[irange][niter]->Draw("same p E1");
@@ -469,16 +551,16 @@ void drawFinalUnfold(const int cone_size = 4)
       dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = %0.1f", cone_size*0.1), 0.22, top - 2*ss);
       dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.22, top - 3*ss);
       dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, top - 4*ss);
-      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, top - 5*ss);
+      dlutility::drawText(Form("|#eta| < %0.1f", 1.1 - cone_size*0.1), 0.22, top - 5*ss);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.22, top-6*ss);
 
-      
-      TLegend *leg = new TLegend(0.22, top - 8.5*ss, 0.4, top - 5.8*ss);
+      TLegend *leg = new TLegend(0.22, top - 9.5*ss, 0.4, top - 6.8*ss);
       leg->SetLineWidth(0);
       leg->SetTextSize(0.04);
       leg->SetTextFont(42);
       leg->AddEntry(g_final_xj_systematics[irange][niter], "Data");
       leg->AddEntry(g_final_xj_truth[irange], "PYTHIA-8","l");
-      leg->AddEntry(g_final_xj_herwig[irange], "HERWIG","l");
+      leg->AddEntry(g_final_xj_herwig[irange], "HERWIG 7.3","l");
       //leg->AddEntry(h_linear_herwig_xj[irange], "HERWIG 7.3","l");
       leg->Draw("same");
 
@@ -499,7 +581,9 @@ void drawFinalUnfold(const int cone_size = 4)
       g_final_shift_xj_sys_range[i] = (TGraphAsymmErrors*) g_final_xj_systematics[i][niter]->Clone();
       g_final_shift_xj_unfold_range[i] = (TGraphAsymmErrors*) g_final_xj_statistics[i][niter]->Clone();
       g_final_shift_xj_truth_range[i] = (TGraphAsymmErrors*) g_final_xj_truth[i]->Clone();
-
+      g_final_shift_xj_truth_range[i]->SetName(Form("g_final_shift_xj_truth_range_%d", i));
+      g_final_shift_xj_sys_range[i]->SetName(Form("g_final_shift_xj_sys_range_%d", i));
+      g_final_shift_xj_unfold_range[i]->SetName(Form("g_final_shift_xj_unfold_range_%d", i));
       
       double binwidth = ixj_bins[first_bin + 1] - ixj_bins[first_bin];
       double fix_shift = binwidth / (float) mbins;
@@ -562,7 +646,7 @@ void drawFinalUnfold(const int cone_size = 4)
   gPad->SetRightMargin(0.05);
   gPad->SetLeftMargin(0.15);
   gPad->SetBottomMargin(0.17);
-  hblank->SetMaximum(5);
+  hblank->SetMaximum(6);
   hblank->Draw("");
   for (int irange = 0; irange < mbins; irange++)
     {
@@ -605,6 +689,30 @@ void drawFinalUnfold(const int cone_size = 4)
   cxj_moneyall->Print(Form("%s/final_plots/h_final_xj_unfolded_pp_r%02d_range_all.png",  rb.get_code_location().c_str(), cone_size));
   cxj_moneyall->Print(Form("%s/final_plots/h_final_xj_unfolded_pp_r%02d_range_all.pdf",  rb.get_code_location().c_str(), cone_size));
 
+  TFile *finalout = new TFile(Form("%s/final_plots/final_plots_pp_r0%d.root",   rb.get_code_location().c_str(), cone_size),"recreate");
+  for (int irange = 0; irange < mbins; irange++)
+    {
+      h_average_xj_truth->Write();
+      h_average_xj_herwig->Write();
+      g_final_shift_xj_truth_range[irange]->Write();
+      g_final_shift_xj_sys_range[irange]->Write();
+      g_final_shift_xj_unfold_range[irange]->Write();
+      h_final_xj_data_range[irange]->Write();
+      g_final_xj_truth[irange]->Write();
+      g_final_xj_herwig[irange]->Write();
+      for (int iter = 0; iter < niterations; iter++)
+	{
+	  //h_average_xj_data[irange][iter]->Write();
+	  g_final_xj_systematics[irange][iter]->Write();
+	  g_final_xj_statistics[irange][iter]->Write();
+	}
+      g_final_xj_truth[irange]->Write();
 
+    }
+  for (int iter = 0; iter < niterations; iter++)
+    {
+      h_average_xj_data[iter]->Write();
+    }
+  finalout->Close();
   return;
 }

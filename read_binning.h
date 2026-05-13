@@ -1,7 +1,13 @@
 #ifndef READ_BINNING_H
 #define READ_BINNING_H
 #include "TEnv.h"
+#include "TF1.h"
 #include "TFile.h"
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <sstream>
+
 class read_binning
 {
 public:
@@ -32,6 +38,32 @@ public:
     return jesr_location;      
   }
 
+  std::vector<int> getRunnumbers()
+  {
+    // Define vectors to store the data                                                                                                                                                                                                    
+    std::vector<int> v;
+    // Open the CSV file                                                                                                                                                                                                                   
+    std::ifstream file("grl24.txt");
+    
+    if (!file.is_open()) {
+      std::cerr << "Error opening file!" << std::endl;
+      return v;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+      std::istringstream ss(line);
+      std::string runNumberStr;
+
+      int runNumber = std::stoi(line);
+
+      v.push_back(runNumber);
+    }
+
+    file.close();
+
+    return v;
+  }
 
   Int_t get_nbins(){ return penv->GetValue("nbins", 1); }
   Int_t get_bbins(){ return penv->GetValue("bbins", 1); }
@@ -46,6 +78,12 @@ public:
   Int_t get_njet_sys(){ return penv->GetValue("NJET", 0); }
   Int_t get_zyam_sys(){ return penv->GetValue("ZYAM", 0); }
   Int_t get_prior_sys(){ return penv->GetValue("PRIOR", 0); }
+  Double_t get_pileup_sys(){ return penv->GetValue("PILEUP", 0.0); }
+  Int_t get_full_sys(){ return penv->GetValue("FULL", 0); }
+  Int_t get_emfrac_sys(){ return penv->GetValue("EMFRAC", 0); }
+  Int_t get_trigger_sys(){ return penv->GetValue("TRIGEFF", 0); }
+  Int_t get_crossingangle_sys(){ return penv->GetValue("CA", 0); }
+  Int_t get_philoc_sys(){ return penv->GetValue("PHILOC", 0); }
   Int_t get_vtx_sys(){ return penv->GetValue("VTX", 0); }
   Int_t get_herwig(){ return penv->GetValue("HERWIG", 0); }
   

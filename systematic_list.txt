@@ -1,0 +1,17 @@
+nominal,NA,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_nominal.root,binning.config,Nominal,kBlack,20,0.9,1.1
+HALF,HALF,1,%s/uncertainties/half_closure_pp_r%02d_PRIMER1_nominal.root,binning.config,Half Closure,kOrange+7,20,0.9,1.1
+HERWIG,HERWIG,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_HERWIG.root,binning_herwig.config,Herwig,kBlue+1,20,0.9,1.1
+posJES,JES,0,%s/unfolding_hists/unfolding_hists_pp_r%02d_posJES.root,binning_posJES.config,JES + Sys.,kCyan+1,20,0.9,1.1
+negJES,JES,0,%s/unfolding_hists/unfolding_hists_pp_r%02d_negJES.root,binning_negJES.config,JES - Sys.,kGreen-2,20,0.9,1.1
+posJER,JER,0,%s/unfolding_hists/unfolding_hists_pp_r%02d_posJER.root,binning_posJER.config,JER + Sys.,kPink+2,20,0.9,1.1
+negJER,JER,0,%s/unfolding_hists/unfolding_hists_pp_r%02d_negJER.root,binning_negJER.config,JER - Sys.,kMagenta+2,20,0.9,1.1
+FULL,FULL,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_FULL.root,binning_full.config,Full x-sec,kViolet-3,20,0.9,1.1
+TRIGGER,TRIGGER,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_TRIGGER.root,binning_trigger.config,Data-driven Eff.,kOrange+7,20,0.9,1.1
+PILEUP,PILEUP,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_PILEUP.root,binning_PILEUP.config,Full Pileup,kSpring+2,20,0.9,1.1
+PILEUPMIX,PILEUPMIX,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_PILEUPMIX.root,binning_PILEUPMIX.config,Mix Pileup,kSpring+2,20,0.9,1.1
+PHILOC1,PHILOC,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_PHILOC1.root,binning_horizontal.config,Horizontal,kRed,20,0.9,1.1
+PHILOC2,PHILOC,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_PHILOC2.root,binning_vertical.config,Vertical,kYellow-2,20,0.9,1.1
+EMFRAC,EMFRAC,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_EMFRAC.root,binning_emfrac.config,EMFrac Reweight,kBlue+1,20,0.9,1.1
+CA1,CA,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_CA1.root,binning_1.5.config,1.5 mRad,kGreen+3,20,0.9,1.1
+CA2,CA,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_CA2.root,binning_0.config,0 mRad,kGreen-4,20,0.9,1.1
+PRIOR,PRIOR,-1,%s/unfolding_hists/unfolding_hists_pp_r%02d_PRIMER2_nominal.root,binning.config,No Prior Reweight,kRed-2,20,0.9,1.1

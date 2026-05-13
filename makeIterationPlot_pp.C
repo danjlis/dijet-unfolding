@@ -13,8 +13,10 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
   read_binning rb(configfile.c_str());
 
 
+  Int_t full_sys = rb.get_full_sys();
   Int_t prior_sys = rb.get_prior_sys();
-
+  Double_t pileup_sys = rb.get_pileup_sys();
+  
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
   std::cout << "JES = " << JES_sys << std::endl;
@@ -24,8 +26,17 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
   
   std::string sys_name = "nominal";
   
+  if (pileup_sys > 1)
+    sys_name = "PILEUP";
+  else if (pileup_sys > 0)
+    sys_name = "PILEUPMIX";
+
+  if (full_sys)
+    sys_name = "FULL";
+
   if (prior_sys)
     sys_name = "PRIOR";
+
   if (herwig_sys)
     sys_name = "HERWIG";
   
@@ -247,12 +258,14 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
 	      prev_cont = h_flat_unfold_pt1pt2[iter - 1]->GetBinContent(ibin+1);
 	    }
 	  
-	  float err1 = fabs((prev_cont - bin_cont)/bin_cont);
+	  float err1 = (prev_cont - bin_cont);///bin_cont);
 	  if (bin_cont == 0) continue;
-	  
 	  binbybin_unc += TMath::Power(err1,2);	  	  
-	  stat_unc+= TMath::Power(h_pt1pt2_profile_unfold[iter]->GetBinError(ibin + 1)/h_pt1pt2_profile_unfold[iter]->GetBinContent(ibin + 1), 2);
-	  unfold_unc+= TMath::Power(h_flat_unfold_pt1pt2[iter]->GetBinError(ibin + 1)/h_flat_unfold_pt1pt2[iter]->GetBinContent(ibin + 1), 2);
+	  if (h_pt1pt2_profile_unfold[iter]->GetBinContent(ibin+1) > 0)
+	    {
+	      stat_unc+= TMath::Power(h_pt1pt2_profile_unfold[iter]->GetBinError(ibin + 1), 2);
+	    }
+	  unfold_unc+= TMath::Power(h_flat_unfold_pt1pt2[iter]->GetBinError(ibin + 1), 2);
 	}
 
       std::cout << stat_unc << " + " << unfold_unc <<" + " << binbybin_unc << " = " <<  sqrt(stat_unc + unfold_unc + binbybin_unc) << std::endl;
@@ -272,6 +285,7 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
 
 
   TCanvas *c_unc = new TCanvas("c_unc","c_unc", 500, 500);
+  gPad->SetLogy();
   dlutility::SetMarkerAtt(h_total_uncertainties, kBlack, 1, 8);
   dlutility::SetLineAtt(h_total_uncertainties, kBlack, 1, 1);
 
@@ -282,14 +296,17 @@ void makeIterationPlot_pp(const int cone_size = 4, const int prior = 0, const st
   dlutility::SetMarkerAtt(h_unfold_uncertainties, kGreen, 1, 8);
   dlutility::SetLineAtt(h_unfold_uncertainties, kGreen, 1, 1);
 
-  h_total_uncertainties->SetMaximum(20);
+  h_total_uncertainties->SetMinimum(0.1);
+  //h_total_uncertainties->SetMaximum(10000);
   h_total_uncertainties->Draw("p hist");
   h_statistical_uncertainties->Draw("same p hist");
   h_unfold_uncertainties->Draw("same p hist");
   h_binbybin_uncertainties->Draw("same p hist");
   h_total_uncertainties->Draw("p hist same");
-  dlutility::DrawSPHENIX(0.22, 0.87);
-  TLegend *leg = new TLegend(0.218, 0.566, 0.397, 0.726);
+  dlutility::DrawSPHENIXpp(0.22, 0.87);
+  dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = 0.%d", cone_size), 0.22, 0.77);
+  TLegend *leg = new TLegend(0.52, 0.66, 0.69, 0.89);
+
   leg->SetLineWidth(0);
   leg->SetTextFont(42);
   leg->SetTextSize(0.03);

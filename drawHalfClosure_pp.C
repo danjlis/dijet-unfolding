@@ -31,10 +31,10 @@ const float lsize_data = 1.1;
 void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
 {
 
-  std::string sys_string = "HALF_PuP";
+  std::string sys_string = "HALF_nominal";
   if (primer)
     {
-      sys_string = "PRIMER" + std::to_string(primer) + "_HALF_PuP";
+      sys_string = "PRIMER" + std::to_string(primer) + "_HALF_nominal";
     }
 
   gStyle->SetCanvasPreferGL(0);
@@ -194,11 +194,11 @@ void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
 	  histo_opps::finalize_xj(h_xj_unfold_range[irange][iter], h_final_xj_unfold_range[irange][iter], nbins, first_xj);
 	}
 
-      histo_opps::normalize_histo(h_final_xj_truth_range[irange], nbins);
-      histo_opps::normalize_histo(h_final_xj_reco_range[irange], nbins);
+      //histo_opps::normalize_histo(h_final_xj_truth_range[irange], nbins);
+      //histo_opps::normalize_histo(h_final_xj_reco_range[irange], nbins);
       for (int iter = 0; iter < niterations; iter++)
 	{
-	  histo_opps::normalize_histo(h_final_xj_unfold_range[irange][iter], nbins);
+	  //histo_opps::normalize_histo(h_final_xj_unfold_range[irange][iter], nbins);
 	}
 
     }
@@ -223,7 +223,7 @@ void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
 
 	dlutility::SetFont(h_final_xj_truth_range[irange], 42, 0.05);
 
-	h_final_xj_truth_range[irange]->SetMaximum(5);
+	//h_final_xj_truth_range[irange]->SetMaximum(5);
 	h_final_xj_truth_range[irange]->SetMinimum(0);
 	h_final_xj_truth_range[irange]->SetTitle(";x_{J}; #frac{1}{N_{pair}}#frac{dN_{pair}}{dx_{J}}");;
 
@@ -234,7 +234,7 @@ void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
 	hu->Draw("same p E1");
 
 
-	dlutility::DrawSPHENIX(0.22, 0.84);
+	dlutility::DrawSPHENIXpp(0.22, 0.84);
 	dlutility::drawText(Form("anti-#it{k}_{t} #it{R} = %0.1f", cone_size*0.1), 0.22, 0.74);
 	dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[1]], ipt_bins[measure_bins[2]]), 0.22, 0.69);
 	dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.22, 0.64);
@@ -314,6 +314,12 @@ void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
       h_closure_test[irange][0]->SetMinimum(-0.2);
       h_closure_test[irange][0]->SetMaximum(0.2);
       h_closure_test[irange][0]->Draw("p E1");
+      TLine *lineh = new TLine(h_closure_test[irange][0]->GetBinLowEdge(1), 0, 1, 0);
+      lineh->SetLineStyle(4);
+      lineh->SetLineColor(kBlack);
+      lineh->SetLineWidth(2);
+      lineh->Draw("same");
+
       //h_closure_test[irange][0]->SetTitleOffset(0.9);
       h_closure_test[irange][0]->SetTitle(";x_{J}; Half Truth - Half Unfold / Half Truth");
       h_closure_test[irange][1]->Draw("p E1 same");
@@ -323,11 +329,11 @@ void drawHalfClosure_pp(const int cone_size = 4, const int primer = 0)
 
       cxjclos->cd(2);
 
-      dlutility::DrawSPHENIXcut(0.02, 0.9, 0, 0.08);
+      dlutility::DrawSPHENIXcutpp(0.02, 0.9, 0, 0.08);
       dlutility::drawText(Form("anti-#it{k}_{t} #kern[-0.3]{#it{R}} = %0.1f", 0.1*cone_size), 0.02, 0.78, 0, kBlack, 0.08);
       dlutility::drawText(Form("%2.1f #leq #it{p}_{T,1} < %2.1f GeV ", ipt_bins[measure_bins[irange]], ipt_bins[measure_bins[irange+1]]), 0.02, 0.73, 0, kBlack, 0.08);
       dlutility::drawText(Form("#it{p}_{T,2} #geq %2.1f GeV", ipt_bins[measure_subleading_bin]), 0.02,0.68, 0, kBlack, 0.08);
-      dlutility::drawText("#Delta#phi #geq 7#pi/8", 0.02,0.63, 0, kBlack, 0.08);
+      dlutility::drawText("#Delta#phi #geq 3#pi/4", 0.02,0.63, 0, kBlack, 0.08);
 
       dlutility::drawText("Closure Test", 0.02,0.53, 0, kBlack, 0.08);
 

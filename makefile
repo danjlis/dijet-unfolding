@@ -15,6 +15,8 @@ SRC4 = makeRawDeltaPhi.cxx
 SRC5 = makeHerwig_hist.cxx
 SRC6 = createEfficiencies.cxx
 
+HEADER = read_binning.h
+
 CLASS = dijetfinder.cc
 # Compiler:
 CXX = clang++
@@ -71,22 +73,22 @@ dijetfinder.o: $(CLASS)
 	$(CXX) $(CXXFLAGS) -c $(CLASS) -o dijetfinder.o
 
 # Compile main source
-createResponse_noempty_pp.o: $(SRC1)
+createResponse_noempty_pp.o: $(SRC1) $(HEADER)
 	$(CXX) $(CXXFLAGS) -c $(SRC1) -o createResponse_noempty_pp.o
 
-unfoldData_noempty_pp.o: $(SRC2)
+unfoldData_noempty_pp.o: $(SRC2) $(HEADER)
 	$(CXX) $(CXXFLAGS) -c $(SRC2) -o unfoldData_noempty_pp.o
 
-unfoldDataUncertainties_noempty_pp.o: $(SRC3)
+unfoldDataUncertainties_noempty_pp.o: $(SRC3) $(HEADER)
 	$(CXX) $(CXXFLAGS) -c $(SRC3) -o unfoldDataUncertainties_noempty_pp.o
 
-makeRawDeltaPhi.o: $(SRC4)
+makeRawDeltaPhi.o: $(SRC4) $(HEADER)
 	$(CXX) $(CXXFLAGS) -c $(SRC4) -o makeRawDeltaPhi.o
 
-makeHerwig_hist.o: $(SRC5)
+makeHerwig_hist.o: $(SRC5) $(HEADER)
 	$(CXX) $(CXXFLAGS) -c $(SRC5) -o makeHerwig_hist.o
 
-createEfficiencies.o: $(SRC6)
+createEfficiencies.o: $(SRC6) $(HEADER)
 	$(CXX) $(CXXFLAGS) -c $(SRC6) -o createEfficiencies.o
 
 # Cleanup:

@@ -24,13 +24,15 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
   gStyle->SetOptStat(0);
   dlutility::SetyjPadStyle();
 
-  float boundary_r4[6];
+  const int nsamples = 6;
+  float boundary_r4[nsamples+1];
   boundary_r4[0] = 14;
-  boundary_r4[1] = 17;
-  boundary_r4[2] = 22;
-  boundary_r4[3] = 35;
+  boundary_r4[1] = 22;
+  boundary_r4[2] = 33;
+  boundary_r4[3] = 42;
   boundary_r4[4] = 52;
-  boundary_r4[5] = 100;
+  boundary_r4[5] = 62;
+  boundary_r4[6] = 100;
   
   
   read_binning rb(configfile.c_str());
@@ -39,40 +41,42 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
   djf.SetVerbosity(verbosity);
   
   
-  std::string j10_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_10_ana509_MDC2-00000028.root";
-  std::string j15_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_15_ana509_MDC2-00000028.root";
+  std::string j12_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_12_ana509_MDC2-00000028.root";
+  std::string j40_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_40_ana509_MDC2-00000028.root";
   std::string j20_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_20_ana509_MDC2-00000028.root";
   std::string j30_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_30_ana509_MDC2-00000028.root";
   std::string j50_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_50_ana509_MDC2-00000028.root";
+  std::string j60_file = rb.get_tntuple_location() + "/TREE_JET_SKIM_r0" + std::to_string(cone_size) + "_v11_60_ana509_MDC2-00000028.root";
 
-  float n_events[5];
-  TFile *finsim[5];
+  float n_events[6];
+  TFile *finsim[6];
   
-  finsim[0] = new TFile(j10_file.c_str(),"r");
-  finsim[1] = new TFile(j15_file.c_str(),"r");
-  finsim[2] = new TFile(j20_file.c_str(),"r");
-  finsim[3] = new TFile(j30_file.c_str(),"r");
+  finsim[0] = new TFile(j12_file.c_str(),"r");
+  finsim[1] = new TFile(j20_file.c_str(),"r");
+  finsim[2] = new TFile(j30_file.c_str(),"r");
+  finsim[3] = new TFile(j40_file.c_str(),"r");
   finsim[4] = new TFile(j50_file.c_str(),"r");
+  finsim[5] = new TFile(j60_file.c_str(),"r");
 
-  TTree *ttree[5];
-  ULong64_t gl1_scaled[5];
+  TTree *ttree[6];
+  ULong64_t gl1_scaled[6];
 
-  std::vector<float> *truth_jet_pt_ref[5] = {0};
-  std::vector<float> *truth_jet_pt[5] = {0};
-  std::vector<float> *truth_jet_eta[5] = {0};
-  std::vector<float> *truth_jet_phi[5] = {0};
+  std::vector<float> *truth_jet_pt_ref[6] = {0};
+  std::vector<float> *truth_jet_pt[6] = {0};
+  std::vector<float> *truth_jet_eta[6] = {0};
+  std::vector<float> *truth_jet_phi[6] = {0};
   
-  std::vector<float> *reco_jet_pt[5] = {0};
-  std::vector<float> *reco_jet_emcal[5] = {0};
-  std::vector<float> *reco_jet_e[5] = {0};
-  std::vector<float> *reco_jet_eta[5] = {0};
-  std::vector<float> *reco_jet_eta_det[5] = {0};
-  std::vector<float> *reco_jet_phi[5] = {0};
+  std::vector<float> *reco_jet_pt[6] = {0};
+  std::vector<float> *reco_jet_emcal[6] = {0};
+  std::vector<float> *reco_jet_e[6] = {0};
+  std::vector<float> *reco_jet_eta[6] = {0};
+  std::vector<float> *reco_jet_eta_det[6] = {0};
+  std::vector<float> *reco_jet_phi[6] = {0};
 
-  float truth_vertex_z[5];
-  float mbd_vertex_z[5];
-
-  for (int j = 0; j < 5; j++)
+  float truth_vertex_z[6];
+  float mbd_vertex_z[6];
+  
+  for (int j = 0; j < 6; j++)
     {
       
       ttree[j] = (TTree*) finsim[j]->Get("ttree");
@@ -85,7 +89,7 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
       ttree[j]->SetBranchAddress(Form("truth_jet_eta_%d", cone_size), &truth_jet_eta[j]);
       ttree[j]->SetBranchAddress(Form("truth_jet_phi_%d", cone_size), &truth_jet_phi[j]);
   
-      ttree[j]->SetBranchAddress(Form("jet_pt_%d", cone_size), &reco_jet_pt[j]);
+      ttree[j]->SetBranchAddress(Form("jet_pt_calib_%d", cone_size), &reco_jet_pt[j]);
       ttree[j]->SetBranchAddress(Form("jet_emcal_%d", cone_size), &reco_jet_emcal[j]);
       ttree[j]->SetBranchAddress(Form("jet_e_%d", cone_size), &reco_jet_e[j]);
       ttree[j]->SetBranchAddress(Form("jet_eta_%d", cone_size), &reco_jet_eta[j]);
@@ -98,23 +102,27 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
     }
 
   
-  float cs_10 = (3.997e6);
-  float cs_15 = (4.073e5);
-  float cs_20 = 6.218e4;
-  float cs_30 = (2.502e3);
-  float cs_50 = (7.2695);
-  
-  float scale_factor[5];
-  scale_factor[0] = cs_10/cs_50;
-  scale_factor[1] = cs_15/cs_50;
-  scale_factor[2] = cs_20/cs_50;
-  scale_factor[3] = cs_30/cs_50; 
-  scale_factor[4] = 1;
+  float cs_12 = (1.49e6);
+  float cs_20 = (6.26e4);
+  float cs_30 = (2.53e3);
+  float cs_40 = (1.355e2);
+  float cs_50 = (7.311);
+  float cs_60 = (3.3261e-01);
 
-  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_2_ana509_2024p022_v001_gl10-ana468list.root";
+  float scale_factor[6];
+  scale_factor[0] = cs_12/cs_60;
+  scale_factor[1] = cs_20/cs_60;
+  scale_factor[2] = cs_30/cs_60;
+  scale_factor[3] = cs_40/cs_60; 
+  scale_factor[4] = cs_50/cs_60;
+  scale_factor[5] = 1;
+
+  std::string data_file = rb.get_tntuple_location() + "/TREE_DIJET_SKIM_r0" + std::to_string(cone_size) + "_v8_7_ana533_2025p007_v001_gl10-alltime.root";
   
   ULong64_t gl1_scaled_data;
   float mbd_vertex_z_data;
+  double calib_lead_time;
+  double calib_delta_time;
   
   std::vector<float> *data_jet_pt = 0;
   std::vector<float> *data_jet_emcal = 0;
@@ -131,7 +139,7 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
       std::cout << " no data "<< std::endl;
     }
 
-  ttreed->SetBranchAddress(Form("jet_pt_%d", cone_size), &data_jet_pt);
+  ttreed->SetBranchAddress(Form("jet_pt_calib_%d", cone_size), &data_jet_pt);
   ttreed->SetBranchAddress(Form("jet_emcal_%d", cone_size), &data_jet_emcal);
   ttreed->SetBranchAddress(Form("jet_e_%d", cone_size), &data_jet_e);
   ttreed->SetBranchAddress(Form("jet_eta_%d", cone_size), &data_jet_eta);
@@ -139,6 +147,8 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
   ttreed->SetBranchAddress(Form("jet_phi_%d", cone_size), &data_jet_phi);
   ttreed->SetBranchAddress("mbd_vertex_z", &mbd_vertex_z_data);
   ttreed->SetBranchAddress("gl1_scaled", &gl1_scaled_data);
+  ttreed->SetBranchAddress("calib_lead_time", &calib_lead_time);
+  ttreed->SetBranchAddress("calib_delta_time", &calib_delta_time);
   
   Int_t read_nbins = rb.get_nbins();
 
@@ -218,26 +228,44 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
   TH1D *h_truth_dphi = new TH1D("h_truth_dphi",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
   TH1D *h_reco_dphi = new TH1D("h_reco_dphi",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
 
+  h_data_dphi->Sumw2();
+  h_truth_dphi->Sumw2();
+  h_reco_dphi->Sumw2();
+
   TH1D *h_truth_match_dphi = new TH1D("h_truth_match_dphi",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
   TH1D *h_reco_match_dphi = new TH1D("h_reco_match_dphi",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
 
+  h_truth_match_dphi->Sumw2();
+  h_reco_match_dphi->Sumw2();
+  
   TProfile *h_sim_match_ddphi = new TProfile("h_sim_match_ddphi", ";<#it{p}_{T}> [GeV]; d#Delta#phi", 25, 10, 60, "s");
   TProfile2D *h2_sim_match_ddphi = new TProfile2D("h2_sim_match_ddphi", ";#it{p}_{T,1} [GeV] ;#it{p}_{T,2} [GeV]; d#Delta#phi", 4, 20, 60, 10, 10, 60, "s");
 
   TH3D *h_truth_pt1pt2dphi = new TH3D("h_truth_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   TH3D *h_reco_pt1pt2dphi = new TH3D("h_reco_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-
+  h_truth_pt1pt2dphi->Sumw2();
+  h_reco_pt1pt2dphi->Sumw2();
+  
   TH3D *h_truth_match_pt1pt2dphi = new TH3D("h_truth_match_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   TH3D *h_reco_match_pt1pt2dphi = new TH3D("h_reco_match_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
   TH3D *h_reco_match_pt1pt2dphitruth = new TH3D("h_reco_match_pt1pt2dphitruth",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
-
+  h_truth_match_pt1pt2dphi->Sumw2();
+  h_reco_match_pt1pt2dphi->Sumw2();
+  h_reco_match_pt1pt2dphitruth->Sumw2();
   TH3D *h_data_pt1pt2dphi = new TH3D("h_data_pt1pt2dphi",";#it{p}_{T,1, smear};#it{p}_{T,2, smear}", nbins, ipt_bins, nbins, ipt_bins,nbinsdphi, idphi_bins);
+
+  h_data_pt1pt2dphi->Sumw2();
+  
   // Data
 
   TH1D *h_data_dphi_counts = new TH1D("h_data_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
   TH1D *h_truth_dphi_counts = new TH1D("h_truth_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
   TH1D *h_reco_dphi_counts = new TH1D("h_reco_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
 
+  h_data_dphi_counts->Sumw2();
+  h_reco_dphi_counts->Sumw2();
+  h_truth_dphi_counts->Sumw2();
+  
   TH1D *h_truth_match_dphi_counts = new TH1D("h_truth_match_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
   TH1D *h_reco_match_dphi_counts = new TH1D("h_reco_match_dphi_counts",";#Delta#phi;1/N",nbinsdphi, idphi_bins);
 
@@ -286,15 +314,22 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
   fgaus->SetRange(-0.5, 0.5);
 
   TF1 *gjer = nullptr;
+			 
+  TH1D *hjersmear = nullptr;
 
   TF1 *fsmear = new TF1("fsmear", "gaus", -1, 1);
   fsmear->SetParameters(1, 0, 0.13);
-  TFile *finjer = new TFile(Form("%s/r%02d/jer/jer_fits_r%02d_1JES_0_closure.root", rb.get_jesr_location().c_str(), (cone_size == 2 ? 3 : cone_size), (cone_size == 2 ? 3 : cone_size)), "r");
+  TFile *finjer = new TFile(Form("%s/r%02d/jer/jer_fits_r%02d_1JES_0_closure_PYTHIA.root", rb.get_jesr_location().c_str(), (cone_size == 2 ? 3 : cone_size), (cone_size == 2 ? 3 : cone_size)), "r");
 
   Double_t JES_sys = rb.get_jes_sys();
   Double_t JER_sys = rb.get_jer_sys();
   std::string sys_name = "nominal";
   gjer = (TF1*) finjer->Get("jernom");
+  gjer = (TF1*) finjer->Get("jernom");
+  hjersmear = (TH1D*) finjer->Get("h_nominal_smear");
+  float nominal_smear = 0.08;
+
+
   if (JER_sys != 0)
     {
       if (JER_sys < 0)
@@ -328,7 +363,7 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
   // Vertex Reweight
   Double_t vtx_cut = rb.get_vtx_cut();
   Int_t vtx_sys = rb.get_vtx_sys();
-  TFile *fvtx = new TFile(Form("%s/vertex/vertex_reweight_pp_r%02d.root", rb.get_code_location().c_str(), cone_size),"r");
+  TFile *fvtx = new TFile(Form("%s/vertex/vertex_reweight_pp_r%02d_%s.root", rb.get_code_location().c_str(), cone_size, sys_name.c_str()),"r");
   TH1D *h_mbd_reweight = (TH1D*) fvtx->Get("h_mbd_reweight");
 
   std::vector<std::pair<float, float>> vertex_scales;
@@ -363,17 +398,17 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
 
 	  if (data_jet_e->at(j) < 0) continue;
 
-
 	      
 	  struct jet tempjet;
 	  tempjet.istruth = 0;
-	  float temppt = fJES->Eval(data_jet_pt->at(j));
-	  tempjet.pt = temppt;
+
+	  tempjet.pt = 	data_jet_pt->at(j);
 
 	  if (tempjet.pt < reco_subleading_cut) continue;
 
 	  tempjet.emcal = data_jet_emcal->at(j);
 	  tempjet.eta = data_jet_eta->at(j);
+	  tempjet.e = data_jet_e->at(j);
 	  tempjet.eta_det = data_jet_eta_det->at(j);
 	  tempjet.phi = data_jet_phi->at(j);
 	  tempjet.t = 0;
@@ -389,8 +424,10 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
       if (reco_good)
 	{
 	  reco_good &= (myrecojets.at(0).pt < ipt_bins[max_reco_bin]);
+	  reco_good &= djf.passes_time_cut(calib_lead_time, calib_delta_time);
+	  reco_good &= (myrecojets.at(1).e / myrecojets.at(0).e >= 0.3);
 	}
-
+      
       if (!reco_good) continue;
 
       float maxi = myrecojets.at(0).pt;
@@ -412,7 +449,7 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
     }
 
   // Sim
-  for (int isample = 0; isample < 5; isample++)
+  for (int isample = 0; isample < 6; isample++)
     {
       std::cout << "Sample " << isample << std::endl;
       int entries2 = ttree[isample]->GetEntries();
@@ -491,18 +528,28 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
 	    {
 
 	      if (reco_jet_e[isample]->at(j) < 0) continue;
-
-
 	      
 	      struct jet tempjet;
 	      tempjet.istruth = 0;
-	      float temppt = fJES->Eval(reco_jet_pt[isample]->at(j));
 
-	      tempjet.pt = temppt;
-		      
+	      float temppt = reco_jet_pt[isample]->at(j);
+	      float tempptreco = temppt;
+	      //int ib = floor((temppt - 3)/0.1) + 1;
+	      float smear1 = gjer->Eval(temppt);//nominal_smear;//hjersmear->GetBinContent(ib );
+	      float jersmear = 0;
+	      if (smear1 > 0)
+		{
+		  fsmear->SetParameter(2, smear1);
+		  jersmear = fsmear->GetRandom();
+		}
+	      
+	      tempptreco = temppt*(1 + JES_sys) + jersmear*temppt;// + JES_sys * temppt;
 
+	      tempjet.pt = tempptreco;
+	      
 	      tempjet.emcal = reco_jet_emcal[isample]->at(j);
 	      tempjet.eta = reco_jet_eta[isample]->at(j);
+	      tempjet.e = reco_jet_e[isample]->at(j);
 	      tempjet.eta_det = reco_jet_eta_det[isample]->at(j);
 	      tempjet.phi = reco_jet_phi[isample]->at(j);
 	      tempjet.t = 0;
@@ -554,30 +601,6 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
 
 	  bool matched = matched_dijets.size() == 2;
 
-	  if (matched)
-	    {
-	      myrecojets2.clear();
-	      for (int ijet = 0 ; ijet < matched_dijets.size(); ijet++)
-		{
-		  auto mjet = matched_dijets.at(ijet);
-		  float temppt = mjet.first.pt;
-		  float smear1 = gjer->Eval(temppt);
-		  if (JER_sys < 0)
-		    {
-		      smear1 -= 0.01;
-		    }
-		  else if (JER_sys > 0)
-		    {
-		      smear1 += 0.01;
-		    }
-		  fsmear->SetParameter(2, smear1);
-		  float jersmear = fsmear->GetRandom();
-		  float tempptreco = mjet.second.pt + jersmear*temppt + JES_sys * temppt;
-		  matched_dijets.at(ijet).second.pt = tempptreco;
-		  myrecojets2.push_back(matched_dijets.at(ijet).second);
-		}
-	      std::sort(myrecojets2.begin(), myrecojets2.end(), [] (auto a, auto b) { return a.pt > b.pt; });
-	    }
 	  
 	  float max_truth = 0;
 	  float max_reco = 0;
@@ -586,13 +609,15 @@ void makeRawDeltaPhi(const int cone_size = 4, const std::string configfile = "bi
 	  int fill_fake_miss = 0;
 
 	  bool reco_good = djf.check_dijet_reco(myrecojets2);
-	  reco_good &= triggered;
-	  reco_good &= has_vertex;
 
 
 	  if (reco_good)
 	    {
 	      reco_good &= (myrecojets2.at(0).pt < ipt_bins[max_reco_bin]);
+	      reco_good &= (myrecojets.at(1).e / myrecojets.at(0).e >= 0.3);
+	      reco_good &= triggered;
+	      reco_good &= has_vertex;
+
 	    }
 
 	  if (truth_good)

@@ -30,11 +30,11 @@ const float lsize_data = 1.1;
 void drawFullClosure(const int cone_size = 4, const int primer = 0)
 {
 
-  std::string sys_string = "PuP";
+  std::string sys_string = "nominal";
 
   if (primer)
     {
-      sys_string = "PRIMER" + std::to_string(primer) + "_PuP";
+      sys_string = "PRIMER" + std::to_string(primer) + "_nominal";
     }
   gStyle->SetCanvasPreferGL(0);
   gStyle->SetOptStat(0);
